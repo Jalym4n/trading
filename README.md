@@ -9,7 +9,7 @@ live in **`CLAUDE.md`**; read it before changing anything.
 pine/                TradingView indicators and strategies (.pine)
 screeners/           Screeners (TradingView screens, Python scanners)
   biotech/           ClinicalTrials.gov + EDGAR catalyst screener (track 2)
-backtesting/         fvg_lab framework and run harnesses (track 1)
+backtesting/         fvg_lab framework + run_example.py / run_spy.py (track 1)
 data/                Local market data (git-ignored, never committed)
 journal/             Thesis journal entries (one file per ticker/catalyst)
 CLAUDE.md            Carry-over context for Claude Code sessions
