@@ -1,0 +1,80 @@
+//@version=6
+// Fair Value Gap — mirrors fvg_lab/strategy.py
+//
+// Every parameter here has the same name and meaning as a field in Params.
+// Keep the two in sync: what you see on the chart should be exactly what the
+// backtest trades, or you are testing one thing and watching another.
+//
+// Detection (3-bar imbalance, known only at the CLOSE of the current bar):
+//   bullish:  low  > high[2]   -> unfilled zone [high[2], low]
+//   bearish:  high < low[2]    -> unfilled zone [high,    low[2]]
+
+indicator("FVG (fvg_lab)", overlay = true, max_boxes_count = 500)
+
+// ---------------------------------------------------------------- inputs --
+minGapAtr = input.float(0.25, "Min gap (x ATR)", minval = 0.0, step = 0.05,
+     tooltip = "Params.min_gap_atr — ignore gaps smaller than this")
+fvgMaxAge = input.int(20, "Max age (bars)", minval = 1,
+     tooltip = "Params.fvg_max_age — bars an unfilled gap stays tradable")
+atrPeriod = input.int(14, "ATR period", minval = 1,
+     tooltip = "Params.atr_period")
+showBull  = input.bool(true, "Show bullish")
+showBear  = input.bool(true, "Show bearish")
+extendRt  = input.bool(true, "Extend zones to current bar")
+bullCol   = input.color(color.new(color.teal, 82), "Bullish fill")
+bearCol   = input.color(color.new(color.red,  82), "Bearish fill")
+
+// ------------------------------------------------------------------ ATR ---
+// Simple mean of true range, shifted one bar, so bar t uses only bars
+// strictly before it. This matches tr.rolling(n).mean().shift(1) in
+// precompute(). Deliberately NOT ta.atr(), which applies Wilder smoothing
+// and would put the gap-size threshold in a slightly different place.
+atrPrev = ta.sma(ta.tr(true), atrPeriod)[1]
+valid   = not na(atrPrev) and atrPrev > 0
+thresh  = minGapAtr * nz(atrPrev)
+
+// ---------------------------------------------------------------- state ---
+var array<box> zones  = array.new<box>()
+var array<int> dirs   = array.new<int>()
+var array<int> births = array.new<int>()
+
+// ------------------------------------------------------------ detection ---
+bullGap = valid and low  > high[2] and (low - high[2]) >= thresh
+bearGap = valid and high < low[2]  and (low[2] - high) >= thresh
+
+if showBull and bullGap
+    zb = box.new(bar_index - 2, low, bar_index, high[2],
+         border_color = na, bgcolor = bullCol)
+    array.push(zones, zb)
+    array.push(dirs, 1)
+    array.push(births, bar_index)
+
+if showBear and bearGap
+    zs = box.new(bar_index - 2, low[2], bar_index, high,
+         border_color = na, bgcolor = bearCol)
+    array.push(zones, zs)
+    array.push(dirs, -1)
+    array.push(births, bar_index)
+
+// ---------------------------------------------------------- maintenance ---
+// Walk backwards so removals do not shift indices we still have to visit.
+if array.size(zones) > 0
+    for i = array.size(zones) - 1 to 0
+        zx   = array.get(zones, i)
+        d    = array.get(dirs, i)
+        age  = bar_index - array.get(births, i)
+        top  = box.get_top(zx)
+        bot  = box.get_bottom(zx)
+        // expire by age, or invalidate once price trades fully through
+        dead = age > fvgMaxAge or (d == 1 ? low < bot : high > top)
+        if dead
+            box.delete(zx)
+            array.remove(zones, i)
+            array.remove(dirs, i)
+            array.remove(births, i)
+        else if extendRt
+            box.set_right(zx, bar_index)
+
+// --------------------------------------------------------------- alerts ---
+alertcondition(bullGap, "Bullish FVG", "Bullish fair value gap formed")
+alertcondition(bearGap, "Bearish FVG", "Bearish fair value gap formed")
