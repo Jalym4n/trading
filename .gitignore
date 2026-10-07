@@ -8,3 +8,5 @@ data/*
 !data/.gitkeep
 *.parquet
 .DS_Store
+# market data dropped next to the run scripts
+backtesting/*.csv
