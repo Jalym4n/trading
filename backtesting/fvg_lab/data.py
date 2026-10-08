@@ -64,13 +64,22 @@ def add_session(
 ) -> pd.DataFrame:
     """Tag each bar with its session date and its index within the session.
 
-    bar_in_session == 0 is the 'first candle'.
+    bar_in_session == 0 is the 'first candle'. Session boundaries are read in
+    the frame's own timezone.
+
+    For 24/7 markets pass session_start="00:00", session_end="24:00": every
+    bar is kept and each calendar day (in the frame's tz) is one session.
+    Load crypto with tz="UTC" for UTC-midnight sessions, or keep New York
+    time and use 09:30-16:00 to test whether the equity open matters.
     """
     out = df.copy()
     t = out.index.time
     start = pd.to_datetime(session_start).time()
-    end = pd.to_datetime(session_end).time()
-    in_session = (t >= start) & (t < end)
+    if session_end == "24:00":
+        in_session = t >= start
+    else:
+        end = pd.to_datetime(session_end).time()
+        in_session = (t >= start) & (t < end)
     out = out[in_session].copy()
     out["session"] = out.index.normalize()
     out["bar_in_session"] = out.groupby("session").cumcount()

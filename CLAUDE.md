@@ -101,6 +101,12 @@ allow_long, allow_short, atr_period
 - **AMD on random data produced a +0.49 R headline** from a 108-variant sweep.
   Randomization test p=0.25, deflated Sharpe **0.0000**, in-sample to
   out-of-sample decay **+0.65 R**. This is the framework working correctly.
+- **Retail crypto fees kill 5m intraday outright.** On synthetic BTC 5m bars
+  (median stop ~0.33% of price), zero-cost expectancy 0.00 R becomes
+  **-2.8 R/trade at 0.40% taker** and -1.8 R at 0.25% maker. Fee drag in R is
+  roughly round-trip cost ÷ stop distance, so ~0.85% round trip needs stops
+  near **8%** to get drag under 0.1 R. Use crypto 5m to validate the pipeline
+  and to ask "is there signal at zero cost", not as a tradable venue.
 
 ### Bugs found and fixed (watch for regressions)
 
@@ -121,8 +127,9 @@ allow_long, allow_short, atr_period
 - [ ] No `retest_depth` parameter (require price to penetrate into the zone
       rather than graze its near edge). This is the highest-value addition
       given the selectivity finding above.
-- [ ] Commission model is flat dollars per unit; percentage fees (crypto) need
-      a small change in `engine.py`
+- [x] Percentage fees: `Costs` now takes `commission_pct`, `spread_bps`,
+      `slippage_bps`; preset `Costs.crypto_spot(fee_pct=...)`. 24/7 sessions via
+      `add_session(df, "00:00", "24:00")`. Tests in `backtesting/tests/`.
 - [ ] Pine v3 arms on the break bar and checks reclaim from the next bar;
       Python allows same-bar reclaim. One-line divergence, intentional, flagged.
 

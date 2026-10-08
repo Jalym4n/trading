@@ -11,7 +11,7 @@ Design rules, all of them about not cheating:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, replace
 
 import numpy as np
 import pandas as pd
@@ -21,30 +21,51 @@ from .strategy import Bars, FVGStrategy, Params
 
 @dataclass(frozen=True)
 class Costs:
+    """Per-fill friction. Two families of terms, use either or both:
+
+    * Fixed (futures, shares): spread/slippage in ticks, commission in $/unit.
+    * Proportional (crypto, % fee brokers): spread/slippage in basis points
+      of price, commission as a fraction of notional. These scale with price,
+      which matters when the instrument moves 5x over the sample (BTC 2020-24):
+      a fixed-tick model would make early trades look far too expensive and
+      late trades far too cheap.
+    """
+
     tick_size: float = 0.25
     point_value: float = 50.0  # $ per 1.0 price move per unit (ES = 50)
     spread_ticks: float = 1.0  # full spread; half is paid per side
     slippage_ticks: float = 0.5  # per side, on top of spread
     commission_per_side: float = 1.25  # $ per unit per side
+    spread_bps: float = 0.0  # full spread in bps of price; half paid per side
+    slippage_bps: float = 0.0  # per side, bps of price, on top of spread
+    commission_pct: float = 0.0  # fraction of fill notional per side (0.004 = 0.40%)
 
-    @property
-    def edge(self) -> float:
+    def edge(self, price: float) -> float:
         """Adverse price offset paid on each fill, in price units."""
-        return (self.spread_ticks / 2 + self.slippage_ticks) * self.tick_size
+        fixed = (self.spread_ticks / 2 + self.slippage_ticks) * self.tick_size
+        prop = price * (self.spread_bps / 2 + self.slippage_bps) / 1e4
+        return fixed + prop
 
     def fill_price(self, price: float, direction: int, opening: bool) -> float:
         """Adverse fill. direction is +1 long / -1 short; opening or closing."""
         side = direction if opening else -direction
-        return price + side * self.edge
+        return price + side * self.edge(price)
+
+    def commission(self, fill: float, qty: float) -> float:
+        """Dollar commission for ONE side at this fill price and size."""
+        notional = abs(fill) * qty * self.point_value
+        return self.commission_per_side * qty + self.commission_pct * notional
 
     def double(self) -> "Costs":
         """Stress test. If the edge dies here, it was never there."""
-        return Costs(
-            self.tick_size,
-            self.point_value,
-            self.spread_ticks * 2,
-            self.slippage_ticks * 2,
-            self.commission_per_side * 2,
+        return replace(
+            self,
+            spread_ticks=self.spread_ticks * 2,
+            slippage_ticks=self.slippage_ticks * 2,
+            commission_per_side=self.commission_per_side * 2,
+            spread_bps=self.spread_bps * 2,
+            slippage_bps=self.slippage_bps * 2,
+            commission_pct=self.commission_pct * 2,
         )
 
     # ------------------------------------------------------------ presets --
@@ -73,6 +94,34 @@ class Costs:
     def mes() -> "Costs":
         """Micro E-mini S&P futures. 1/10th the size of ES."""
         return Costs(0.25, 5.0, 1.0, 0.5, 0.52)
+
+    @staticmethod
+    def crypto_spot(
+        fee_pct: float = 0.004,
+        spread_bps: float = 1.0,
+        slippage_bps: float = 2.0,
+    ) -> "Costs":
+        """Spot BTC/ETH, one unit = one coin, sized fractionally.
+
+        Defaults assume TAKER fills at a retail entry tier (0.40%/side is
+        Kraken Pro's lowest-volume taker rate at time of writing; Coinbase
+        Advanced's entry tier is higher). Check your exchange's fee page and
+        pass the real number. Market and stop orders are taker; do not model
+        maker fees for a strategy that enters on the open and exits on stops.
+
+        Run with allow_fractional=True: at this account size you trade
+        fractions of a coin.
+        """
+        return Costs(
+            tick_size=0.01,
+            point_value=1.0,
+            spread_ticks=0.0,
+            slippage_ticks=0.0,
+            commission_per_side=0.0,
+            spread_bps=spread_bps,
+            slippage_bps=slippage_bps,
+            commission_pct=fee_pct,
+        )
 
 
 @dataclass
@@ -179,7 +228,7 @@ def run(
             if exit_px is not None:
                 fill = costs.fill_price(exit_px, d, opening=False)
                 gross = (fill - pos["entry"]) * d * pos["qty"] * costs.point_value
-                comm = 2 * costs.commission_per_side * pos["qty"]
+                comm = costs.commission(pos["entry"], pos["qty"]) + costs.commission(fill, pos["qty"])
                 pnl = gross - comm
                 risk_dollars = pos["risk_pts"] * pos["qty"] * costs.point_value
                 equity += pnl
