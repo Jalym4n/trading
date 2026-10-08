@@ -7,7 +7,13 @@ built so that the default outcome is **killing your idea**, not confirming it.
 cd backtesting
 pip install -r requirements.txt
 python run_example.py
+python tests/test_costs.py      # cost model checks
 ```
+
+Crypto (24/7, % fees): load with `data.load_csv(path, tz="UTC")`, tag sessions
+with `data.add_session(df, "00:00", "24:00")`, cost with
+`Costs.crypto_spot(fee_pct=<your taker fee>)`, and run with
+`allow_fractional=True`.
 
 The example runs on a synthetic random walk. There is nothing in that data to
 find, so the output shows you what a correct null result looks like before you
