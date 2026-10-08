@@ -114,13 +114,19 @@ def sweep(
     log: TrialLog | None = None,
     tag: str = "",
     min_trades: int = 30,
+    run_kwargs: dict | None = None,
 ) -> pd.DataFrame:
     """Run every combination, log every one, return a ranked frame.
 
     Ranking is deliberately by expectancy with a minimum trade count, not by
     total return. Total return rewards the variant that got lucky once.
+
+    run_kwargs go straight to engine.run (starting_equity, risk_per_trade,
+    allow_fractional). Crypto needs allow_fractional=True or every signal is
+    skipped as undersized.
     """
     log = log or TrialLog()
+    run_kwargs = run_kwargs or {}
     rows = []
     # indicators only depend on these, so build Bars once per group
     cache: dict[tuple, Bars] = {}
@@ -128,7 +134,7 @@ def sweep(
         key = (p.first_candle_n, p.atr_period, p.ema_period, p.amd_cons_bars)
         if key not in cache:
             cache[key] = Bars(df, p)
-        res = run(df, p, costs, bars=cache[key])
+        res = run(df, p, costs, bars=cache[key], **run_kwargs)
         st = summarize(res)
         log.append(p.to_dict(), st, tag=tag)
         rows.append({**p.to_dict(), **st})
@@ -152,6 +158,7 @@ def purged_walk_forward(
     embargo_days: int = 3,
     min_trades: int = 20,
     log: TrialLog | None = None,
+    run_kwargs: dict | None = None,
 ) -> dict:
     """Select parameters in-sample, apply them forward, never look back.
 
@@ -161,6 +168,7 @@ def purged_walk_forward(
     your holding period ever spans sessions.
     """
     log = log or TrialLog()
+    run_kwargs = run_kwargs or {}
     if "session" not in df:
         raise ValueError("call data.add_session(df) first")
     sessions = np.array(sorted(df["session"].unique()))
@@ -174,14 +182,15 @@ def purged_walk_forward(
         tr_df = df[df["session"].isin(tr)]
         te_df = df[df["session"].isin(te)]
 
-        ranked = sweep(tr_df, base, grid, costs, log=log, tag="wf_train", min_trades=min_trades)
+        ranked = sweep(tr_df, base, grid, costs, log=log, tag="wf_train",
+                       min_trades=min_trades, run_kwargs=run_kwargs)
         if ranked.empty:
             start += test_days
             continue
         best = ranked.iloc[0]
         chosen = params_from_row(best)
 
-        res = run(te_df, chosen, costs)
+        res = run(te_df, chosen, costs, **run_kwargs)
         st = summarize(res)
         log.append(chosen.to_dict(), st, tag="wf_test")
         fold_rows.append(

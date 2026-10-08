@@ -121,7 +121,11 @@ allow_long, allow_short, atr_period
 
 ### Known gaps / TODO
 
-- [ ] **No real data loaded.** Primary blocker.
+- [ ] **No real data loaded.** Primary blocker. Tooling now exists:
+      `backtesting/fetch_crypto.py` (Coinbase / Binance archive, no key) then
+      `backtesting/run_crypto.py --csv btc_5m.csv`. Needs to be RUN on a
+      machine with internet; the cloud session's network policy blocks the
+      exchange hosts.
 - [ ] No time stop (exit after N bars unresolved)
 - [ ] No daily loss limit
 - [ ] No `retest_depth` parameter (require price to penetrate into the zone

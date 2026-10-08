@@ -10,7 +10,19 @@ python run_example.py
 python tests/test_costs.py      # cost model checks
 ```
 
-Crypto (24/7, % fees): load with `data.load_csv(path, tz="UTC")`, tag sessions
+Real crypto data, free (run on your own machine, needs internet):
+
+```
+python fetch_crypto.py --source coinbase --symbol BTC-USD --interval 5m --start 2019-01-01 --out btc_5m.csv
+python run_crypto.py --csv btc_5m.csv --fee 0.004       # ~15 min for 2019 -> now
+python tests/test_fetch.py
+```
+
+`fetch_crypto.py` writes bar OPEN times in UTC, drops the still-forming bar,
+and reports gaps without filling them. `--source binance --symbol BTCUSDT`
+uses the monthly archive instead (faster, SHA-256 checked, USDT-quoted).
+
+Crypto (24/7, % fees) by hand: load with `data.load_csv(path, tz="UTC")`, tag sessions
 with `data.add_session(df, "00:00", "24:00")`, cost with
 `Costs.crypto_spot(fee_pct=<your taker fee>)`, and run with
 `allow_fractional=True`.
