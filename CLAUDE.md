@@ -108,6 +108,36 @@ allow_long, allow_short, atr_period
   near **8%** to get drag under 0.1 R. Use crypto 5m to validate the pipeline
   and to ask "is there signal at zero cost", not as a tradable venue.
 
+### Findings on REAL data (BTC 5m, 2019-01 to 2024-06 dev; holdout untouched)
+
+Run via `run_crypto.py`, UTC-day sessions, two venues (Binance BTCUSDT archive,
+Coinbase BTC-USD), 0.40% taker.
+
+| | Binance | Coinbase |
+|---|---|---|
+| Baseline zero-cost expectancy, randomization p | +0.089 R, p=0.000 | +0.089 R, p=0.000 |
+| Best of 144 (fvg_retest, bias=True, target 3R) | +0.106 R | +0.124 R |
+| Purged walk-forward pooled OOS, zero cost | **+0.089 R** | **+0.101 R** (27/46 folds positive) |
+| Deflated Sharpe | 0.79 vs 145 trials | **0.00 vs 6,959 trials** |
+| Same variant at 0.40% taker | -5.2 R, $1k to $0.04 | -8.9 R, $1k to $0.01 |
+
+- **A small zero-cost signal replicates across two venues.** It is the first
+  thing that has survived the null and a walk-forward. It is NOT a pass: the
+  deflated Sharpe fails, and the gate requires doubled costs.
+- **The edge is ~0.017% of price per trade** (0.1 R on a 0.17% median stop).
+  Retail crypto round trip is ~0.85%, about 50x larger. Untradable on crypto.
+- The trial count jumped to 6,959 because each walk-forward fold logs its
+  144-variant sweep. That is rule 4 working as designed.
+- `pct_same_bar_exit` is 14-17%, not low. Stops are tight relative to 5m bars.
+- **Venue matters for FVG:** only 83% of Coinbase bullish FVGs also appear on
+  Binance over the same bars. Gap identity is partly a venue artifact. Same
+  lesson as the IEX warning.
+- **Implication for SPY:** SPY share friction is ~0.006% round trip, below this
+  0.017% edge. That is the reason to buy real SPY data, not a reason to trade.
+  Account constraint: risking 1% of $1k on a 0.18% stop needs ~$5.5k notional
+  (~5.5x leverage). Unlevered, 0.1 R/trade is roughly $90/yr, inside the
+  established $50-150/yr ceiling.
+
 ### Bugs found and fixed (watch for regressions)
 
 - `floor(qty)` silently dropped ~99% of signals when one contract risked more
@@ -121,11 +151,11 @@ allow_long, allow_short, atr_period
 
 ### Known gaps / TODO
 
-- [ ] **No real data loaded.** Primary blocker. Tooling now exists:
-      `backtesting/fetch_crypto.py` (Coinbase / Binance archive, no key) then
-      `backtesting/run_crypto.py --csv btc_5m.csv`. Needs to be RUN on a
-      machine with internet; the cloud session's network policy blocks the
-      exchange hosts.
+- [x] Real data: BTC 5m from Binance and Coinbase, 2019 to 2026, run through
+      `run_crypto.py`. Results above. CSVs are git-ignored; re-fetch with
+      `fetch_crypto.py`. **Holdout (2024-06 onward) has NOT been opened.**
+- [ ] Real SPY data (FirstRate sample first). The BTC zero-cost signal is the
+      reason to test where friction is smaller than 0.017%.
 - [ ] No time stop (exit after N bars unresolved)
 - [ ] No daily loss limit
 - [ ] No `retest_depth` parameter (require price to penetrate into the zone
