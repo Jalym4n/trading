@@ -107,6 +107,25 @@ def roll_jump_report(raw: pd.DataFrame, adjusted: pd.DataFrame, rolls: pd.DataFr
     return pd.DataFrame(rows)
 
 
+def contracts_in_use(intervals: list[dict], first: pd.Timestamp, last: pd.Timestamp) -> list[str]:
+    """Raw symbols an instrument_id carried while it was in OUR series.
+
+    CME reuses instrument_ids over the years (id 118 was ESU4 in 2014 and an
+    option, a spread and a swap at other times), so resolving an id over the
+    whole download range returns unrelated contracts. Keep only the intervals
+    [d0, d1) that overlap the dates this id actually appears in the file.
+    """
+    f, l = first.normalize().tz_localize(None), last.normalize().tz_localize(None)
+    return sorted({iv["s"] for iv in intervals
+                   if pd.Timestamp(iv["d0"]) <= l and pd.Timestamp(iv["d1"]) > f})
+
+
+def is_outright(symbol: str, root: str) -> bool:
+    """ESU4, ESZ25 yes; ESZ5-ESH6 (spread), ESU4 C5000 (option), NQU4 no."""
+    import re
+    return re.fullmatch(rf"{re.escape(root)}[FGHJKMNQUVXZ]\d{{1,2}}", symbol) is not None
+
+
 # ------------------------------------------------------------- databento ---
 def _client():
     key = os.environ.get("DATABENTO_API_KEY")
@@ -188,10 +207,14 @@ def main(argv=None) -> None:
     res = client.symbology.resolve(dataset=DATASET, symbols=[str(i) for i in ids],
                                    stype_in="instrument_id", stype_out="raw_symbol",
                                    start_date=a.start[:10], end_date=str(end)[:10])
-    names = {int(k): sorted({m["s"] for m in v}) for k, v in res["result"].items()}
-    bad = {i: s for i, s in names.items() if any("-" in x for x in s)}
+    span = raw.groupby("instrument_id").apply(lambda g: (g.index[0], g.index[-1]))
+    names = {int(k): contracts_in_use(v, *span[int(k)]) for k, v in res["result"].items()}
+    bad = {i: s for i, s in names.items() if len(s) != 1 or not is_outright(s[0], a.root)}
     if bad:
-        sys.exit(f"calendar spread(s) in the series: {bad}. Refusing to continue.")
+        sys.exit(f"instrument_id(s) not resolving to exactly one {a.root} outright while "
+                 f"in the series: {bad}. Refusing to continue.")
+    print(f"{len(names)} contracts, all {a.root} outrights: "
+          f"{names[ids[0]][0]} ... {names[ids[-1]][0]}" if ids else "")
     raw["contract"] = raw["instrument_id"].map(lambda i: "/".join(names.get(int(i), ["?"])))
 
     # ---- 4. measure each roll at a common minute ------------------------
