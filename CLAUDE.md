@@ -41,7 +41,7 @@ strategy question.
 | Instrument | Round-trip friction | Notes |
 |---|---|---|
 | SPY shares | **0.002%** | 1c spread on $774 |
-| **MES futures** | **~0.007%** | 1 tick = $1.25 on $39k notional |
+| **MES futures** | **~0.007%** | 1 tick = $1.25 on $39k notional. **But ~0.71 pts round trip = ~0.3 R on a 2.4-pt 5m FVG stop.** % of price is the wrong unit; use friction / stop |
 | ES futures | ~0.007% | 1 tick = $12.50 on $390k notional |
 | SPY options | ~2% | 2-3c spread on a $3.00 contract, at 0.5 delta |
 | Low-float small cap | 1 to 3% | plus LULD halt risk, unmodellable |
@@ -216,12 +216,11 @@ Coinbase BTC-USD), 0.40% taker.
 - **Venue matters for FVG:** only 83% of Coinbase bullish FVGs also appear on
   Binance over the same bars. Gap identity is partly a venue artifact. Same
   lesson as the IEX warning.
-- **Implication for SPY / MES:** SPY share friction is 0.002% (spread only) to
-  ~0.006% (run_spy's 1-tick slippage model) round trip, and MES ~0.007%, all
-  below this 0.017% edge. That is the reason to buy real SPY data, not a reason to trade.
-  Account constraint: risking 1% of $1k on a 0.18% stop needs ~$5.5k notional
-  (~5.5x leverage). Unlevered, 0.1 R/trade is roughly $90/yr, inside the
-  established $50-150/yr ceiling.
+- ~~Implication for SPY / MES: friction below the 0.017% edge.~~ **Wrong
+  comparison, refuted on ES (below).** Comparing friction to the edge as a %
+  of price assumes the stop is the same % of price on both markets. It is not:
+  ES FVG stops are ~0.07% of price vs BTC's ~0.17%. The only valid unit is
+  **friction in R = round-trip cost / stop distance.**
 
 ### Findings on REAL data: market structure on ES (2010-06 to 2021-11 dev)
 
@@ -249,6 +248,36 @@ Coinbase BTC-USD), 0.40% taker.
   trades with 562 skipped as undersized (wide structural stops), and the best
   variant read +0.18 R; with fractional sizing it is 656 trades and +0.01 R.
   Measure in R with `allow_fractional=True`; report affordability separately.
+
+### Findings on REAL data: FVG retest on ES, PRE-REGISTERED (2010-06 to 2021-11 dev)
+
+`run_fvg.py --csv es_1m.csv`, committed (b84f6c3) BEFORE the first run.
+Three variants fixed from the BTC trial log; pass = all positive at zero AND
+MES costs, plus walk-forward at 2x costs positive OOS. 5m RTH, 14 holiday
+sessions (<30 bars) dropped, 2,925 dev sessions, holdout untouched.
+
+| | Zero cost | MES costs | MES 2x | Trades | Median stop |
+|---|---|---|---|---|---|
+| P1 BTC baseline (gap 0.25, 2R) | **+0.052 R** | -0.293 R | -0.551 R | 3,931 | 2.38 pts |
+| P2 Binance best (gap 0.25, 3R) | **+0.051 R** | -0.295 R | -0.542 R | 3,758 | 2.36 pts |
+| P3 Coinbase best (gap 0, 3R) | **+0.056 R** | -0.314 R | -0.652 R | 4,556 | 2.19 pts |
+
+- **VERDICT: FAIL.** Walk-forward over the 144-variant BTC grid at 2x costs:
+  44 folds, 3 positive, pooled OOS **-0.421 R**. Every year 2010-2021 is
+  negative at MES costs for all three (best year 2020, about -0.1 R). All 144
+  exploratory variants negative (best -0.195 R); deflated Sharpe 0.00 vs 6,531.
+- **The zero-cost signal replicates on a third market**, same sign, about half
+  the BTC size (+0.05 R vs +0.09 R), on ~4,000 trades per variant. The pattern
+  is probably real; it is just far too small.
+- **Why MES did not save it:** MES round trip is ~0.71 pts (1 tick spread +
+  slippage per side plus commission). Gross edge = 0.05 R x 2.4 pts ~= 0.12
+  pts. Friction is ~6x the edge, ~0.35 R per trade.
+- **What would be needed:** for friction under the 0.05 R gross edge, stops
+  must exceed ~14 pts, about 6x wider than 5m gaps produce. That points at
+  30m/60m bars (signal-to-friction scales with sqrt(t)), but the +0.05 R may
+  not survive the change: it is a new strategy with its own trial count.
+- **Affordability was not the binding constraint:** 38-44% of trades fit 1%
+  risk on $1k, 95% on $4k.
 
 ### Bugs found and fixed (watch for regressions)
 
@@ -582,8 +611,10 @@ then read it off the table above.
    executions, or what a drawdown does to judgment.
 6. **Case studies have survivorship bias too.** Three vivid examples are three
    draws from an unsampled distribution.
-7. **Check friction before strategy.** The instrument's round-trip cost has
-   decided more questions in this project than any signal has.
+7. **Check friction before strategy, in R.** The instrument's round-trip cost
+   has decided more questions in this project than any signal has. Measure it
+   as round-trip cost / typical stop, never as % of price: the ES FVG test
+   failed because a "0.007%" market still costs 0.3 R on a tight stop.
 8. **Forward-testing beats backtesting where survivorship bias is fatal.**
    Recording the universe as it exists, including what dies, sidesteps the
    problem entirely. Costs only time.
