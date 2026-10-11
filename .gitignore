@@ -10,3 +10,5 @@ data/*
 .DS_Store
 # market data dropped next to the run scripts
 backtesting/*.csv
+# Databento download cache (paid data, re-usable, never committed)
+backtesting/.databento_cache/
