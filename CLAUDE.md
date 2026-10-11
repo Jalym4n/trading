@@ -102,6 +102,8 @@ backtesting/
   run_overnight.py  ONH/ONL sweep vs break, synthetic 24h null (MNQ costs)
   run_crypto.py     stage-1 BTC/ETH harness: zero-cost signal, then real fees
   fetch_crypto.py   free BTC/ETH downloader (Coinbase API, Binance archive)
+  fetch_futures.py  Databento ohlcv-1m downloader, quotes first, back-adjusts rolls
+  check_coverage.py Databento session-coverage probe (~$0.01)
   instrument_select.py  friction-in-R ranking of CME index micros
   propfirm/
     combine_sim.py  Monte Carlo of a Topstep-style evaluation rule stack
@@ -223,6 +225,13 @@ Coinbase BTC-USD), 0.40% taker.
   `tests/test_overnight.py`, verified to fail on the old code.
 - `sweep()` / `purged_walk_forward()` never passed `allow_fractional` to `run()`,
   so every crypto signal was skipped as undersized. Fixed with `run_kwargs`.
+- **`assert_no_roll_gaps` fired on every weekend reopen.** On real 24h data the
+  Sunday 18:00 open gaps by more than 5x a 1m ATR for real reasons, so the
+  check raised on correctly adjusted data and would have been ignored. It now
+  skips the first bar after a pause (time step > 2x median spacing). Rolls on
+  Databento continuous symbols happen mid-session at 00:00 UTC, one bar after
+  the previous print, so they are still caught. Verified on real ES data: raw
+  raises only at the roll, adjusted passes.
 - `df.iloc[i]` in the bar loop made sweeps take hours. Hot path is numpy now;
   indicators are cached across variants sharing `first_candle_n`, `atr_period`,
   `ema_period`, `amd_cons_bars`.
@@ -234,11 +243,14 @@ Coinbase BTC-USD), 0.40% taker.
       (2024-06 onward) has NOT been opened.**
 - [ ] **Real SPY / MES / MNQ data.** Now the primary blocker. The BTC
       zero-cost signal is the reason to test where friction is below 0.017%.
-- [~] **Roll-gap check.** `data.assert_no_roll_gaps()` exists but is NOT
-      called by `validate()` or `load_csv()`. **Call it by hand on every
-      continuous futures file before any ES/MES/MNQ backtest.** A quarterly roll
-      discontinuity satisfies `low[i] > high[i-2]` exactly, manufacturing a
-      phantom FVG at a price that never traded.
+- [x] **Roll gaps.** `fetch_futures.py` back-adjusts every roll by the
+      old/new spread measured at a common minute (difference method, stays on
+      the tick grid), then runs `assert_no_roll_gaps` on the 1m and 5m output.
+      Live-tested on ESH6 -> ESM6: raw jump 51.5 pts, adjusted 0.25 pts.
+      `assert_no_roll_gaps` is still NOT called by `load_csv()`; any futures
+      file from another source must be checked by hand.
+- [x] `data.resample_ohlcv(df, rule, offset)`: 1m to 5m/15m/30m, left-labelled,
+      empty bins dropped. The `offset` argument is what the bar-offset test needs.
 - [ ] **`bars_per_year` is hardcoded to 19,656** in `metrics.summarize()`
       (78 x 252, i.e. 5m). On 30m the correct value is 3,276. Leaving it alone
       inflates annualized Sharpe by sqrt(6) ≈ 2.45x. Make it a parameter derived
@@ -304,6 +316,14 @@ Coinbase BTC-USD), 0.40% taker.
   is fully populated (60 bars)**, which confirms the `add_overnight_levels`
   lookahead fix was required on real data. API key lives in the
   `DATABENTO_API_KEY` env var only, never in the repo.
+- **Databento ohlcv-1m quotes (2026-10-11, to date):** ES $20.86 and NQ $20.22
+  from 2010-06; YM $20.09 from 2010-06; RTY $11.17 from 2017-07; MES $9.56,
+  MNQ $9.57, MYM $9.31, M2K $9.07 from 2019-05 (micros launched then).
+  Micros track the minis within a tick, so test on **ES/NQ prices with
+  `Costs.mes()`**; micro history adds nothing before 2019. ES first.
+- **Databento continuous `.v.0` is NOT back-adjusted** and rolls at 00:00 UTC.
+  Some days are flagged degraded (e.g. 2026-03-15/16); `fetch_futures.py`
+  lists them.
 - **Futures files must include the 16:00-17:00 ET post-close and the 18:00 ET
   Globex reopen** for `add_overnight_levels`; a file filtered to RTH has no
   overnight range at all and the function raises.

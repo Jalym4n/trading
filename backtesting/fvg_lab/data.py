@@ -87,6 +87,27 @@ def add_session(
     return out
 
 
+def resample_ohlcv(df: pd.DataFrame, rule: str = "5min", offset: str = "0min") -> pd.DataFrame:
+    """Aggregate finer bars (e.g. 1m) into coarser ones, timestamped at bar OPEN.
+
+    Bins are left-closed and left-labelled, so a 5m bar stamped 09:30 holds
+    the 1m bars 09:30..09:34 and is only complete at 09:35. Bins with no
+    source bars are dropped rather than filled.
+
+    `offset` shifts the bin grid (e.g. "1min" gives 09:31, 09:36, ...). The
+    bar-offset robustness test resamples the same 1m data at offsets 0..4min:
+    a pattern that only exists at one offset is an aggregation artifact.
+    Each offset is a separate trial.
+    """
+    agg = {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
+    out = (df[list(agg)]
+           .resample(rule, offset=offset, label="left", closed="left")
+           .agg(agg)
+           .dropna(subset=["open"]))
+    validate(out)
+    return out
+
+
 def trade_date(idx: pd.DatetimeIndex, roll_hour: int = 18) -> pd.DatetimeIndex:
     """Map each timestamp to the RTH session it belongs to.
 
@@ -152,12 +173,19 @@ def add_overnight_levels(
 
 
 def assert_no_roll_gaps(df: pd.DataFrame, max_gap_atr: float = 5.0,
-                        atr_period: int = 14) -> None:
+                        atr_period: int = 14, skip_reopens: bool = True) -> None:
     """Reject a continuous futures series that still contains roll gaps.
 
     A quarterly roll discontinuity satisfies low[i] > high[i-2] exactly, so an
     unadjusted or badly stitched series manufactures a phantom FVG four times a
     year at a price that never traded. Call this before any futures backtest.
+
+    skip_reopens: ignore the first bar after a pause in trading (the 17:00 ET
+    daily halt, weekends, holidays). Those opens gap for real reasons, and
+    without this the check fires on every Sunday reopen even on a correctly
+    adjusted series. Rolls on Databento's continuous symbols happen
+    MID-session (00:00 UTC), one bar after the previous print, so they are
+    still caught. A "pause" is a time step over 2x the median bar spacing.
     """
     prev_close = df["close"].shift(1)
     tr = pd.concat(
@@ -167,6 +195,9 @@ def assert_no_roll_gaps(df: pd.DataFrame, max_gap_atr: float = 5.0,
     atr = tr.rolling(atr_period, min_periods=atr_period).mean().shift(1)
     jump = (df["open"] - prev_close).abs()
     bad = jump > max_gap_atr * atr
+    if skip_reopens and len(df) > 2:
+        step = df.index.to_series().diff()
+        bad &= ~(step > 2 * step.median()).to_numpy()
     if bad.any():
         where = df.index[bad][:5].tolist()
         raise ValueError(

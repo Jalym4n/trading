@@ -18,8 +18,21 @@ Futures data check (Databento, ~$0.01): `pip install databento`, set
 `DATABENTO_API_KEY` in your environment (never in a file in this repo), then
 `python check_coverage.py --symbol MES`.
 
-Futures: load a 24h file (keep 16:00-17:00 and the 18:00 reopen), call
-`data.assert_no_roll_gaps(df)` by hand, then `data.add_overnight_levels(df)`.
+Futures data (Databento, quotes first and asks before paying):
+
+```
+python fetch_futures.py --root ES --start 2010-06-06 --out es_1m.csv   # ~$21, asks 'buy'
+python tests/test_futures.py
+```
+
+```python
+df = data.load_csv("es_1m.csv")                       # back-adjusted, 24h, ET
+rth = data.add_overnight_levels(data.resample_ohlcv(df, "5min"))
+```
+
+Futures from any other source: keep the full 24h (16:00-17:00 and the 18:00
+reopen), call `data.assert_no_roll_gaps(df)` yourself, then
+`data.add_overnight_levels(df)`.
 
 Real crypto data, free (run on your own machine, needs internet):
 
