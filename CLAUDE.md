@@ -113,7 +113,20 @@ backtesting/
 pine/
   fvg_lab_v3.pine       TradingView FVG + iFVG indicator, mirrors strategy.py
   amd_power_of_3.pine   AMD indicator with a self-scoring predicted-vs-opposite table
+  market_structure_qm.pine  swings, BOS/CHoCH, quasimodo; mirrors choch/qm modes
 ```
+
+**Market structure rules (fixed before any real data):** swing high at p =
+`high[p]` strictly above the `swing_left` bars before and >= the `swing_right`
+bars after; known only at p + swing_right. Close beyond the last unbroken swing
+= BOS with the trend, CHoCH against it. Bearish QM: swings H1, L1, H2 > H1,
+then a close below L1 arms a short at H1 (within `qm_tolerance_atr`), only on
+a later bar still closing below H2, cancelled if price trades above H2 or after
+`qm_max_age` bars, one entry per setup. Tests in `tests/test_structure.py` are
+mutation-checked: removing any rule fails a test, except the H2 > H1 check,
+which is behaviourally covered by the cancel rule (a lower head is crossed
+before the shoulder is reached).
+
 
 ### Design rules (load-bearing, do not break)
 
@@ -135,14 +148,15 @@ pine/
 
 ```
 entry_mode            fvg_retest | first_candle_break | fvg_plus_break | amd
-                      | on_sweep_reversal | on_break
+                      | on_sweep_reversal | on_break | choch | qm
+swing_left, swing_right, qm_tolerance_atr, qm_max_age
 sweep_buffer_atr, sweep_reclaim_bars, on_range_min_atr, on_range_max_atr
 first_candle_n, require_first_candle_bias, min_gap_atr, fvg_max_age
 entry_start_bar, entry_end_bar
 amd_cons_bars, amd_max_range_atr, amd_min_break_atr, amd_reclaim_bars
 invalidation_mode (wick|close), invert_on_violation, max_inversions
 ema_period, ema_mode (with|against)
-stop_mode (fvg_far_edge|atr|opening_range|amd_extreme|sweep_extreme)
+stop_mode (fvg_far_edge|atr|opening_range|amd_extreme|sweep_extreme|structure|qm_head)
 stop_atr_mult, stop_buffer_atr, min_stop_atr, max_stop_atr
 target_r, exit_at_session_end, max_trades_per_session
 allow_long, allow_short, atr_period

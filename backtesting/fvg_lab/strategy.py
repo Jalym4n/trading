@@ -23,7 +23,7 @@ import pandas as pd
 class Params:
     # --- entry logic -------------------------------------------------------
     # fvg_retest | first_candle_break | fvg_plus_break | amd
-    # | on_sweep_reversal | on_break
+    # | on_sweep_reversal | on_break | choch | qm
     entry_mode: str = "fvg_retest"
     first_candle_n: int = 1  # bars defining the opening range / "first candle"
     require_first_candle_bias: bool = True  # only take FVGs agreeing with OR direction
@@ -47,8 +47,21 @@ class Params:
     on_range_min_atr: float = 1.0  # skip degenerate overnight ranges (holidays)
     on_range_max_atr: float = 8.0  # skip gap/event days the rule was not built for
 
+    # --- market structure / quasimodo -------------------------------------
+    # Swing high at bar p: high[p] strictly above the swing_left bars before
+    # it and >= the swing_right bars after it. Only KNOWN at bar p+swing_right.
+    #   choch: trade the first close through the last swing against the trend
+    #   qm:    H1, L1, H2>H1 then a close below L1 arms a short at H1 (mirror
+    #          for longs); entry when price returns to within qm_tolerance_atr
+    #          of H1 while still closing below H2, within qm_max_age bars
+    swing_left: int = 3
+    swing_right: int = 3
+    qm_tolerance_atr: float = 0.10
+    qm_max_age: int = 24
+
     # --- exit logic --------------------------------------------------------
     # fvg_far_edge | atr | opening_range | amd_extreme | sweep_extreme
+    # | structure (last opposite swing) | qm_head (beyond the QM head)
     stop_mode: str = "fvg_far_edge"
     stop_atr_mult: float = 1.0
     stop_buffer_atr: float = 0.25  # push the stop this far beyond the structural level
@@ -203,6 +216,7 @@ class FVGStrategy:
         self._sw_ext = float("nan")
         self._sw_used = False
         self._sw_stop_level = float("nan")
+        self._reset_structure()
         self._session = None
         self._trades_this_session = 0
 
@@ -223,6 +237,7 @@ class FVGStrategy:
             self._sw_ext = float("nan")
             self._sw_used = False
             self._sw_stop_level = float("nan")
+            self._reset_structure()
             self._trades_this_session = 0
 
     def note_trade_opened(self) -> None:
@@ -287,6 +302,112 @@ class FVGStrategy:
         self._amd_stop_level = self._amd_ext
         d = -self._amd_dir
         return d, f"amd_{'up' if d == 1 else 'dn'}"
+
+    # -- market structure / quasimodo ---------------------------------------
+    def _reset_structure(self) -> None:
+        self._swings: list[tuple[int, float, int]] = []   # (bar, price, +1 high / -1 low)
+        self._trend = 0                                    # +1 up, -1 down, 0 unknown
+        self._sh = (-1, float("nan"), True)                # last swing high: bar, price, broken
+        self._sl = (-1, float("nan"), True)
+        self._ms_event = 0          # this bar: +2 bull CHoCH, +1 bull BOS, -1/-2 bear
+        self._qm = None             # armed QM: (dir, level, head, armed_bar)
+        self._qm_used_head = None   # one setup per head
+        self._ms_stop_level = float("nan")
+
+    def _pivot_at(self, j: int, b: Bars, kind: int) -> bool:
+        """Is bar j a swing (kind +1 high / -1 low)? Uses bars j-L..j+R only,
+        all inside j's session. Call it at i = j+R, never earlier."""
+        L, R = self.p.swing_left, self.p.swing_right
+        if j - L < 0 or j + R >= b.n or b.session[j - L] != b.session[j + R]:
+            return False
+        if kind == 1:
+            x = b.high
+            return bool(np.all(x[j] > x[j - L:j]) and np.all(x[j] >= x[j + 1:j + R + 1]))
+        x = b.low
+        return bool(np.all(x[j] < x[j - L:j]) and np.all(x[j] <= x[j + 1:j + R + 1]))
+
+    def _add_swing(self, bar: int, price: float, kind: int) -> None:
+        if self._swings and self._swings[-1][2] == kind:
+            last = self._swings[-1]
+            more_extreme = price > last[1] if kind == 1 else price < last[1]
+            if not more_extreme:
+                return
+            self._swings[-1] = (bar, price, kind)   # same type twice: keep the extreme
+        else:
+            self._swings.append((bar, price, kind))
+        if kind == 1:
+            self._sh = (bar, price, False)
+        else:
+            self._sl = (bar, price, False)
+
+    def _update_structure(self, i: int, b: Bars) -> None:
+        p = self.p
+        j = i - p.swing_right                         # the bar that may now be confirmed
+        if j >= 0 and b.session[j] == b.session[i]:
+            if self._pivot_at(j, b, 1):
+                self._add_swing(j, float(b.high[j]), 1)
+            if self._pivot_at(j, b, -1):
+                self._add_swing(j, float(b.low[j]), -1)
+
+        c = b.close[i]
+        self._ms_event = 0
+        bar_h, px_h, broken_h = self._sh
+        if not broken_h and np.isfinite(px_h) and c > px_h:
+            self._ms_event = 2 if self._trend == -1 else 1
+            self._trend = 1
+            self._sh = (bar_h, px_h, True)
+        bar_l, px_l, broken_l = self._sl
+        if not broken_l and np.isfinite(px_l) and c < px_l:
+            self._ms_event = -2 if self._trend == 1 else -1
+            self._trend = -1
+            self._sl = (bar_l, px_l, True)
+
+        # quasimodo arming: last three swings H1, L1, H2>H1 (bearish) and a close
+        # below L1; mirror for bullish. The level is the LEFT SHOULDER (H1 / L1).
+        if len(self._swings) >= 3:
+            s1, s2, s3 = self._swings[-3:]
+            head = s3[1]
+            if self._qm_used_head != (s3[0], head):
+                if s1[2] == 1 and s3[2] == 1 and s3[1] > s1[1] and c < s2[1]:
+                    self._qm = (-1, s1[1], head, i)
+                    self._qm_used_head = (s3[0], head)
+                elif s1[2] == -1 and s3[2] == -1 and s3[1] < s1[1] and c > s2[1]:
+                    self._qm = (1, s1[1], head, i)
+                    self._qm_used_head = (s3[0], head)
+
+        # invalidate an armed QM that ran past its head or went stale
+        if self._qm is not None:
+            d, level, head, armed = self._qm
+            if (d == -1 and b.high[i] > head) or (d == 1 and b.low[i] < head) \
+               or i - armed > p.qm_max_age:
+                self._qm = None
+
+    def _choch(self, i: int, b: Bars) -> tuple[int, str]:
+        e = self._ms_event
+        if abs(e) != 2:
+            return 0, ""
+        d = 1 if e > 0 else -1
+        # structural stop: the most recent opposite swing
+        opp = self._sl[1] if d == 1 else self._sh[1]
+        self._ms_stop_level = opp
+        return d, f"choch_{'up' if d == 1 else 'dn'}"
+
+    def _quasimodo(self, i: int, b: Bars) -> tuple[int, str]:
+        if self._qm is None:
+            return 0, ""
+        d, level, head, armed = self._qm
+        if i <= armed:
+            return 0, ""                       # never on the arming bar itself
+        tol = self.p.qm_tolerance_atr * b.atr[i]
+        if d == -1:
+            hit = b.high[i] >= level - tol and b.close[i] < head
+        else:
+            hit = b.low[i] <= level + tol and b.close[i] > head
+        if not hit:
+            return 0, ""
+        self._qm = None                        # one entry per setup
+        self._ms_stop_level = head
+        return d, f"qm_{'long' if d == 1 else 'short'} age={i - armed}"
 
     # -- FVG maintenance -----------------------------------------------------
 
@@ -420,6 +541,8 @@ class FVGStrategy:
     def decide(self, i: int, b: Bars, in_position: bool) -> Intent | None:
         self._maybe_reset(b.session[i])
         self._update_fvgs(i, b)
+        if self.p.entry_mode in ("choch", "qm"):
+            self._update_structure(i, b)       # every bar, even when not entering
 
         p = self.p
         k = int(b.k[i])
@@ -498,6 +621,16 @@ class FVGStrategy:
             if ema_dir != 0 and direction != ema_dir:
                 direction, reason = 0, ""
 
+        elif p.entry_mode == "choch":
+            direction, reason = self._choch(i, b)
+            if ema_dir != 0 and direction != ema_dir:
+                direction, reason = 0, ""
+
+        elif p.entry_mode == "qm":
+            direction, reason = self._quasimodo(i, b)
+            if ema_dir != 0 and direction != ema_dir:
+                direction, reason = 0, ""
+
         if direction == 0:
             return None
         if direction == 1 and not p.allow_long:
@@ -512,6 +645,8 @@ class FVGStrategy:
             level = b.or_low[i] if direction == 1 else b.or_high[i]
         elif p.stop_mode == "amd_extreme" and np.isfinite(self._amd_stop_level):
             level = self._amd_stop_level  # beyond the extreme of the fake move
+        elif p.stop_mode in ("structure", "qm_head") and np.isfinite(self._ms_stop_level):
+            level = self._ms_stop_level   # opposite swing (choch) or QM head (qm)
         elif p.stop_mode == "sweep_extreme" and np.isfinite(self._sw_stop_level):
             level = self._sw_stop_level   # beyond the furthest point of the sweep
         else:

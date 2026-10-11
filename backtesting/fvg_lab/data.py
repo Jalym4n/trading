@@ -186,6 +186,12 @@ def assert_no_roll_gaps(df: pd.DataFrame, max_gap_atr: float = 5.0,
     adjusted series. Rolls on Databento's continuous symbols happen
     MID-session (00:00 UTC), one bar after the previous print, so they are
     still caught. A "pause" is a time step over 2x the median bar spacing.
+
+    Limits, measured on real ES 2010-2026: on 1m 24h data it flags ~100
+    one-tick moves in dead overnight minutes (ATR ~0.04 pts), and on 5m 24h
+    data it flags 08:30 ET news releases. Neither is a roll. It is reliable on
+    5m RTH bars. When roll timestamps are known (fetch_futures.py), check the
+    jump AT each roll instead; that is exact.
     """
     prev_close = df["close"].shift(1)
     tr = pd.concat(
