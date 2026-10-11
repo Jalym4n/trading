@@ -1,8 +1,9 @@
 # Project context
 
-Carry-over context from a long design conversation. Two tracks: a quantitative
-backtesting framework (built, untested on real data) and a biotech catalyst
-research process (designed, not built).
+Carry-over context from a long design conversation. Three tracks: a quantitative
+backtesting framework (built, run on real BTC data, SPY/futures untested), a biotech catalyst
+research process (designed, not built), and an execution-vehicle decision
+(analysed, blocked on track 1).
 
 ---
 
@@ -13,21 +14,66 @@ research process (designed, not built).
 - Jurisdiction: **Ontario, Canada**. CIRO-regulated brokers. Crypto cannot be
   held directly in a TFSA and every disposal is a taxable event. FINRA's
   pattern-day-trader rule generally does not apply to Canadian brokers; confirm
-  per broker.
+  per broker. Futures and prop-firm payouts are **business income** (100%
+  taxable), not capital gains. US Section 1256 60/40 treatment does NOT apply.
 - Background: **clinical / nursing placement, A&P coursework, research
   methodology training**. This matters for track 2.
+- Time: placement hours conflict with 09:30-11:00 ET. Any strategy requiring
+  continuous screen presence during the US open is not operable.
 - Formatting preference: no long dashes, compact output, bold key terms.
 
 ### Established economics (do not relitigate)
 
 - $25/day on $500 is **5% daily**, which compounds to ~$109M in a year. The
-  target is a capital problem, not a strategy problem. $6,300/yr needs roughly
-  $30k to $60k of capital at realistic returns.
+  target is a capital problem, not a strategy problem.
 - Realistic ceiling on $500 with a genuine edge: **$50 to $150 per year**.
 - Options require 100% cash; margin buying power cannot be used for long
   options.
-- Friction dominates at this size. Required edge per trade: ~0.01% on SPY
-  shares, >1% on small caps, 5-10% on cheap options.
+
+---
+
+## Cross-cutting: friction and instrument selection
+
+**This is the most transferable finding in the project.** Every market examined
+was ranked by round-trip friction, and that single number decided more than any
+strategy question.
+
+| Instrument | Round-trip friction | Notes |
+|---|---|---|
+| SPY shares | **0.002%** | 1c spread on $774 |
+| **MES futures** | **~0.007%** | 1 tick = $1.25 on $39k notional |
+| ES futures | ~0.007% | 1 tick = $12.50 on $390k notional |
+| SPY options | ~2% | 2-3c spread on a $3.00 contract, at 0.5 delta |
+| Low-float small cap | 1 to 3% | plus LULD halt risk, unmodellable |
+| Memecoin, $1k into $30k pool | ~8% | AMM slippage, not a spread |
+| Memecoin, $1k into $5k pool | ~40% | |
+
+### The AMM friction law (constant product)
+
+For a buy of fraction `f` of the pool's quote side:
+
+```
+price after       = (1 + f)^2  x  price before
+your average fill = (1 + f)    x  price before
+→ slippage = f exactly
+```
+
+Selling fraction `g` of the token side fills at `P / (1 + g)`.
+**Round-trip friction ≈ 2f plus fees.** It is a function of position size
+against pool depth, not a fixed spread.
+
+### Position sizing is the real constraint, not strategy quality
+
+Minimum viable position vs a 1% risk budget:
+
+| Instrument | Capital needed for a correctly sized trade |
+|---|---|
+| **MES futures** | **$2,000 to $4,000** (8-point stop = $40 risk) |
+| SPY options | $15,000 to $30,000 (min loss at stop ≈ $150) |
+| SPY shares | works at any size but no leverage |
+
+**MES is the only instrument examined that offers meaningful leverage without
+catastrophic friction.** This is the target vehicle.
 
 ---
 
@@ -35,23 +81,36 @@ research process (designed, not built).
 
 ### Status
 
-Code is **written, debugged, and verified on synthetic data**. It has **never
-been run on real market data**. That is the single open blocker.
+Code is **written, debugged, and verified on synthetic data**. It has been run
+on **real BTC 5m data** (Binance + Coinbase, 2019-2026); see "Findings on REAL
+data". It has **not** been run on real SPY or futures data. That is now the
+open blocker for every decision in track 3.
 
 ### Files
 
 ```
-fvg_lab/
-  data.py       loading, validation, session tagging, synthetic null data, holdout split
-  strategy.py   Params, Bars (numpy view), FVG detection, AMD detection, entry/exit rules
-  engine.py     event-driven loop, cost model, position sizing, trade records
-  metrics.py    expectancy, PSR, deflated Sharpe, drawdown, randomization test
-  trials.py     TrialLog, parameter sweep, purged walk-forward
-run_example.py  worked example on synthetic data (MES costs)
-run_spy.py      stage-1 SPY harness, USE_REAL_DATA flag
-README.md
-fvg_lab_v3.pine       TradingView FVG + iFVG indicator, mirrors strategy.py
-amd_power_of_3.pine   AMD indicator with a self-scoring predicted-vs-opposite table
+backtesting/
+  fvg_lab/
+    data.py       loading, validation, sessions (incl. 24/7), overnight levels,
+                  roll-gap check, synthetic null data, holdout split
+    strategy.py   Params, Bars, FVG / AMD / overnight-sweep detection, entry/exit
+    engine.py     event-driven loop, cost model (fixed + % fees), sizing, trades
+    metrics.py    expectancy, PSR, deflated Sharpe, drawdown, randomization test
+    trials.py     TrialLog, parameter sweep, purged walk-forward (run_kwargs)
+  run_example.py    worked example on synthetic data (MES costs)
+  run_spy.py        stage-1 SPY harness, USE_REAL_DATA flag
+  run_overnight.py  ONH/ONL sweep vs break, synthetic 24h null (MNQ costs)
+  run_crypto.py     stage-1 BTC/ETH harness: zero-cost signal, then real fees
+  fetch_crypto.py   free BTC/ETH downloader (Coinbase API, Binance archive)
+  instrument_select.py  friction-in-R ranking of CME index micros
+  propfirm/
+    combine_sim.py  Monte Carlo of a Topstep-style evaluation rule stack
+    funnel_sim.py   full evaluation -> funded -> first payout funnel
+  tests/            cost model, downloader, overnight-level lookahead tests
+  trials_*.jsonl    trial logs, COMMITTED (rule 4: the count never resets)
+pine/
+  fvg_lab_v3.pine       TradingView FVG + iFVG indicator, mirrors strategy.py
+  amd_power_of_3.pine   AMD indicator with a self-scoring predicted-vs-opposite table
 ```
 
 ### Design rules (load-bearing, do not break)
@@ -63,7 +122,8 @@ amd_power_of_3.pine   AMD indicator with a self-scoring predicted-vs-opposite ta
 3. **Costs before metrics.** Half-spread plus slippage per side, plus commission.
    `costs.double()` is the stress test.
 4. **The trial log never resets.** `deflated_sharpe` uses the cumulative count.
-   Every variant tested raises the bar.
+   Every variant tested raises the bar. Each timeframe and each bar-offset is a
+   separate trial, not a free re-roll.
 5. **Purge and embargo.** Standard k-fold is invalid on time series and is not
    offered. `purged_walk_forward` drops sessions between train and test.
 6. **Synthetic null first.** `data.synth()` is a random walk. Anything
@@ -73,18 +133,22 @@ amd_power_of_3.pine   AMD indicator with a self-scoring predicted-vs-opposite ta
 
 ```
 entry_mode            fvg_retest | first_candle_break | fvg_plus_break | amd
+                      | on_sweep_reversal | on_break
+sweep_buffer_atr, sweep_reclaim_bars, on_range_min_atr, on_range_max_atr
 first_candle_n, require_first_candle_bias, min_gap_atr, fvg_max_age
 entry_start_bar, entry_end_bar
 amd_cons_bars, amd_max_range_atr, amd_min_break_atr, amd_reclaim_bars
 invalidation_mode (wick|close), invert_on_violation, max_inversions
 ema_period, ema_mode (with|against)
-stop_mode (fvg_far_edge|atr|opening_range|amd_extreme)
+stop_mode (fvg_far_edge|atr|opening_range|amd_extreme|sweep_extreme)
 stop_atr_mult, stop_buffer_atr, min_stop_atr, max_stop_atr
 target_r, exit_at_session_end, max_trades_per_session
 allow_long, allow_short, atr_period
 ```
 
-`Costs` presets: `spy_shares()`, `es()`, `mes()`.
+`Costs` presets: `spy_shares()`, `es()`, `mes()`, `crypto_spot(fee_pct=...)`.
+`Costs` takes fixed terms (ticks, $/unit) and proportional terms
+(`spread_bps`, `slippage_bps`, `commission_pct`); `double()` doubles all.
 
 ### Findings so far (all on synthetic data)
 
@@ -104,9 +168,13 @@ allow_long, allow_short, atr_period
 - **Retail crypto fees kill 5m intraday outright.** On synthetic BTC 5m bars
   (median stop ~0.33% of price), zero-cost expectancy 0.00 R becomes
   **-2.8 R/trade at 0.40% taker** and -1.8 R at 0.25% maker. Fee drag in R is
-  roughly round-trip cost ÷ stop distance, so ~0.85% round trip needs stops
-  near **8%** to get drag under 0.1 R. Use crypto 5m to validate the pipeline
-  and to ask "is there signal at zero cost", not as a tradable venue.
+  roughly round-trip cost / stop distance, so ~0.85% round trip needs stops
+  near **8%** to get drag under 0.1 R.
+- **Overnight sweep/break null (run_overnight.py, MNQ costs):** best of 108
+  variants +0.14 R on 120 trades, randomization p=0.096; pooled means
+  on_sweep_reversal -0.06 R, on_break -0.17 R. Correct null behaviour.
+  `on_range_min_atr` 0.5 vs 1.5 changed nothing on synthetic data, so half
+  that grid is duplicate trials; drop the dimension or widen it.
 
 ### Findings on REAL data (BTC 5m, 2019-01 to 2024-06 dev; holdout untouched)
 
@@ -132,8 +200,9 @@ Coinbase BTC-USD), 0.40% taker.
 - **Venue matters for FVG:** only 83% of Coinbase bullish FVGs also appear on
   Binance over the same bars. Gap identity is partly a venue artifact. Same
   lesson as the IEX warning.
-- **Implication for SPY:** SPY share friction is ~0.006% round trip, below this
-  0.017% edge. That is the reason to buy real SPY data, not a reason to trade.
+- **Implication for SPY / MES:** SPY share friction is 0.002% (spread only) to
+  ~0.006% (run_spy's 1-tick slippage model) round trip, and MES ~0.007%, all
+  below this 0.017% edge. That is the reason to buy real SPY data, not a reason to trade.
   Account constraint: risking 1% of $1k on a 0.18% stop needs ~$5.5k notional
   (~5.5x leverage). Unlevered, 0.1 R/trade is roughly $90/yr, inside the
   established $50-150/yr ceiling.
@@ -141,31 +210,78 @@ Coinbase BTC-USD), 0.40% taker.
 ### Bugs found and fixed (watch for regressions)
 
 - `floor(qty)` silently dropped ~99% of signals when one contract risked more
-  than the risk budget. Now surfaced as `skipped_undersized`.
+  than the risk budget. Now surfaced as `skipped_undersized`. Root cause was
+  **instrument selection** (ES at $50/pt), not code; MES at $5/pt fixed it.
 - Stops tighter than one bar's range made the pessimistic stop-first rule fire
   on nearly every trade. Fixed with `stop_buffer_atr` and `min_stop_atr`;
   diagnosed via `pct_same_bar_exit`.
+- **`add_overnight_levels` lookahead.** Post-close futures bars (16:00-17:00
+  ET) were grouped into the SAME day's overnight range, so the 09:30 ONH/ONL
+  included prices from 7 hours later. Invisible on `synth(include_overnight=
+  True)` (no post-close bars); fatal on real MES/MNQ files. Fixed: overnight
+  is `on_start` to `rth_start` only. Regression test in
+  `tests/test_overnight.py`, verified to fail on the old code.
+- `sweep()` / `purged_walk_forward()` never passed `allow_fractional` to `run()`,
+  so every crypto signal was skipped as undersized. Fixed with `run_kwargs`.
 - `df.iloc[i]` in the bar loop made sweeps take hours. Hot path is numpy now;
   indicators are cached across variants sharing `first_candle_n`, `atr_period`,
   `ema_period`, `amd_cons_bars`.
 
 ### Known gaps / TODO
 
-- [x] Real data: BTC 5m from Binance and Coinbase, 2019 to 2026, run through
-      `run_crypto.py`. Results above. CSVs are git-ignored; re-fetch with
-      `fetch_crypto.py`. **Holdout (2024-06 onward) has NOT been opened.**
-- [ ] Real SPY data (FirstRate sample first). The BTC zero-cost signal is the
-      reason to test where friction is smaller than 0.017%.
+- [x] Real BTC data: Binance + Coinbase 5m, 2019 to 2026, via `run_crypto.py`.
+      CSVs are git-ignored; re-fetch with `fetch_crypto.py`. **Holdout
+      (2024-06 onward) has NOT been opened.**
+- [ ] **Real SPY / MES / MNQ data.** Now the primary blocker. The BTC
+      zero-cost signal is the reason to test where friction is below 0.017%.
+- [~] **Roll-gap check.** `data.assert_no_roll_gaps()` exists but is NOT
+      called by `validate()` or `load_csv()`. **Call it by hand on every
+      continuous futures file before any ES/MES/MNQ backtest.** A quarterly roll
+      discontinuity satisfies `low[i] > high[i-2]` exactly, manufacturing a
+      phantom FVG at a price that never traded.
+- [ ] **`bars_per_year` is hardcoded to 19,656** in `metrics.summarize()`
+      (78 x 252, i.e. 5m). On 30m the correct value is 3,276. Leaving it alone
+      inflates annualized Sharpe by sqrt(6) ≈ 2.45x. Make it a parameter derived
+      from the data's bar spacing.
+- [ ] **No bar-offset robustness test.** Resample the same 1m source at offsets
+      0..4 min (5m) or 0..5 (30m) and compare expectancy. If it swings across
+      offsets the pattern is an aggregation artifact, not structure. Cheap now
+      that the hot path is numpy. Counts as N trials, not 1.
 - [ ] No time stop (exit after N bars unresolved)
 - [ ] No daily loss limit
 - [ ] No `retest_depth` parameter (require price to penetrate into the zone
-      rather than graze its near edge). This is the highest-value addition
-      given the selectivity finding above.
-- [x] Percentage fees: `Costs` now takes `commission_pct`, `spread_bps`,
-      `slippage_bps`; preset `Costs.crypto_spot(fee_pct=...)`. 24/7 sessions via
-      `add_session(df, "00:00", "24:00")`. Tests in `backtesting/tests/`.
+      rather than graze its near edge). Highest-value addition given the
+      selectivity finding above.
+- [x] Percentage fees: `commission_pct`, `spread_bps`, `slippage_bps`,
+      `Costs.crypto_spot()`. 24/7 sessions via `add_session(df, "00:00", "24:00")`.
+- [ ] Single-series only. A universe loop is the biggest structural change
+      available and the one that most expands what can be learned (breadth
+      substitutes for frequency, see below).
 - [ ] Pine v3 arms on the break bar and checks reclaim from the next bar;
       Python allows same-bar reclaim. One-line divergence, intentional, flagged.
+
+### Timeframe mechanics (settled)
+
+- A bar destroys **path information**. Larger bars = more ambiguity about
+  whether stop or target hit first = more of the backtest is the pessimistic-fill
+  assumption rather than measurement.
+- Move size scales with **sqrt(t)**; friction is **constant per round trip**.
+  So signal-to-friction scales with sqrt(t). Lower timeframes are always a worse
+  friction deal, non-linearly.
+- **Statistical power:** `t ≈ expectancy x sqrt(n)`. For t > 2 you need ~400
+  trades at 0.10R expectancy, ~1,600 at 0.05R. At one instrument and 1-3 trades
+  per session that is 6 months to 1.6 years of calendar time.
+- **The resolution is breadth, not frequency.** 20 instruments x 1 trade/session
+  gives 400 trades in 20 sessions on a timeframe where friction is negligible.
+  Discount for correlation: 20 US equities on one day is ~3-5 effective
+  independent observations, not 20.
+- **Research at 5m.** Then check 15m and 30m. Surviving across timeframes is
+  evidence; working at exactly one is usually overfit.
+- **Every bar-count parameter in `Params` is secretly a time parameter.**
+  Changing chart timeframe silently reinterprets all of them. Either express in
+  minutes and convert, or treat each timeframe as a separate strategy with its
+  own grid and trial count.
+
 
 ### Data situation
 
@@ -181,13 +297,9 @@ Coinbase BTC-USD), 0.40% taker.
 - Test **BTC and ETH only** if going crypto: no survivorship bias, deepest books,
   longest clean history. Altcoin universes are catastrophically survivorship-biased
   because most tokens from any cohort are delisted or dead within a few years.
-
-### Gate before any real money
-
-- Pooled out-of-sample expectancy positive **after doubled costs**
-- Deflated Sharpe **> 0.95** against the full cumulative trial count
-- `pct_same_bar_exit` low (result is not a bar-size artifact)
-- Not concentrated in one year or one volatility regime
+- **Futures files must include the 16:00-17:00 ET post-close and the 18:00 ET
+  Globex reopen** for `add_overnight_levels`; a file filtered to RTH has no
+  overnight range at all and the function raises.
 
 ---
 
@@ -218,7 +330,7 @@ shifting selection by roughly 15 points, repeatedly.
 
 ```
 (cash + equivalents + short-term investments)
-÷ (net cash used in operating activities over last 2 quarters ÷ 2)
+/ (net cash used in operating activities over last 2 quarters / 2)
 = quarters of runway
 ```
 
@@ -247,8 +359,8 @@ Most sub-$300M biotechs have no usable options, so implied probability must be
 derived from valuation:
 
 ```
-EV = market cap + debt − cash
-implied PoS ≈ EV ÷ (peak sales estimate × multiple)      # multiple ~2-4x
+EV = market cap + debt - cash
+implied PoS ~= EV / (peak sales estimate x multiple)      # multiple ~2-4x
 ```
 
 ### Thesis template
@@ -294,11 +406,101 @@ and outputs a weekly ranked candidate list.
 
 ---
 
-## Standing principles (apply to both tracks)
+## Track 3: execution vehicle (analysed, blocked on track 1)
+
+### Futures mechanics
+
+- Obligation, not right. No premium. Symmetric payoff. Counterparty is the
+  clearinghouse.
+- **Margin is a performance bond, not a loan.** No interest. Initial margin is
+  roughly 5-7% of notional; brokers offer much lower day-trade margin
+  (commonly $50-200 for MES). Verify per broker, it changes with volatility.
+- **Marked to market daily.** Losses leave the account in cash the same day.
+  Loss is unbounded, unlike a long option where max loss is the premium.
+- `exit_at_session_end = True` exists to eliminate overnight gap risk.
+  **Do not relax it.**
+- Contract specs: ES = $50/point, MES = $5/point, both 0.25 tick, so one tick
+  is $12.50 and $1.25 respectively. This is exactly `Costs.es()` / `Costs.mes()`.
+
+### Prop firm evaluation (analysed in detail, verdict: not yet)
+
+Topstep $50K Combine: $49/month, $149 activation, $3,000 target, **$2,000
+trailing max loss (end-of-day ratchet, never moves down)**, $1,000 daily loss
+limit, best day < 50% of total profit.
+
+The trailing MLL is the binding rule. After a good day the floor ratchets up, so
+**you can be eliminated while net up relative to your starting balance.**
+
+Topstep's own published 2025 disclosures:
+
+| Metric | Rate |
+|---|---|
+| Combines passed, per attempt | **16.8%** |
+| People funded at least once | 51.8% (implies ~4 attempts each) |
+| Funded traders who received a payout | 33.3% |
+| Reached a **Live** account | **0.71%** |
+
+→ ~17% of entrants ever receive any payout. 99.3% of "funded" traders never
+trade real capital; the Express account is a simulator.
+
+`propfirm/combine_sim.py` and `funnel_sim.py` model this rule stack. **The model
+reproduces all three published figures at an input of -0.05R expectancy**, i.e.
+the published pass rate is what a population with a small negative edge produces.
+
+Simulated Combine pass rates:
+
+| Expectancy | $100/trade | $200/trade |
+|---|---|---|
+| -0.05 R | 11.0% | 21.2% |
+| **0.00 R** | **27.5%** | **32.8%** |
+| +0.05 R | 50.8% | 45.8% |
+| +0.10 R | 71.7% | 58.9% |
+
+Three conclusions:
+
+1. **A zero-edge trader passes 27-33% of the time.** Passing is weak evidence of
+   skill and a dangerous source of false confidence.
+2. **With no edge the rules reward sizing up** (fewer bets, fewer chances for the
+   ratchet to catch you). With a real edge they reward sizing down. The
+   evaluation pays you to gamble precisely when you should not.
+3. **Breakeven requires an average payout above ~$1,800** at realistic inputs,
+   ~$960 at zero edge. First payouts are typically far below that.
+
+**The subscription is the capital.** 10 months plus activation is $639, which is
+a quarter to a third of the $2,000-4,000 needed to fund an MES account outright.
+Decision deferred until track 1 produces a measured out-of-sample expectancy;
+then read it off the table above.
+
+---
+
+## Closed questions (do not reopen without new evidence)
+
+- **Low-float momentum ("Ross Cameron method").** Real phenomenon, worst friction
+  profile examined (1-3% spreads plus unmodellable LULD halts), and the written
+  rule has 6+ undefined parameters. FTC action against Warrior Trading, $3M,
+  2022, finding that most customers lost money.
+- **Memecoins.** Strictly negative-sum: aggregate participant P&L = -(fees + MEV).
+  Pump.fun graduation 0.2-2%; ~3% of wallets cleared $1,000 profit. Four possible
+  edges: issuance/distribution (legal exposure under OSC), speed (below capital
+  floor; infra is a fixed cost and the variance needs ~2,000 attempts/month),
+  attention detection (only one buildable at $1k, forward-testable but not
+  backtestable), forensics (defensive constraint, generates no expectancy).
+- **$TRUMP as case study.** 80% supply retained, single-sided Meteora DLMM
+  position deposited 17h pre-launch (a programmatic sell ladder, not market
+  making), ~$100M in fees on $39B of volume, 813,294 wallets down ~$2B. The
+  entire 416x ($0.18 to $75) existed in the first hours. Demonstrates every
+  mechanism above simultaneously.
+- **Forex.** Reviewed; no structural advantage over MES at this size.
+- **Altcoin universes.** Catastrophic survivorship bias. BTC/ETH only if crypto.
+
+---
+
+## Standing principles (apply to all tracks)
 
 1. **Write the rule before looking at data.** If it needs a judgment call in the
    moment, it is not a rule.
 2. **Every variant tested is a trial.** Count them. The bar rises with the count.
+   Timeframes and bar offsets count.
 3. **A pattern defined by its outcome is not testable.** "It swept liquidity and
    reversed" is a description of the past. `close[i] < H` is a rule.
 4. **Assume the backtest is wrong and work to disprove that.** Most ideas should
@@ -307,18 +509,38 @@ and outputs a weekly ranked candidate list.
    executions, or what a drawdown does to judgment.
 6. **Case studies have survivorship bias too.** Three vivid examples are three
    draws from an unsampled distribution.
+7. **Check friction before strategy.** The instrument's round-trip cost has
+   decided more questions in this project than any signal has.
+8. **Forward-testing beats backtesting where survivorship bias is fatal.**
+   Recording the universe as it exists, including what dies, sidesteps the
+   problem entirely. Costs only time.
+
+---
+
+## Gate before any real money
+
+- Pooled out-of-sample expectancy positive **after doubled costs**
+- Deflated Sharpe **> 0.95** against the full cumulative trial count
+- `pct_same_bar_exit` low (result is not a bar-size artifact)
+- Stable across bar offsets and across at least two timeframes
+- Not concentrated in one year or one volatility regime
 
 ---
 
 ## Immediate next actions
 
-1. **Unblock track 1.** Either buy the FirstRate SPY sample and wire
-   `data.load_csv`, or pull free BTC/ETH data and add the percentage-fee cost
-   model. The second is free and available today.
-2. **Add `retest_depth`** to `Params`. The selectivity finding says the current
+1. ~~Unblock track 1 with free BTC data.~~ Done; small zero-cost signal, gate
+   failed, untradable on crypto. **Next: real SPY or MES/MNQ data** (FirstRate
+   sample first). Everything in track 3 waits on this.
+2. **Add the `bars_per_year` parameter, and wire `assert_no_roll_gaps` into
+   the futures load path,** before any futures data is loaded. Both are latent
+   bugs, not enhancements.
+3. **Add `retest_depth`** to `Params`. The selectivity finding says the current
    entry condition is nearly empty; this is the targeted fix.
-3. **Add time stop and daily loss limit** so the written setups are fully
+4. **Run the bar-offset robustness test.** Cheap, and it can invalidate
+   everything downstream, so run it early.
+5. **Add time stop and daily loss limit** so written setups are fully
    representable in code.
-4. **Build the biotech screener** (ClinicalTrials.gov + EDGAR join).
-5. **Start the thesis journal** with 10 names, zero capital, six-month
+6. **Build the biotech screener** (ClinicalTrials.gov + EDGAR join).
+7. **Start the thesis journal** with 10 names, zero capital, six-month
    calibration window.

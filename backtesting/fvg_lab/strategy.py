@@ -22,7 +22,9 @@ import pandas as pd
 @dataclass(frozen=True)
 class Params:
     # --- entry logic -------------------------------------------------------
-    entry_mode: str = "fvg_retest"  # fvg_retest | first_candle_break | fvg_plus_break | amd
+    # fvg_retest | first_candle_break | fvg_plus_break | amd
+    # | on_sweep_reversal | on_break
+    entry_mode: str = "fvg_retest"
     first_candle_n: int = 1  # bars defining the opening range / "first candle"
     require_first_candle_bias: bool = True  # only take FVGs agreeing with OR direction
     min_gap_atr: float = 0.0  # ignore gaps smaller than this * ATR
@@ -30,8 +32,24 @@ class Params:
     entry_start_bar: int = 1  # no entries before this bar index in session
     entry_end_bar: int = 60  # no NEW entries after this bar index
 
+    # --- overnight range (futures only) ------------------------------------
+    # The ON high/low is built by 15 hours of Globex trading and is fixed
+    # before the RTH open, so it is a non-arbitrary level with resting stops
+    # above and below it. The RTH open is the first moment with enough
+    # liquidity to fill them.
+    #   on_sweep_reversal: price trades beyond ONH/ONL, then CLOSES back
+    #       inside within sweep_reclaim_bars -> fade the sweep.
+    #   on_break: price closes beyond ONH/ONL and keeps going -> continuation.
+    # These are opposite hypotheses on the same level. Test both; at most one
+    # should survive, and a market where neither does is the likeliest outcome.
+    sweep_buffer_atr: float = 0.10  # how far past ONH/ONL counts as a sweep
+    sweep_reclaim_bars: int = 4  # must close back inside within this many bars
+    on_range_min_atr: float = 1.0  # skip degenerate overnight ranges (holidays)
+    on_range_max_atr: float = 8.0  # skip gap/event days the rule was not built for
+
     # --- exit logic --------------------------------------------------------
-    stop_mode: str = "fvg_far_edge"  # fvg_far_edge | atr | opening_range | amd_extreme
+    # fvg_far_edge | atr | opening_range | amd_extreme | sweep_extreme
+    stop_mode: str = "fvg_far_edge"
     stop_atr_mult: float = 1.0
     stop_buffer_atr: float = 0.25  # push the stop this far beyond the structural level
     min_stop_atr: float = 0.25  # skip trades whose stop is tighter than this * ATR
@@ -88,7 +106,7 @@ class Bars:
     __slots__ = (
         "open", "high", "low", "close", "session", "k", "nbars",
         "atr", "or_high", "or_low", "or_bias", "ema",
-        "amd_hi", "amd_lo", "index", "n",
+        "amd_hi", "amd_lo", "onh", "onl", "index", "n",
     )
 
     def __init__(self, df: pd.DataFrame, p: Params):
@@ -107,6 +125,10 @@ class Bars:
         self.ema = out["ema"].to_numpy(float)
         self.amd_hi = out["amd_hi"].to_numpy(float)
         self.amd_lo = out["amd_lo"].to_numpy(float)
+        # overnight levels are optional: only present for 24h futures data
+        has_on = "onh" in out.columns
+        self.onh = out["onh"].to_numpy(float) if has_on else np.full(len(out), np.nan)
+        self.onl = out["onl"].to_numpy(float) if has_on else np.full(len(out), np.nan)
         self.index = out.index
         self.n = len(out)
 
@@ -174,6 +196,13 @@ class FVGStrategy:
         self._amd_ext = float("nan")  # furthest point the fake move reached
         self._amd_used = False
         self._amd_stop_level = float("nan")
+        # overnight sweep state
+        self._sw_armed = False
+        self._sw_dir = 0          # +1 swept ONH, -1 swept ONL
+        self._sw_bar = -1
+        self._sw_ext = float("nan")
+        self._sw_used = False
+        self._sw_stop_level = float("nan")
         self._session = None
         self._trades_this_session = 0
 
@@ -188,6 +217,12 @@ class FVGStrategy:
             self._amd_bar = -1
             self._amd_ext = float("nan")
             self._amd_used = False
+            self._sw_armed = False
+            self._sw_dir = 0
+            self._sw_bar = -1
+            self._sw_ext = float("nan")
+            self._sw_used = False
+            self._sw_stop_level = float("nan")
             self._trades_this_session = 0
 
     def note_trade_opened(self) -> None:
@@ -254,6 +289,79 @@ class FVGStrategy:
         return d, f"amd_{'up' if d == 1 else 'dn'}"
 
     # -- FVG maintenance -----------------------------------------------------
+
+    # -- overnight range sweep ----------------------------------------------
+    def _on_sweep(self, i: int, b: Bars) -> tuple[int, str]:
+        """Detect a sweep of the overnight high/low and its reclaim.
+
+        Observable at bar i and nothing later. ONH/ONL were fixed at 09:29,
+        before this session's first bar, so referencing them is not lookahead.
+
+        Returns the direction of the FADE: sweeping ONH returns -1.
+        """
+        p = self.p
+        atr = b.atr[i]
+        onh, onl = b.onh[i], b.onl[i]
+        if self._sw_used or not (np.isfinite(onh) and np.isfinite(onl)):
+            return 0, ""
+
+        rng = onh - onl
+        if rng < p.on_range_min_atr * atr or rng > p.on_range_max_atr * atr:
+            return 0, ""           # degenerate or event-day range
+
+        thresh = p.sweep_buffer_atr * atr
+        hi_i, lo_i, close_i = b.high[i], b.low[i], b.close[i]
+
+        if not self._sw_armed:
+            if hi_i > onh + thresh:
+                self._sw_armed, self._sw_dir, self._sw_bar = True, 1, i
+                self._sw_ext = hi_i
+            elif lo_i < onl - thresh:
+                self._sw_armed, self._sw_dir, self._sw_bar = True, -1, i
+                self._sw_ext = lo_i
+            # fall through: one bar may sweep and reclaim within itself
+
+        if not self._sw_armed:
+            return 0, ""
+
+        self._sw_ext = (max(self._sw_ext, hi_i) if self._sw_dir == 1
+                        else min(self._sw_ext, lo_i))
+        if i - self._sw_bar > p.sweep_reclaim_bars:
+            self._sw_armed = False          # held beyond the level: a real break
+            return 0, ""
+
+        reclaimed = (close_i < onh) if self._sw_dir == 1 else (close_i > onl)
+        if not reclaimed:
+            return 0, ""
+
+        self._sw_armed = False
+        self._sw_used = True
+        self._sw_stop_level = self._sw_ext
+        d = -self._sw_dir
+        return d, f"on_sweep_{'high' if self._sw_dir == 1 else 'low'}"
+
+    def _on_break(self, i: int, b: Bars) -> tuple[int, str]:
+        """Opposite hypothesis: a close beyond the overnight range continues."""
+        p = self.p
+        atr = b.atr[i]
+        onh, onl = b.onh[i], b.onl[i]
+        if self._sw_used or not (np.isfinite(onh) and np.isfinite(onl)):
+            return 0, ""
+        rng = onh - onl
+        if rng < p.on_range_min_atr * atr or rng > p.on_range_max_atr * atr:
+            return 0, ""
+        thresh = p.sweep_buffer_atr * atr
+        c = b.close[i]
+        if c > onh + thresh:
+            self._sw_used = True
+            self._sw_stop_level = onh
+            return 1, "on_break_up"
+        if c < onl - thresh:
+            self._sw_used = True
+            self._sw_stop_level = onl
+            return -1, "on_break_dn"
+        return 0, ""
+
     def _update_fvgs(self, i: int, b: Bars) -> None:
         p = self.p
         k = b.k[i]
@@ -380,6 +488,16 @@ class FVGStrategy:
             if ema_dir != 0 and direction != ema_dir:
                 direction, reason = 0, ""
 
+        elif p.entry_mode == "on_sweep_reversal":
+            direction, reason = self._on_sweep(i, b)
+            if ema_dir != 0 and direction != ema_dir:
+                direction, reason = 0, ""
+
+        elif p.entry_mode == "on_break":
+            direction, reason = self._on_break(i, b)
+            if ema_dir != 0 and direction != ema_dir:
+                direction, reason = 0, ""
+
         if direction == 0:
             return None
         if direction == 1 and not p.allow_long:
@@ -394,6 +512,8 @@ class FVGStrategy:
             level = b.or_low[i] if direction == 1 else b.or_high[i]
         elif p.stop_mode == "amd_extreme" and np.isfinite(self._amd_stop_level):
             level = self._amd_stop_level  # beyond the extreme of the fake move
+        elif p.stop_mode == "sweep_extreme" and np.isfinite(self._sw_stop_level):
+            level = self._sw_stop_level   # beyond the furthest point of the sweep
         else:
             level = ref - direction * p.stop_atr_mult * atr
         # a structural stop sits just BEYOND the level, not exactly on it
