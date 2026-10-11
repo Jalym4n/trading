@@ -87,6 +87,95 @@ def add_session(
     return out
 
 
+def trade_date(idx: pd.DatetimeIndex, roll_hour: int = 18) -> pd.DatetimeIndex:
+    """Map each timestamp to the RTH session it belongs to.
+
+    Futures trade nearly 23 hours. A bar at 20:00 Monday belongs to Tuesday's
+    session, because the Globex day opens at 18:00 ET the prior calendar day.
+    Everything from 18:00 onward rolls forward to the next weekday.
+    """
+    d = idx.normalize()
+    roll = idx.hour >= roll_hour
+    out = d.where(~roll, d + pd.Timedelta(days=1))
+    # Friday evening rolls to Monday
+    dow = out.dayofweek
+    out = out.where(dow != 5, out + pd.Timedelta(days=2))
+    out = out.where(dow != 6, out + pd.Timedelta(days=1))
+    return pd.DatetimeIndex(out)
+
+
+def add_overnight_levels(
+    df: pd.DataFrame,
+    on_start: str = "18:00",
+    rth_start: str = "09:30",
+    rth_end: str = "16:00",
+) -> pd.DataFrame:
+    """Compute the overnight auction's high/low, then return the RTH frame.
+
+    ONH/ONL are built from 18:00 ET the prior evening to the RTH open, so they
+    are fully determined BEFORE the first RTH bar. Post-close bars (16:00 to
+    18:00 ET) are excluded: they trade after the session they would otherwise
+    be grouped with, which would be lookahead. Using them at any RTH bar is
+    not lookahead. This is the structure futures have and cash equities do not:
+    a real overnight auction instead of a gap.
+
+    Input must be a 24h frame. Output is RTH only, with onh/onl/on_range added.
+    """
+    out = df.copy()
+    out["session"] = trade_date(out.index, roll_hour=int(on_start.split(":")[0]))
+
+    t = out.index.time
+    r0 = pd.to_datetime(rth_start).time()
+    r1 = pd.to_datetime(rth_end).time()
+    is_rth = (t >= r0) & (t < r1)
+
+    # Overnight = from on_start the prior evening up to the RTH open. Bars
+    # between the RTH close and on_start (16:00-17:00 ET futures trading)
+    # happen AFTER this session's RTH and must not leak into its ONH/ONL.
+    o0 = pd.to_datetime(on_start).time()
+    is_on = (t >= o0) | (t < r0)
+    on = out[is_on]
+    if on.empty:
+        raise ValueError(
+            "no overnight bars found. add_overnight_levels needs a 24h frame; "
+            "use synth(include_overnight=True) or an unfiltered vendor file."
+        )
+    levels = on.groupby("session").agg(onh=("high", "max"), onl=("low", "min"))
+
+    rth = out[is_rth].copy()
+    rth = rth.join(levels, on="session")
+    rth = rth.dropna(subset=["onh", "onl"])
+    rth["on_range"] = rth["onh"] - rth["onl"]
+    rth["bar_in_session"] = rth.groupby("session").cumcount()
+    rth["bars_in_session"] = rth.groupby("session")["bar_in_session"].transform("size")
+    return rth
+
+
+def assert_no_roll_gaps(df: pd.DataFrame, max_gap_atr: float = 5.0,
+                        atr_period: int = 14) -> None:
+    """Reject a continuous futures series that still contains roll gaps.
+
+    A quarterly roll discontinuity satisfies low[i] > high[i-2] exactly, so an
+    unadjusted or badly stitched series manufactures a phantom FVG four times a
+    year at a price that never traded. Call this before any futures backtest.
+    """
+    prev_close = df["close"].shift(1)
+    tr = pd.concat(
+        [df["high"] - df["low"],
+         (df["high"] - prev_close).abs(),
+         (df["low"] - prev_close).abs()], axis=1).max(axis=1)
+    atr = tr.rolling(atr_period, min_periods=atr_period).mean().shift(1)
+    jump = (df["open"] - prev_close).abs()
+    bad = jump > max_gap_atr * atr
+    if bad.any():
+        where = df.index[bad][:5].tolist()
+        raise ValueError(
+            f"{int(bad.sum())} bar(s) gap more than {max_gap_atr}x ATR from the "
+            f"prior close, e.g. {where}. If this is a futures series, the roll "
+            f"is not adjusted. Back-adjust it or exclude the roll sessions."
+        )
+
+
 def synth(
     n_days: int = 500,
     bars_per_day: int = 78,
@@ -96,6 +185,8 @@ def synth(
     vol: float = 0.0009,
     tick: float = 0.25,
     start_price: float = 4000.0,
+    include_overnight: bool = False,
+    overnight_bars: int = 90,
 ) -> pd.DataFrame:
     """Random-walk bars with no exploitable structure.
 
@@ -104,10 +195,18 @@ def synth(
     set against this before you run it against real data.
 
     For a SPY-shaped series: synth(tick=0.01, start_price=550.0).
+
+    include_overnight=True prepends `overnight_bars` 5m bars running back from
+    the open, so the frame has the 24h shape futures actually have. Required to
+    null-test any overnight-range rule: the ON high/low of a random walk carries
+    no information, so a positive result here is a bug.
     """
     rng = np.random.default_rng(seed)
     idx = []
     for d in pd.bdate_range(start, periods=n_days, tz="America/New_York"):
+        if include_overnight:
+            on_start = d + pd.Timedelta("9h30m") - pd.Timedelta(minutes=5 * overnight_bars)
+            idx.extend(pd.date_range(on_start, periods=overnight_bars, freq="5min"))
         idx.extend(pd.date_range(d + pd.Timedelta("9h30m"), periods=bars_per_day, freq="5min"))
     idx = pd.DatetimeIndex(idx)
 

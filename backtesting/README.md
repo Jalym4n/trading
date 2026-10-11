@@ -8,7 +8,14 @@ cd backtesting
 pip install -r requirements.txt
 python run_example.py
 python tests/test_costs.py      # cost model checks
+python tests/test_overnight.py  # overnight-range lookahead checks
+python run_overnight.py         # ONH/ONL sweep vs break, synthetic null
+python instrument_select.py     # friction in R for MES / MNQ / MYM / M2K
+cd propfirm && python combine_sim.py && python funnel_sim.py   # Topstep model
 ```
+
+Futures: load a 24h file (keep 16:00-17:00 and the 18:00 reopen), call
+`data.assert_no_roll_gaps(df)` by hand, then `data.add_overnight_levels(df)`.
 
 Real crypto data, free (run on your own machine, needs internet):
 
