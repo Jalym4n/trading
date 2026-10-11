@@ -297,6 +297,13 @@ Coinbase BTC-USD), 0.40% taker.
 - Test **BTC and ETH only** if going crypto: no survivorship bias, deepest books,
   longest clean history. Altcoin universes are catastrophically survivorship-biased
   because most tokens from any cohort are delisted or dead within a few years.
+- **Databento GLBX.MDP3 ohlcv-1m coverage verified** (2026-09-29/30, via
+  `backtesting/check_coverage.py`, $0.01 per probe): NQ, MNQ, MES continuous
+  `.v.0` each resolve to one outright (NQZ6, MNQZ6, MESZ6), no spreads; 23 of
+  24 hours populated, 17:00 halt empty as expected; **16:00-17:00 post-close
+  is fully populated (60 bars)**, which confirms the `add_overnight_levels`
+  lookahead fix was required on real data. API key lives in the
+  `DATABENTO_API_KEY` env var only, never in the repo.
 - **Futures files must include the 16:00-17:00 ET post-close and the 18:00 ET
   Globex reopen** for `add_overnight_levels`; a file filtered to RTH has no
   overnight range at all and the function raises.

@@ -14,6 +14,10 @@ python instrument_select.py     # friction in R for MES / MNQ / MYM / M2K
 cd propfirm && python combine_sim.py && python funnel_sim.py   # Topstep model
 ```
 
+Futures data check (Databento, ~$0.01): `pip install databento`, set
+`DATABENTO_API_KEY` in your environment (never in a file in this repo), then
+`python check_coverage.py --symbol MES`.
+
 Futures: load a 24h file (keep 16:00-17:00 and the 18:00 reopen), call
 `data.assert_no_roll_gaps(df)` by hand, then `data.add_overnight_levels(df)`.
 
