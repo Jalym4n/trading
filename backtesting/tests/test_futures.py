@@ -113,6 +113,23 @@ def test_roll_gap_check_ignores_reopens_but_catches_rolls():
         assert "2026-03-08 19:30" in str(e)
 
 
+def test_reused_instrument_id_resolves_to_contract_in_use_only():
+    # modelled on id 118 from Databento: an id reused for options, spreads, ESU4
+    ivs = [{"d0": "2010-06-23", "d1": "2013-11-13", "s": "IAYX2 P-40"},
+           {"d0": "2013-11-13", "d1": "2014-06-19", "s": "ESU4"},
+           {"d0": "2016-01-24", "d1": "2016-04-04", "s": "RMBU6-RMBH6"}]
+    tz = "UTC"
+    got = ff.contracts_in_use(ivs, pd.Timestamp("2014-06-12 00:00", tz=tz),
+                              pd.Timestamp("2014-06-18 23:59", tz=tz))
+    assert got == ["ESU4"]
+
+
+def test_outright_pattern():
+    assert ff.is_outright("ESU4", "ES") and ff.is_outright("ESZ25", "ES")
+    for bad in ["ESZ5-ESH6", "ESU4 C5000", "NQU4", "MESU4", "ES"]:
+        assert not ff.is_outright(bad, "ES"), bad
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

@@ -107,6 +107,25 @@ def roll_jump_report(raw: pd.DataFrame, adjusted: pd.DataFrame, rolls: pd.DataFr
     return pd.DataFrame(rows)
 
 
+def contracts_in_use(intervals: list[dict], first: pd.Timestamp, last: pd.Timestamp) -> list[str]:
+    """Raw symbols an instrument_id carried while it was in OUR series.
+
+    CME reuses instrument_ids over the years (id 118 was ESU4 in 2014 and an
+    option, a spread and a swap at other times), so resolving an id over the
+    whole download range returns unrelated contracts. Keep only the intervals
+    [d0, d1) that overlap the dates this id actually appears in the file.
+    """
+    f, l = first.normalize().tz_localize(None), last.normalize().tz_localize(None)
+    return sorted({iv["s"] for iv in intervals
+                   if pd.Timestamp(iv["d0"]) <= l and pd.Timestamp(iv["d1"]) > f})
+
+
+def is_outright(symbol: str, root: str) -> bool:
+    """ESU4, ESZ25 yes; ESZ5-ESH6 (spread), ESU4 C5000 (option), NQU4 no."""
+    import re
+    return re.fullmatch(rf"{re.escape(root)}[FGHJKMNQUVXZ]\d{{1,2}}", symbol) is not None
+
+
 # ------------------------------------------------------------- databento ---
 def _client():
     key = os.environ.get("DATABENTO_API_KEY")
@@ -188,10 +207,14 @@ def main(argv=None) -> None:
     res = client.symbology.resolve(dataset=DATASET, symbols=[str(i) for i in ids],
                                    stype_in="instrument_id", stype_out="raw_symbol",
                                    start_date=a.start[:10], end_date=str(end)[:10])
-    names = {int(k): sorted({m["s"] for m in v}) for k, v in res["result"].items()}
-    bad = {i: s for i, s in names.items() if any("-" in x for x in s)}
+    span = raw.groupby("instrument_id").apply(lambda g: (g.index[0], g.index[-1]))
+    names = {int(k): contracts_in_use(v, *span[int(k)]) for k, v in res["result"].items()}
+    bad = {i: s for i, s in names.items() if len(s) != 1 or not is_outright(s[0], a.root)}
     if bad:
-        sys.exit(f"calendar spread(s) in the series: {bad}. Refusing to continue.")
+        sys.exit(f"instrument_id(s) not resolving to exactly one {a.root} outright while "
+                 f"in the series: {bad}. Refusing to continue.")
+    print(f"{len(names)} contracts, all {a.root} outrights: "
+          f"{names[ids[0]][0]} ... {names[ids[-1]][0]}" if ids else "")
     raw["contract"] = raw["instrument_id"].map(lambda i: "/".join(names.get(int(i), ["?"])))
 
     # ---- 4. measure each roll at a common minute ------------------------
@@ -261,11 +284,27 @@ def main(argv=None) -> None:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from fvg_lab import data
     chk = data.load_csv(out)
-    data.assert_no_roll_gaps(chk)            # raises if any roll survived adjustment
-    data.assert_no_roll_gaps(data.resample_ohlcv(chk, "5min"))
+    # Hard check: every adjusted roll jump must look like an ordinary bar at
+    # that clock minute (<= its 99th pct, or 2 ticks, whichever is larger).
+    # The roll timestamps are known exactly, so this is the precise test.
+    tick = 0.25 if a.root in ("ES", "NQ", "MES", "MNQ") else 0.0
+    limit = np.maximum(rolls["p99_same_minute"].fillna(0), 2 * tick)
+    leftover = rolls[rolls["adj_jump"] > limit]
+    if not leftover.empty:
+        sys.exit(f"{len(leftover)} roll(s) still jump after adjustment:\n"
+                 f"{leftover[['ts', 'old', 'new', 'adj_jump']].to_string(index=False)}")
+    # Advisory only: the generic jump check also fires on news releases and on
+    # one-tick moves in dead overnight minutes, so it cannot fail the build.
+    rth5 = data.add_session(data.resample_ohlcv(chk, "5min"))[OUT_COLS]
+    try:
+        data.assert_no_roll_gaps(rth5)
+        generic = "5m RTH generic jump check: pass"
+    except ValueError as e:
+        generic = f"5m RTH generic jump check (advisory): {str(e)[:120]}"
     print(f"\nwrote {len(chk):,} bars to {out}  ({chk.index[0]} -> {chk.index[-1]})")
     print(f"rolls written to {out.replace('.csv', '_rolls.csv')}")
-    print("data.load_csv + validate + assert_no_roll_gaps (1m and 5m): OK")
+    print(f"data.load_csv + validate: OK; all {len(rolls)} adjusted roll jumps within normal range")
+    print(generic)
 
 
 if __name__ == "__main__":

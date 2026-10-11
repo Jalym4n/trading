@@ -113,7 +113,20 @@ backtesting/
 pine/
   fvg_lab_v3.pine       TradingView FVG + iFVG indicator, mirrors strategy.py
   amd_power_of_3.pine   AMD indicator with a self-scoring predicted-vs-opposite table
+  market_structure_qm.pine  swings, BOS/CHoCH, quasimodo; mirrors choch/qm modes
 ```
+
+**Market structure rules (fixed before any real data):** swing high at p =
+`high[p]` strictly above the `swing_left` bars before and >= the `swing_right`
+bars after; known only at p + swing_right. Close beyond the last unbroken swing
+= BOS with the trend, CHoCH against it. Bearish QM: swings H1, L1, H2 > H1,
+then a close below L1 arms a short at H1 (within `qm_tolerance_atr`), only on
+a later bar still closing below H2, cancelled if price trades above H2 or after
+`qm_max_age` bars, one entry per setup. Tests in `tests/test_structure.py` are
+mutation-checked: removing any rule fails a test, except the H2 > H1 check,
+which is behaviourally covered by the cancel rule (a lower head is crossed
+before the shoulder is reached).
+
 
 ### Design rules (load-bearing, do not break)
 
@@ -135,14 +148,15 @@ pine/
 
 ```
 entry_mode            fvg_retest | first_candle_break | fvg_plus_break | amd
-                      | on_sweep_reversal | on_break
+                      | on_sweep_reversal | on_break | choch | qm
+swing_left, swing_right, qm_tolerance_atr, qm_max_age
 sweep_buffer_atr, sweep_reclaim_bars, on_range_min_atr, on_range_max_atr
 first_candle_n, require_first_candle_bias, min_gap_atr, fvg_max_age
 entry_start_bar, entry_end_bar
 amd_cons_bars, amd_max_range_atr, amd_min_break_atr, amd_reclaim_bars
 invalidation_mode (wick|close), invert_on_violation, max_inversions
 ema_period, ema_mode (with|against)
-stop_mode (fvg_far_edge|atr|opening_range|amd_extreme|sweep_extreme)
+stop_mode (fvg_far_edge|atr|opening_range|amd_extreme|sweep_extreme|structure|qm_head)
 stop_atr_mult, stop_buffer_atr, min_stop_atr, max_stop_atr
 target_r, exit_at_session_end, max_trades_per_session
 allow_long, allow_short, atr_period
@@ -209,6 +223,33 @@ Coinbase BTC-USD), 0.40% taker.
   (~5.5x leverage). Unlevered, 0.1 R/trade is roughly $90/yr, inside the
   established $50-150/yr ceiling.
 
+### Findings on REAL data: market structure on ES (2010-06 to 2021-11 dev)
+
+`run_structure.py --csv es_1m.csv`: 5m RTH bars, MES costs, fractional sizing,
+2,937 dev sessions, holdout (1,263 sessions from 2021-11) untouched.
+
+| | CHoCH | Quasimodo |
+|---|---|---|
+| Synthetic null baseline / best of grid | -0.06 R / +0.01 R | -0.13 R / +0.12 R |
+| **ES baseline, MES costs** | **-0.152 R** (2,272 trades) | **-0.485 R** (259 trades) |
+| ES baseline, 2x costs | -0.273 R | -0.691 R |
+| ES best of grid (12 / 48 variants) | -0.148 R | -0.323 R |
+| Deflated Sharpe | 0.00 | 0.00 vs 633 trials |
+| Walk-forward @2x costs, pooled OOS | -0.271 R, 3/44 folds positive | -0.591 R, 7/44 folds positive |
+| Median stop | 5.6 pts = $28/MES | 2.9 pts = $14/MES |
+| Fits 1% risk: $1k / $4k | 2% / 70% | 32% / 91% |
+
+- **Both are closed on ES.** Every variant in both grids is negative; there is
+  no parameter to rescue. Worse than the synthetic null in both cases.
+- Friction is ~0.12 R/trade (CHoCH) and ~0.2 R/trade (QM) at MES costs, so
+  gross before costs is about -0.03 R and -0.28 R. Fading CHoCH would pay the
+  same costs on a ~+0.03 R gross: also negative. QM is negative even gross.
+- QM is rare: 259 setups in 2,937 sessions, and 12% same-bar exits.
+- **Whole-contract sizing hides signals.** On the null, CHoCH measured 208
+  trades with 562 skipped as undersized (wide structural stops), and the best
+  variant read +0.18 R; with fractional sizing it is 656 trades and +0.01 R.
+  Measure in R with `allow_fractional=True`; report affordability separately.
+
 ### Bugs found and fixed (watch for regressions)
 
 - `floor(qty)` silently dropped ~99% of signals when one contract risked more
@@ -251,6 +292,11 @@ Coinbase BTC-USD), 0.40% taker.
       file from another source must be checked by hand.
 - [x] `data.resample_ohlcv(df, rule, offset)`: 1m to 5m/15m/30m, left-labelled,
       empty bins dropped. The `offset` argument is what the bar-offset test needs.
+- [ ] **Exclude CME holiday sessions.** On ES 2010-2026, 52 of 4,200 RTH
+      "sessions" are US holidays (Jul 4, Labor Day, Thanksgiving, MLK,
+      Presidents Day) where Globex trades ~2 hours and the cash market is
+      shut (24 bars). 80 half-days (~42 bars) are real. Filter with an
+      exchange calendar. 1.2% of sessions; did not change the structure result.
 - [ ] **`bars_per_year` is hardcoded to 19,656** in `metrics.summarize()`
       (78 x 252, i.e. 5m). On 30m the correct value is 3,276. Leaving it alone
       inflates annualized Sharpe by sqrt(6) ≈ 2.45x. Make it a parameter derived

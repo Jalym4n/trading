@@ -1,0 +1,280 @@
+//@version=6
+// Market structure (swings, BOS / CHoCH) + quasimodo. Mirrors fvg_lab/strategy.py
+// entry_mode "choch" / "qm". Same rules, same order, same parameter names.
+//
+// SWING HIGH at bar p: high[p] strictly above the swingLeft bars before it and
+// >= the swingRight bars after it. It is only KNOWN at bar p + swingRight, and
+// nothing here uses it earlier. Labels sit on bar p but are created at p + R.
+// Two swings of the same type in a row: keep the more extreme one.
+//
+// BOS / CHoCH: a close beyond the last unbroken swing. With the trend = BOS,
+// against it = CHoCH (trend flips).
+//
+// BEARISH QM: last three swings H1, L1, H2 > H1 (head), then a close below L1
+// arms it. Short signal on a LATER bar whose high reaches H1 (within tolerance)
+// while it still closes below H2. Cancelled if price trades above H2 first or
+// after qmMaxAge bars. One signal per setup. Bullish is the mirror.
+//
+// Use a chart WITHOUT extended hours to match the backtest (RTH sessions).
+// Known divergence: the backtest skips a signal while already in a trade or
+// at max_trades_per_session; this indicator shows every signal.
+
+indicator("Market Structure + QM (fvg_lab)", overlay = true,
+     max_labels_count = 500, max_lines_count = 500)
+
+// ---------------------------------------------------------------- inputs --
+swingLeft  = input.int(3, "Swing left bars", minval = 1, tooltip = "Params.swing_left")
+swingRight = input.int(3, "Swing right bars", minval = 1,
+     tooltip = "Params.swing_right. A swing is only known this many bars after it.")
+qmTolAtr   = input.float(0.10, "QM touch tolerance (x ATR)", minval = 0.0, step = 0.05,
+     tooltip = "Params.qm_tolerance_atr")
+qmMaxAge   = input.int(24, "QM max age (bars)", minval = 1, tooltip = "Params.qm_max_age")
+atrPeriod  = input.int(14, "ATR period", minval = 1, tooltip = "Params.atr_period")
+entryEnd   = input.int(60, "Last entry bar of session", minval = 1, tooltip = "Params.entry_end_bar")
+stopBufAtr = input.float(0.25, "Stop buffer (x ATR)", minval = 0.0, step = 0.05,
+     tooltip = "Params.stop_buffer_atr")
+minStopAtr = input.float(0.25, "Min stop (x ATR)", minval = 0.0, step = 0.05,
+     tooltip = "Params.min_stop_atr")
+maxStopAtr = input.float(10.0, "Max stop (x ATR)", minval = 0.1, step = 0.5,
+     tooltip = "Params.max_stop_atr")
+evalBars   = input.int(24, "Score QM after N bars", minval = 1)
+hitAtr     = input.float(1.0, "Counts as a move (x ATR)", minval = 0.1, step = 0.1)
+showSwings = input.bool(true, "Show confirmed swings")
+showMS     = input.bool(true, "Show BOS / CHoCH")
+
+// Simple mean of true range, shifted one bar: matches tr.rolling(n).mean().shift(1)
+atrPrev = ta.sma(ta.tr(true), atrPeriod)[1]
+atrOk   = not na(atrPrev) and atrPrev > 0
+
+// ------------------------------------------------------------------ state --
+var array<float> swP = array.new<float>()
+var array<int>   swB = array.new<int>()
+var array<int>   swK = array.new<int>()   // +1 swing high, -1 swing low
+var int   sessStart = na
+var int   k = -1                           // bar index within the RTH session
+var int   trend = 0
+var float shP = na
+var int   shB = na
+var bool  shBroken = true
+var float slP = na
+var int   slB = na
+var bool  slBroken = true
+var int   qmDir = 0
+var float qmLevel = na
+var float qmHead = na
+var int   qmArmed = na
+var int   qmUsedB = na
+var float qmUsedP = na
+
+// self-scoring, deliberately NOT reset at the session boundary
+var int   pDir = 0
+var int   pBar = na
+var float pPrice = na
+var int   nSig = 0
+var int   nPred = 0
+var int   nOpp = 0
+var int   nFlat = 0
+
+inRth = session.ismarket
+if session.isfirstbar_regular
+    sessStart := bar_index
+    k := 0
+    array.clear(swP)
+    array.clear(swB)
+    array.clear(swK)
+    trend := 0
+    shP := na
+    shBroken := true
+    slP := na
+    slBroken := true
+    qmDir := 0
+    qmUsedB := na
+    qmUsedP := na
+else if inRth
+    k += 1
+
+// --------------------------------------------------- 1. confirm swings ----
+f_pivotHigh() =>
+    ok = true
+    for m = 1 to swingLeft
+        if not (high[swingRight] > high[swingRight + m])
+            ok := false
+    for m = 1 to swingRight
+        if not (high[swingRight] >= high[swingRight - m])
+            ok := false
+    ok
+
+f_pivotLow() =>
+    ok = true
+    for m = 1 to swingLeft
+        if not (low[swingRight] < low[swingRight + m])
+            ok := false
+    for m = 1 to swingRight
+        if not (low[swingRight] <= low[swingRight - m])
+            ok := false
+    ok
+
+canConfirm = inRth and not na(sessStart) and bar_index - swingRight - swingLeft >= sessStart
+// evaluated on every bar (Pine warns when history-reading calls are conditional)
+isPH = f_pivotHigh()
+isPL = f_pivotLow()
+newHigh = canConfirm and isPH
+newLow  = canConfirm and isPL
+
+if newHigh
+    pj = high[swingRight]
+    bj = bar_index - swingRight
+    n = array.size(swK)
+    accept = true
+    if n > 0 and array.get(swK, n - 1) == 1
+        if pj > array.get(swP, n - 1)
+            array.set(swP, n - 1, pj)
+            array.set(swB, n - 1, bj)
+        else
+            accept := false
+    else
+        array.push(swP, pj)
+        array.push(swB, bj)
+        array.push(swK, 1)
+    if accept
+        shP := pj
+        shB := bj
+        shBroken := false
+        if showSwings
+            label.new(bj, pj, "H", style = label.style_label_down, size = size.tiny,
+                 color = color.new(color.gray, 70), textcolor = chart.fg_color)
+
+if newLow
+    pj = low[swingRight]
+    bj = bar_index - swingRight
+    n = array.size(swK)
+    accept = true
+    if n > 0 and array.get(swK, n - 1) == -1
+        if pj < array.get(swP, n - 1)
+            array.set(swP, n - 1, pj)
+            array.set(swB, n - 1, bj)
+        else
+            accept := false
+    else
+        array.push(swP, pj)
+        array.push(swB, bj)
+        array.push(swK, -1)
+    if accept
+        slP := pj
+        slB := bj
+        slBroken := false
+        if showSwings
+            label.new(bj, pj, "L", style = label.style_label_up, size = size.tiny,
+                 color = color.new(color.gray, 70), textcolor = chart.fg_color)
+
+// ------------------------------------------------------ 2. BOS / CHoCH ----
+msEvent = 0
+if inRth
+    if not shBroken and not na(shP) and close > shP
+        msEvent := trend == -1 ? 2 : 1
+        trend := 1
+        shBroken := true
+        if showMS
+            line.new(shB, shP, bar_index, shP, color = color.new(#1D9E75, 30),
+                 style = line.style_dashed)
+            label.new(bar_index, shP, msEvent == 2 ? "CHoCH" : "BOS",
+                 style = label.style_label_down, size = size.tiny,
+                 color = color.new(#1D9E75, msEvent == 2 ? 10 : 60), textcolor = color.white)
+    if not slBroken and not na(slP) and close < slP
+        msEvent := trend == 1 ? -2 : -1
+        trend := -1
+        slBroken := true
+        if showMS
+            line.new(slB, slP, bar_index, slP, color = color.new(#D85A30, 30),
+                 style = line.style_dashed)
+            label.new(bar_index, slP, msEvent == -2 ? "CHoCH" : "BOS",
+                 style = label.style_label_up, size = size.tiny,
+                 color = color.new(#D85A30, msEvent == -2 ? 10 : 60), textcolor = color.white)
+
+// --------------------------------------------------------- 3. arm a QM ----
+n3 = array.size(swK)
+if inRth and n3 >= 3
+    k1 = array.get(swK, n3 - 3)
+    p1 = array.get(swP, n3 - 3)
+    b1 = array.get(swB, n3 - 3)
+    p2 = array.get(swP, n3 - 2)
+    k3 = array.get(swK, n3 - 1)
+    p3 = array.get(swP, n3 - 1)
+    b3 = array.get(swB, n3 - 1)
+    fresh = na(qmUsedB) or qmUsedB != b3 or qmUsedP != p3
+    if fresh
+        armed = 0
+        if k1 == 1 and k3 == 1 and p3 > p1 and close < p2
+            armed := -1
+        else if k1 == -1 and k3 == -1 and p3 < p1 and close > p2
+            armed := 1
+        if armed != 0
+            qmDir := armed
+            qmLevel := p1
+            qmHead := p3
+            qmArmed := bar_index
+            qmUsedB := b3
+            qmUsedP := p3
+            line.new(b1, p1, bar_index, p1, color = color.new(#7F77DD, 20), width = 2)
+
+// ---------------------------------------------- 4. cancel a stale QM ------
+if qmDir != 0
+    pastHead = qmDir == -1 ? high > qmHead : low < qmHead
+    if pastHead or bar_index - qmArmed > qmMaxAge
+        qmDir := 0
+
+// --------------------------------------------------------- 5. QM entry ----
+qmSignal = 0
+if qmDir != 0 and inRth and atrOk and k >= 1 and k <= entryEnd and bar_index > qmArmed
+    tol = qmTolAtr * atrPrev
+    hit = qmDir == -1 ? (high >= qmLevel - tol and close < qmHead) : (low <= qmLevel + tol and close > qmHead)
+    if hit
+        d = qmDir
+        qmDir := 0                                   // one signal per setup
+        stopPx = qmHead - d * stopBufAtr * atrPrev   // beyond the head
+        risk = (close - stopPx) * d
+        if risk >= minStopAtr * atrPrev and risk <= maxStopAtr * atrPrev
+            qmSignal := d
+
+if qmSignal != 0
+    label.new(bar_index, qmSignal == 1 ? low : high, qmSignal == 1 ? "QM ▲" : "QM ▼",
+         style = qmSignal == 1 ? label.style_label_up : label.style_label_down,
+         color = color.new(#7F77DD, 10), textcolor = color.white, size = size.small)
+    nSig += 1
+    pDir := qmSignal
+    pBar := bar_index
+    pPrice := close
+
+// ------------------------------------------------------------ 6. score ----
+// Rough self-check, not a backtest: close-to-close after evalBars, counting the
+// predicted AND the opposite direction so one has a control for the other.
+if pDir != 0 and not na(pBar) and bar_index - pBar == evalBars and atrOk
+    mv = (close - pPrice) * pDir
+    th = hitAtr * atrPrev
+    if mv >= th
+        nPred += 1
+    else if mv <= -th
+        nOpp += 1
+    else
+        nFlat += 1
+    pDir := 0
+
+var table tbl = table.new(position.top_right, 2, 5, bgcolor = color.new(color.gray, 82), border_width = 1)
+if barstate.islast
+    scored = nPred + nOpp + nFlat
+    table.cell(tbl, 0, 0, "QM signals", text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 1, 0, str.tostring(nSig), text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 0, 1, "scored", text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 1, 1, str.tostring(scored), text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 0, 2, "predicted dir", text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 1, 2, str.tostring(nPred) + (scored > 0 ? "  (" + str.tostring(100.0 * nPred / scored, "#.0") + "%)" : ""),
+         text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 0, 3, "opposite dir", text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 1, 3, str.tostring(nOpp) + (scored > 0 ? "  (" + str.tostring(100.0 * nOpp / scored, "#.0") + "%)" : ""),
+         text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 0, 4, "neither", text_size = size.small, text_color = chart.fg_color)
+    table.cell(tbl, 1, 4, str.tostring(nFlat), text_size = size.small, text_color = chart.fg_color)
+
+alertcondition(qmSignal == 1, "QM long", "Bullish quasimodo: price back at the left shoulder")
+alertcondition(qmSignal == -1, "QM short", "Bearish quasimodo: price back at the left shoulder")
+alertcondition(msEvent == 2 or msEvent == -2, "CHoCH", "Change of character")
