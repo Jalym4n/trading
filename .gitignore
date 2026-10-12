@@ -18,3 +18,4 @@ screeners/biotech/biocat_out/
 screeners/biotech/**/.cache/
 journal.jsonl
 __pycache__/
+screeners/biotech/biocat_out.log
