@@ -2,7 +2,7 @@
 
 Carry-over context from a long design conversation. Three tracks: a quantitative
 backtesting framework (built, run on real BTC data, SPY/futures untested), a biotech catalyst
-research process (designed, not built), and an execution-vehicle decision
+research process (screener built as `screeners/biotech/biocat`, first live run 2026-10-12), and an execution-vehicle decision
 (analysed, blocked on track 1).
 
 ---
@@ -405,7 +405,19 @@ sessions (<30 bars) dropped, 2,925 dev sessions, holdout untouched.
 
 ---
 
-## Track 2: biotech catalyst research (designed, not built)
+## Track 2: biotech catalyst research (screener built: `screeners/biotech/biocat`)
+
+**Status (2026-10-12):** `python -m biocat screen` runs end to end on free data
+(CT.gov v2, SEC EDGAR, unofficial Yahoo/Nasdaq quotes). First live run: 1,494
+Phase 2/3 industry trials, 769 sponsors, 183 resolved to a ticker (24%) after
+an SIC gate, **64 trials / 48 tickers** pass the size filters, one dossier
+each. The tool **extracts and presents, never judges**: no score, no rating,
+mechanical sort only. Revision history comes from the undocumented
+`/api/int/studies/{nct}/history` route (needs an `ncbi_sid` cookie). Thesis
+journal (`biocat journal`) is append-only and hash-chained; scored entries are
+final. Audit `identity.csv` before using a row: the first run had four false
+joins (Vertex, Thryv, Polaris, Vantage), now fixed and regression-tested. See
+`screeners/biotech/README.md`.
 
 The reasoning: technical analysis on SPY intraday is the lowest-prior corner of
 the market. Domain expertise in healthcare is a real structural advantage. This
@@ -645,6 +657,7 @@ then read it off the table above.
    everything downstream, so run it early.
 5. **Add time stop and daily loss limit** so written setups are fully
    representable in code.
-6. **Build the biotech screener** (ClinicalTrials.gov + EDGAR join).
+6. ~~Build the biotech screener.~~ Done (`biocat`). Next: read the 64 dossiers,
+   pick 10 names for the journal.
 7. **Start the thesis journal** with 10 names, zero capital, six-month
    calibration window.
