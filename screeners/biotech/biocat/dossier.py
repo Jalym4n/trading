@@ -193,7 +193,8 @@ def build(row: dict, record: dict, history_md: list[str], related: dict, today: 
             "| field | value |", "|---|---|"] + \
            [f"| {k} | {row.get(k)} |" for k in
             ("company", "cik", "sec_sic", "sponsor", "phase", "catalyst_date", "date_type", "months_out", "market_cap",
-             "avg_dollar_vol", "cash_usd", "cash_asof", "burn_q_usd", "burn_status", "runway_q",
+             "market_cap_source", "avg_dollar_vol", "cash_usd", "cash_asof", "cash_tags", "burn_q_usd",
+             "burn_quarters", "burn_status", "runway_q",
              "runway_needed_q", "funded_through", "shelf_count", "atm_count", "dilution_risk", "data_notes")] + \
            ["", f"Generated {today.isoformat()} from ClinicalTrials.gov API v2 and SEC EDGAR. "
                 "Fields are reported as registered; nothing here is an assessment.", ""]

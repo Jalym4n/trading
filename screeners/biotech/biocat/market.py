@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 
 YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/{t}"
 NASDAQ = "https://api.nasdaq.com/api/quote/{t}/historical"
+NASDAQ_SUMMARY = "https://api.nasdaq.com/api/quote/{t}/summary"
 
 
 @dataclass
@@ -68,6 +69,17 @@ def _from_nasdaq(http, ticker: str, today: dt.date, days: int) -> Market:
     m, dd, y = rows[0]["date"].split("/")
     return Market(price=_num(rows[0]["close"]), price_date=f"{y}-{m}-{dd}",
                   avg_dollar_vol=sum(dv) / len(dv), reverse_splits_24m=None, source="nasdaq")
+
+
+def nasdaq_market_cap(http, ticker: str) -> float | None:
+    """Nasdaq summary 'Market Cap' (unofficial). Used ONLY when SEC XBRL has no
+    dei share count (typically 20-F filers), so ADS ratios are not guessed."""
+    d = http.get_json(NASDAQ_SUMMARY.format(t=ticker), {"assetclass": "stocks"})
+    v = ((((d or {}).get("data") or {}).get("summaryData") or {}).get("MarketCap") or {}).get("value")
+    try:
+        return _num(v) if v else None
+    except ValueError:
+        return None
 
 
 def fetch_market(http, ticker: str, today: dt.date, days: int = 30) -> Market:

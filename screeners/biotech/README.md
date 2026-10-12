@@ -70,6 +70,7 @@ a dated timeline, **E** statistical-plan terms with the sentence they occur in,
 | SEC submissions (SIC) | `data.sec.gov/submissions/CIK##########.json` | official |
 | Yahoo chart (price, volume, splits) | `query1.finance.yahoo.com/v8/finance/chart/{t}` | **unofficial** |
 | Nasdaq historical (fallback) | `api.nasdaq.com/api/quote/{t}/historical` | **unofficial**, no splits |
+| Nasdaq summary (market cap) | `api.nasdaq.com/api/quote/{t}/summary` | **unofficial**; used only when XBRL has no share count |
 
 Unofficial routes can change or block without notice; when they fail the
 fields go empty and the dossier says so.
@@ -105,6 +106,21 @@ HTML-entity-escaped and is unescaped before comparison.
   Corp. Fixed by stripping SEC state tags (`/ MA`) and by the SIC gate; both
   have regression tests. A collision between two healthcare firms would still
   pass the SIC gate.
+- **Market cap** = `dei:EntityCommonStockSharesOutstanding` x price. 20-F
+  filers often omit that fact; their cap comes from the Nasdaq summary instead
+  (never from IFRS share counts, because the ADS ratio is unknown). The source
+  is printed in each dossier as `market_cap_source`.
+- **Cash** is the first non-zero of `CashAndCashEquivalentsAtCarryingValue`,
+  `Cash`, `CashCashEquivalentsRestrictedCash...` at the latest balance-sheet
+  date: some filers tag the first as 0 every quarter.
+- **Burn** is the mean of the last two quarters, and each quarter is printed
+  (`burn_quarters`). One inflow quarter can make runway very large (ZURA,
+  2026-10-12: -18.9M then +18.9M, runway 10,302 quarters). Read the quarters,
+  not just the ratio.
+- **No quote, stale filings.** Acquired or delisted issuers (e.g. ITCI, BPMC)
+  still sponsor trials under their old names. With no price their market cap
+  is unknown, so they are kept, per the never-drop-on-missing-data rule;
+  `data_notes` shows the 404.
 - Stage 1 returned 1,494 trials, not ~3,000: the industry-sponsor and
   primary-completion window filters are strict.
 - Some issuers have no ticker on SEC and are

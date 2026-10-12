@@ -78,11 +78,21 @@ def screen(a) -> int:
                 info["dil"] = {"shelf_count": None, "atm_count": None, "dilution_risk": None}
                 info["errors"].append(f"fts: {e}")
             info["mkt"] = M.fetch_market(http, r.ticker, today)
+            info["mcap"], info["mcap_src"] = None, None
+            if info.get("shares") and info["mkt"].price:
+                info["mcap"] = info["shares"] * info["mkt"].price
+                info["mcap_src"] = f"dei:EntityCommonStockSharesOutstanding ({info['shares_asof']}) x price"
+            elif not info.get("shares"):
+                try:
+                    info["mcap"] = M.nasdaq_market_cap(http, r.ticker)
+                    info["mcap_src"] = "Nasdaq summary MarketCap (unofficial)" if info["mcap"] else None
+                except Exception as e:  # noqa: BLE001
+                    info["errors"].append(f"nasdaq summary: {e}")
             company_cache[r.cik] = info
         info = company_cache[r.cik]
         run = F.compute_runway(info["facts"], months, today) if info.get("facts") else None
         mkt = info["mkt"]
-        mcap = (info["shares"] * mkt.price) if (info.get("shares") and mkt.price) else None
+        mcap = info["mcap"]
         keep, reasons = M.size_filter(mcap, mkt.avg_dollar_vol, mkt.reverse_splits_24m)
         row = {
             "ticker": r.ticker, "company": r.sec_name, "cik": r.cik, "sponsor": t.sponsor,
@@ -95,7 +105,12 @@ def screen(a) -> int:
             "burn_q_usd": run.burn_q_usd if run else None,
             "burn_status": run.burn_status if run else "no_data",
             "runway_q": run.runway_q if run else None,
-            "runway_needed_q": run.runway_needed_q if run else None,
+            "runway_needed_q": run.runway_needed_q if run else
+            (round(months / 3 + 2, 2) if months is not None else None),
+            "market_cap_source": info["mcap_src"],
+            "cash_tags": run.cash_tags if run else None,
+            "burn_quarters": "; ".join(f"{q['start']}..{q['end']} {q['val']:+,.0f} ({q['derived_from']})"
+                                       for q in run.quarters_used) if run and run.quarters_used else None,
             "funded_through": run.funded_through if run else None,
             **{k: info["dil"].get(k) for k in ("shelf_count", "atm_count", "dilution_risk")},
             "_filter_notes": "; ".join(reasons),

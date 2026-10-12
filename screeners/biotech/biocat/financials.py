@@ -26,7 +26,7 @@ from dataclasses import dataclass
 FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 FTS_URL = "https://efts.sec.gov/LATEST/search-index"
 
-CASH_TAGS = ["CashAndCashEquivalentsAtCarryingValue",
+CASH_TAGS = ["CashAndCashEquivalentsAtCarryingValue", "Cash",
              "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"]
 STI_TAGS = ["ShortTermInvestments", "MarketableSecuritiesCurrent",
             "AvailableForSaleSecuritiesDebtSecuritiesCurrent"]
@@ -116,6 +116,26 @@ def instant_at(facts: dict, tags: list[str], end: str) -> tuple[float | None, st
     return None, None
 
 
+def cash_instant(facts: dict) -> tuple[dict | None, str | None]:
+    """Cash at the latest balance-sheet date. Some filers tag
+    CashAndCashEquivalentsAtCarryingValue = 0 every quarter and report the real
+    figure under us-gaap:Cash (MAIA, 2026-06-30: 0 vs 27,595,831). At that
+    date the first tag in CASH_TAGS with a NON-ZERO value wins; all zero -> 0."""
+    latest, _ = latest_instant(facts, CASH_TAGS)
+    if not latest:
+        return None, None
+    first = None
+    for tag in CASH_TAGS:
+        val, _t = instant_at(facts, [tag], latest["end"])
+        if val is None:
+            continue
+        hit = ({"end": latest["end"], "val": val}, tag)
+        first = first or hit
+        if val != 0:
+            return hit
+    return first
+
+
 @dataclass
 class Runway:
     cash_usd: float | None
@@ -131,7 +151,7 @@ class Runway:
 
 def compute_runway(facts: dict, months_out: float | None, today: dt.date,
                    n_quarters: int = 2, stale_days: int = 270) -> Runway:
-    cash_f, cash_tag = latest_instant(facts, CASH_TAGS)
+    cash_f, cash_tag = cash_instant(facts)
     cash = cash_asof = None
     tags_used = []
     if cash_f:

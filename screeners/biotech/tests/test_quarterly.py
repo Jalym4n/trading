@@ -106,6 +106,24 @@ def test_stale_financials_do_not_produce_a_runway():
     assert r.burn_status == "stale" and r.runway_q is None
 
 
+def test_zero_tagged_cash_falls_back_to_us_gaap_cash():
+    # MAIA Biotechnology 10-Q 2026-06-30: CashAndCashEquivalentsAtCarryingValue tagged 0,
+    # real cash under us-gaap:Cash
+    from biocat.financials import cash_instant
+    facts = {"facts": {"us-gaap": {
+        "CashAndCashEquivalentsAtCarryingValue": {"units": {"USD": [
+            {"end": "2026-03-31", "val": 0, "filed": "2026-05-10"},
+            {"end": "2026-06-30", "val": 0, "filed": "2026-08-10"}]}},
+        "Cash": {"units": {"USD": [{"end": "2026-03-31", "val": 34413110, "filed": "2026-05-10"},
+                                   {"end": "2026-06-30", "val": 27595831, "filed": "2026-08-10"}]}}}}}
+    f, tag = cash_instant(facts)
+    assert (f["end"], f["val"], tag) == ("2026-06-30", 27595831, "Cash")
+    # a genuine zero with no alternative stays zero
+    only_zero = {"facts": {"us-gaap": {"CashAndCashEquivalentsAtCarryingValue": {"units": {"USD": [
+        {"end": "2026-06-30", "val": 0, "filed": "2026-08-10"}]}}}}}
+    assert cash_instant(only_zero)[0]["val"] == 0
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
