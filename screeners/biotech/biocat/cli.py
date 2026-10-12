@@ -98,7 +98,13 @@ def screen(a) -> int:
             "runway_needed_q": run.runway_needed_q if run else None,
             "funded_through": run.funded_through if run else None,
             **{k: info["dil"].get(k) for k in ("shelf_count", "atm_count", "dilution_risk")},
-            "_filter_notes": "; ".join(reasons), "_interventions": t.interventions,
+            "_filter_notes": "; ".join(reasons),
+            "data_notes": "; ".join(
+                reasons + info["errors"]
+                + ([] if mkt.price else [f"market: {e}" for e in mkt.errors] or ["market: no price"])
+                + ([] if info.get("shares") else ["shares: no dei:EntityCommonStockSharesOutstanding in XBRL "
+                                                  "(20-F filers often omit it; not derived from IFRS counts "
+                                                  "because the ADS ratio is unknown)"])) or "none",
         }
         (rows if keep else dropped).append(row)
     log(f"stages 3-4: {len(rows)} trial rows pass size filters, {len(dropped)} dropped on known values")
@@ -122,12 +128,11 @@ def screen(a) -> int:
             hist = None
             hist_md = ["## D. Revision history", "", f"Not available: {e}", ""]
         related = {}
-        for name in row["_interventions"][:3]:
-            if name and name.lower() not in ("placebo", "standard of care"):
-                try:
-                    related[name] = T.related_trials(http, row["sponsor"], name)
-                except Exception:  # noqa: BLE001
-                    related[name] = []
+        for name in D.experimental_interventions(rec.get("protocolSection", {}))[:3]:
+            try:
+                related[name] = T.related_trials(http, row["sponsor"], name, limit=D.RELATED_CAP)
+            except Exception:  # noqa: BLE001
+                related[name] = []
         md, facts = D.build(row, rec, hist_md, related, today)
         row.update({"n_primary_endpoints": facts["n_primary"], "masking": facts["masking"],
                     "allocation": facts["allocation"], "has_control_arm": facts["has_control_arm"],

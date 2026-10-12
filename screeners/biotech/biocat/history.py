@@ -25,6 +25,7 @@ from __future__ import annotations
 import difflib
 import html
 import json
+import re
 import time
 import urllib.request
 from http.cookiejar import Cookie, CookieJar
@@ -97,6 +98,27 @@ def _clean(s) -> str:
     return " ".join(html.unescape(s or "").split())
 
 
+_BLOCK_TAG = re.compile(r"<\s*(?:br|/?p|/?li|/?ul|/?ol|/?h\d)\b[^>]*>", re.I)
+_ANY_TAG = re.compile(r"<[^>]+>")
+_BULLET = re.compile(r"^(?:[*\u2022-]\s+)")
+
+
+def criteria_lines(text: str | None) -> list[str]:
+    """Eligibility text as one criterion per line, so a diff shows criteria.
+
+    Historical versions store criteria as one HTML string ("<ul><li>...");
+    the current record uses markdown bullets. Both reduce to the same lines.
+    """
+    t = _BLOCK_TAG.sub("\n", html.unescape(text or ""))
+    t = _ANY_TAG.sub("", t)
+    out = []
+    for line in t.splitlines():
+        line = _BULLET.sub("", " ".join(line.split()))
+        if line:
+            out.append(line)
+    return out
+
+
 def snapshot(study: dict) -> dict:
     ps = study.get("protocolSection", {}) or {}
     st = ps.get("statusModule", {}) or {}
@@ -108,7 +130,7 @@ def snapshot(study: dict) -> dict:
         "primary": [(_clean(p.get("measure")), _clean(p.get("timeFrame"))) for p in prim],
         "pcd": pcd.get("date"), "pcd_type": pcd.get("type"),
         "enroll": ei.get("count"), "enroll_type": ei.get("type"),
-        "criteria": html.unescape(el.get("eligibilityCriteria") or ""),
+        "criteria": criteria_lines(el.get("eligibilityCriteria")),
         "elig_meta": (el.get("minimumAge"), el.get("maximumAge"), el.get("sex"), el.get("healthyVolunteers")),
         "status": st.get("overallStatus"),
     }
@@ -167,8 +189,7 @@ def timeline(snaps: list[tuple[int, str, dict]]) -> dict:
             events.append((v, date, f"enrollment target {direction}",
                            f"{prev['enroll']} -> {s['enroll']} ({s['enroll_type']})"))
         if s["criteria"] != prev["criteria"] or s["elig_meta"] != prev["elig_meta"]:
-            diff = [l for l in difflib.unified_diff(prev["criteria"].splitlines(), s["criteria"].splitlines(),
-                                                    lineterm="", n=0)
+            diff = [l for l in difflib.unified_diff(prev["criteria"], s["criteria"], lineterm="", n=0)
                     if not l.startswith(("---", "+++", "@@"))]
             elig_changes.append({"version": v, "date": date, "diff": diff[:30], "n_lines": len(diff),
                                  "meta_from": prev["elig_meta"], "meta_to": s["elig_meta"]})

@@ -10,10 +10,11 @@ from __future__ import annotations
 import datetime as dt
 from collections import Counter
 
-from .textscan import multiplicity_hits, stat_signal_hits, subjective_terms, walk_text
+from .textscan import STAT_SIGNALS, multiplicity_hits, stat_signal_hits, subjective_terms, walk_text
 from .trials import months_between, parse_date
 
 CONTROL_TYPES = {"PLACEBO_COMPARATOR", "ACTIVE_COMPARATOR", "SHAM_COMPARATOR"}
+RELATED_CAP = 100   # trials.related_trials pageSize
 
 
 def _g(d, *path, default=None):
@@ -114,10 +115,9 @@ def stats_section(ps: dict) -> list[str]:
     hits = stat_signal_hits(walk_text(ps))
     found = sorted({h["term"] for h in hits})
     out = ["## E. Statistical-plan terms in free text", "",
-           "Searched: interim analysis, futility, intention-to-treat, per-protocol, adaptive, "
-           "data monitoring committee, DSMB, sample size re-estimation.", "",
+           f"Searched: {', '.join(STAT_SIGNALS)}.", "",
            f"Present: {', '.join(found) or 'none'}. "
-           f"Absent: {', '.join(t for t in ['interim analysis', 'futility', 'intention-to-treat', 'per-protocol', 'adaptive', 'data monitoring committee', 'DSMB', 'sample size re-estimation'] if t not in found) or 'none'}.",
+           f"Absent: {', '.join(t for t in STAT_SIGNALS if t not in found) or 'none'}.",
            ""]
     if hits:
         out += ["| term | field | sentence |", "|---|---|---|"] + \
@@ -126,6 +126,24 @@ def stats_section(ps: dict) -> list[str]:
     if any(h["term"] in ("interim analysis", "futility") for h in hits):
         out += ["Note: an interim or futility analysis can end a trial before "
                 "`primaryCompletionDate`, which would move the catalyst date.", ""]
+    return out
+
+
+def experimental_interventions(ps: dict) -> list[str]:
+    """Interventions linked to an EXPERIMENTAL arm and to no control arm, from
+    `armsInterventionsModule.interventions[].armGroupLabels`. A comparator or
+    shared backbone ("Chemotherapeutic Agent" in both arms) is not the asset.
+    Records with no arm links fall back to every non-placebo intervention."""
+    aim = ps.get("armsInterventionsModule", {}) or {}
+    arm_type = {a.get("label"): a.get("type") for a in aim.get("armGroups", []) or []}
+    ivs = aim.get("interventions", []) or []
+    if not any(iv.get("armGroupLabels") for iv in ivs):
+        return [iv.get("name") for iv in ivs if iv.get("name") and "placebo" not in iv["name"].lower()]
+    out = []
+    for iv in ivs:
+        types = {arm_type.get(lbl) for lbl in iv.get("armGroupLabels") or []}
+        if iv.get("name") and "EXPERIMENTAL" in types and not types & CONTROL_TYPES:
+            out.append(iv["name"])
     return out
 
 
@@ -139,12 +157,18 @@ def context_section(nct_id: str, sponsor: str, related: dict[str, list[dict]],
            f"Intervention MeSH terms (`derivedSection.interventionBrowseModule.meshes`): "
            f"{', '.join(meshes) or '(none)'}", "",
            f"MeSH ancestors / class (`...ancestors`): {', '.join(anc[:12]) or '(none)'}", ""]
+    out += ["Interventions queried: those linked to an EXPERIMENTAL arm and to no placebo / active / "
+            "sham arm (`armsInterventionsModule.interventions[].armGroupLabels`): "
+            f"{', '.join(related) or '(none)'}.", ""]
     for name, rows in related.items():
+        capped = len(rows) >= RELATED_CAP
         rows = [r for r in rows if r["nct_id"] != nct_id]
         same = [r for r in rows if r["sponsor"] == sponsor]
         other = [r for r in rows if r["sponsor"] != sponsor]
         out += [f"### Intervention \"{name}\" (`query.intr`, all statuses)", "",
-                f"Same sponsor, other trials: {len(same)}. Other sponsors: {len(other)}.", ""]
+                f"Same sponsor, other trials: {len(same)}. Other sponsors: {len(other)}."
+                + (f" **The API returned its page cap of {RELATED_CAP}; more trials may exist.**" if capped else ""),
+                ""]
         if rows:
             out += ["| NCT | sponsor | phase | status | primary completion | results posted | why stopped |",
                     "|---|---|---|---|---|---|---|"]
@@ -170,7 +194,7 @@ def build(row: dict, record: dict, history_md: list[str], related: dict, today: 
            [f"| {k} | {row.get(k)} |" for k in
             ("company", "cik", "sec_sic", "sponsor", "phase", "catalyst_date", "date_type", "months_out", "market_cap",
              "avg_dollar_vol", "cash_usd", "cash_asof", "burn_q_usd", "burn_status", "runway_q",
-             "runway_needed_q", "funded_through", "shelf_count", "atm_count", "dilution_risk")] + \
+             "runway_needed_q", "funded_through", "shelf_count", "atm_count", "dilution_risk", "data_notes")] + \
            ["", f"Generated {today.isoformat()} from ClinicalTrials.gov API v2 and SEC EDGAR. "
                 "Fields are reported as registered; nothing here is an assessment.", ""]
     md = "\n".join(head + a + b + c + history_md + e + f) + "\n"

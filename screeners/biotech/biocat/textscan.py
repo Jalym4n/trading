@@ -18,7 +18,7 @@ SUBJECTIVE_ACRONYMS = ["VAS", "NRS", "QoL", "PGA", "IGA", "PRO"]
 
 MULTIPLICITY = ["alpha", "Bonferroni", "hierarchical", "gatekeeping", "type I error", "multiplicity"]
 
-STAT_SIGNALS = ["interim analysis", "futility", "intention-to-treat", "per-protocol", "adaptive",
+STAT_SIGNALS = ["interim analysis", "futility", "intention-to-treat", "per-protocol", "adaptive design",
                 "data monitoring committee", "DSMB", "sample size re-estimation"]
 
 
@@ -34,7 +34,10 @@ _SUBJ = [(t, _pattern(t, False)) for t in SUBJECTIVE_WORDS] + \
 # sense is reported. The evidence sentence is printed either way.
 _ALPHA = re.compile(r"(?<![A-Za-z0-9-])alpha(?![A-Za-z0-9]|\s*-|\s*\d)", re.I)
 _MULT = [(t, _ALPHA if t == "alpha" else _pattern(t, False)) for t in MULTIPLICITY]
-_STAT = [(t, _pattern(t, t == "DSMB")) for t in STAT_SIGNALS]
+# bare "adaptive" also hits "Adaptive Behavior Composite Score"; require the design sense
+_ADAPTIVE = re.compile(r"(?<![A-Za-z0-9])adaptive\s+(?:design|randomi[sz]ation|trial|study|seamless|"
+                       r"platform|enrichment|phase)", re.I)
+_STAT = [(t, _ADAPTIVE if t == "adaptive design" else _pattern(t, t == "DSMB")) for t in STAT_SIGNALS]
 
 
 def walk_text(obj, path: str = "") -> list[tuple[str, str]]:
