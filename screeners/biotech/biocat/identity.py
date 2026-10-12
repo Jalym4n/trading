@@ -10,6 +10,12 @@ Fallback    EDGAR full-text search for the exact sponsor phrase; candidates come
 
 Accept only when exactly one CIK survives and it has a ticker. Otherwise record
 why it was rejected; nothing is guessed.
+
+SIC gate    An independent second check on every accepted match: the filer's SIC
+            code (data.sec.gov/submissions) must be a healthcare code. Stripping
+            descriptors makes "Thryv Therapeutics" and "Thryv Holdings" (SaaS)
+            share the key "thryv"; the name alone cannot tell them apart. Failure
+            to fetch the SIC is a rejection ("sic_unverified"), not a pass.
 """
 
 from __future__ import annotations
@@ -21,6 +27,11 @@ from .names import normalise, parse_display_name
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 FTS_URL = "https://efts.sec.gov/LATEST/search-index"
+SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
+# drugs, biologics, diagnostics, medical devices, drug/device wholesale,
+# health services, commercial biological research
+HEALTHCARE_SIC = ({2833, 2834, 2835, 2836, 3826, 3841, 3842, 3843, 3844, 3845, 3851,
+                   5047, 5122, 8731, 8733, 8734} | set(range(8000, 8100)))
 
 
 @dataclass
@@ -28,11 +39,14 @@ class Resolution:
     sponsor: str
     key: str
     status: str                 # resolved / ambiguous / no_match / no_ticker / empty_key / skipped_budget
+                                # / sic_outside_healthcare / sic_unverified
     cik: int | None = None
     ticker: str | None = None
     sec_name: str | None = None
     path: str | None = None     # tickers_json / fts
     detail: str = ""
+    sic: int | None = None
+    sic_desc: str | None = None
 
 
 class TickerIndex:
@@ -122,3 +136,27 @@ def resolve_all(sponsors_by_count: list[tuple[str, int]], http, idx: TickerIndex
     log(f"stage 2: {n_ok}/{len(out)} sponsors resolved ({100 * n_ok / max(len(out), 1):.0f}%), "
         f"{fts_used} FTS lookups" + (f", {skipped} NOT LOOKED UP (budget)" if skipped else ""))
     return out
+
+
+def sic_gate(res: list[Resolution], http, log=print) -> list[Resolution]:
+    """Demote resolved matches whose SEC filer is not a healthcare SIC. In place."""
+    bad = unver = 0
+    for r in res:
+        if r.status != "resolved":
+            continue
+        try:
+            sub = http.get_json(SUBMISSIONS_URL.format(cik=r.cik))
+            r.sic = int(sub.get("sic") or 0) or None
+            r.sic_desc = sub.get("sicDescription")
+        except Exception as e:  # noqa: BLE001  unverified is a rejection
+            r.status, r.detail = "sic_unverified", f"submissions fetch failed: {e}"
+            unver += 1
+            continue
+        if r.sic not in HEALTHCARE_SIC:
+            r.status = "sic_outside_healthcare"
+            r.detail = f"SIC {r.sic} {r.sic_desc}; {r.detail}".rstrip("; ")
+            bad += 1
+    n_ok = sum(r.status == "resolved" for r in res)
+    log(f"stage 2 SIC gate: {bad} rejected outside healthcare SIC, {unver} unverified; "
+        f"{n_ok}/{len(res)} sponsors resolved ({100 * n_ok / max(len(res), 1):.0f}%)")
+    return res

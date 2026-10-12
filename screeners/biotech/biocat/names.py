@@ -26,6 +26,7 @@ SUFFIXES = {
     "labs", "laboratories", "laboratory",
 }
 TRAILING_JOINERS = {"and", "the", "of"}
+_SEC_TAG = re.compile(r"\s*/\s*(?:[a-z]{2,3}|adr|new|cayman(?: islands)?|marshall islands)\.?\s*$")
 
 
 def _fold(s: str) -> str:
@@ -37,6 +38,9 @@ def normalise(name: str) -> str:
     """Canonical key for a company name. Empty string if nothing is left."""
     s = _fold(name or "").lower()
     s = s.replace("&", " and ")
+    # SEC conformed-name tags: "VERTEX PHARMACEUTICALS INC / MA", "TuHURA ... Inc./NV",
+    # "... /ADR". Two or more letters only, so the legal forms "A/S" and "S/A" survive.
+    s = _SEC_TAG.sub(" ", s)
     s = re.sub(r"\(.*?\)", " ", s)            # "(Shanghai)", "(Suzhou)"
     s = s.replace("s/a", " sa ")
     # dotted abbreviations: "s.a." -> "sa", "n.v." -> "nv", "s.p.a." -> "spa"

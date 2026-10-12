@@ -44,14 +44,15 @@ def screen(a) -> int:
     # ---- stage 2: fewest trials first (micro-caps run 1-2 programmes) ------
     order = sorted(by_sponsor.items(), key=lambda kv: (kv[1], kv[0]))
     idx = I.TickerIndex.load(http)
-    res = I.resolve_all(order, http, idx, a.max_fts, log)
+    res = I.sic_gate(I.resolve_all(order, http, idx, a.max_fts, log), http, log)
     ok = {r.sponsor: r for r in res if r.status == "resolved"}
     with open(os.path.join(a.out, "identity.csv"), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["sponsor", "n_trials", "key", "status", "path", "cik", "ticker", "sec_name", "detail"])
+        w.writerow(["sponsor", "n_trials", "key", "status", "path", "cik", "ticker", "sec_name", "sic", "sic_desc",
+                    "detail"])
         for r in res:
             w.writerow([r.sponsor, by_sponsor[r.sponsor], r.key, r.status, r.path, r.cik, r.ticker,
-                        r.sec_name, r.detail])
+                        r.sec_name, r.sic, r.sic_desc, r.detail])
 
     # ---- stages 3 + 4 per resolved company --------------------------------
     rows, dropped = [], []
@@ -85,6 +86,7 @@ def screen(a) -> int:
         keep, reasons = M.size_filter(mcap, mkt.avg_dollar_vol, mkt.reverse_splits_24m)
         row = {
             "ticker": r.ticker, "company": r.sec_name, "cik": r.cik, "sponsor": t.sponsor,
+            "sec_sic": f"{r.sic} {r.sic_desc}",
             "nct_id": t.nct_id, "phase": t.phase, "phase_rank": t.phase_rank,
             "catalyst_date": t.pcd, "date_type": t.pcd_type, "months_out": months,
             "market_cap": round(mcap) if mcap else None,

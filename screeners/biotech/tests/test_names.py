@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from biocat.identity import TickerIndex, candidates_from_fts, resolve_fast  # noqa: E402
+from biocat.identity import Resolution, TickerIndex, candidates_from_fts, resolve_fast, sic_gate  # noqa: E402
 from biocat.names import normalise, parse_display_name  # noqa: E402
 
 # (ClinicalTrials.gov sponsor as registered, expected key)
@@ -99,6 +99,52 @@ def test_ambiguous_key_is_rejected_not_guessed():
     ok = resolve_fast("Xyz Biosciences Inc", idx)
     assert ok.status == "resolved" and ok.ticker == "XYZ" and ok.cik == 3
     assert resolve_fast("Nothing Like It Inc", idx).status == "no_match"
+
+
+def test_sec_state_tags_are_stripped_but_legal_forms_survive():
+    assert normalise("VERTEX PHARMACEUTICALS INC / MA") == "vertex"
+    assert normalise("TuHURA Biosciences, Inc./NV") == "tuhura"
+    assert normalise("Ascendis Pharma A/S") == "ascendis pharma a s"
+    assert normalise("Brainfarma Industria Química e Farmacêutica S/A") == \
+        "brainfarma industria quimica e farmaceutica"
+
+
+def test_vertex_regression_is_now_ambiguous():
+    # live run 2026-10-12: "Vertex Pharmaceuticals Incorporated" resolved to VERX
+    # (Vertex, Inc., tax software) because VRTX's SEC title carries "/ MA"
+    idx = TickerIndex([{"cik_str": 875320, "ticker": "VRTX", "title": "VERTEX PHARMACEUTICALS INC / MA"},
+                       {"cik_str": 1806837, "ticker": "VERX", "title": "Vertex, Inc."}])
+    r = resolve_fast("Vertex Pharmaceuticals Incorporated", idx)
+    assert r.status == "ambiguous" and r.ticker is None
+
+
+class _FakeHttp:
+    def __init__(self, sics):
+        self.sics = sics
+
+    def get_json(self, url, params=None, use_cache=True):
+        cik = int(url.rsplit("CIK", 1)[1].split(".")[0])
+        if cik not in self.sics:
+            raise OSError("HTTP 500")
+        sic, desc = self.sics[cik]
+        return {"sic": sic, "sicDescription": desc}
+
+
+def test_sic_gate_rejects_name_collisions_outside_healthcare():
+    # real false joins from the same run: Thryv Therapeutics -> Thryv Holdings (SIC 7370s),
+    # Polaris Group -> Polaris Inc. (vehicles); Starton Holdings is pharma and stays
+    res = [Resolution("Thryv Therapeutics", "thryv", "resolved", 1556739, "THRY", "Thryv Holdings, Inc."),
+           Resolution("Polaris Group", "polaris", "resolved", 931015, "PII", "Polaris Inc."),
+           Resolution("Starton Therapeutics, Inc", "starton", "resolved", 2, "STA", "Starton Holdings, Inc."),
+           Resolution("Unreachable Bio", "unreachable bio", "resolved", 3, "UNR", "Unreachable Bio Inc"),
+           Resolution("Some Sponsor", "some sponsor", "no_match")]
+    http = _FakeHttp({1556739: ("7374", "Services-Computer Processing"),
+                      931015: ("3711", "Motor Vehicles & Passenger Car Bodies"),
+                      2: ("2834", "Pharmaceutical Preparations")})
+    sic_gate(res, http, log=lambda m: None)
+    assert [r.status for r in res] == ["sic_outside_healthcare", "sic_outside_healthcare", "resolved",
+                                       "sic_unverified", "no_match"]
+    assert res[2].sic == 2834
 
 
 if __name__ == "__main__":
