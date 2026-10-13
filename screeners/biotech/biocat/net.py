@@ -87,7 +87,11 @@ class Http:
             os.replace(tmp, p)
 
     # ------------------------------------------------------------------- get
-    def get_json(self, url: str, params: dict | None = None, use_cache: bool = True):
+    def get_text(self, url: str, use_cache: bool = True) -> str:
+        """Raw document (e.g. an 8-K .htm), cached like JSON."""
+        return self.get_json(url, None, use_cache, _text=True)["text"]
+
+    def get_json(self, url: str, params: dict | None = None, use_cache: bool = True, _text: bool = False):
         if params:
             url = url + ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
         if use_cache:
@@ -97,7 +101,7 @@ class Http:
         host = urllib.parse.urlparse(url).hostname or ""
         is_sec = any(host == h or host.endswith("." + h) for h in SEC_HOSTS)
         headers = {"User-Agent": self.sec_ua if is_sec else BROWSER_UA,
-                   "Accept": "application/json"}
+                   "Accept": "*/*" if _text else "application/json"}
         last_err = None
         for attempt in range(self.retries):
             if is_sec:
@@ -105,7 +109,8 @@ class Http:
             try:
                 req = urllib.request.Request(url, headers=headers)
                 with urllib.request.urlopen(req, timeout=60) as r:
-                    data = json.loads(r.read())
+                    raw = r.read()
+                    data = {"text": raw.decode("utf-8", "ignore")} if _text else json.loads(raw)
                 self.calls["network"] += 1
                 if use_cache:
                     self._cache_put(url, data)

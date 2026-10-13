@@ -78,6 +78,11 @@ def screen(a) -> int:
                 info["dil"] = {"shelf_count": None, "atm_count": None, "dilution_risk": None}
                 info["errors"].append(f"fts: {e}")
             info["mkt"] = M.fetch_market(http, r.ticker, today)
+            try:
+                info["sec_splits"] = F.sec_reverse_splits(http, r.cik, today)
+            except Exception as e:  # noqa: BLE001
+                info["sec_splits"] = None
+                info["errors"].append(f"sec reverse-split check: {e}")
             info["mcap"], info["mcap_src"] = None, None
             if info.get("shares") and info["mkt"].price:
                 info["mcap"] = info["shares"] * info["mkt"].price
@@ -93,7 +98,8 @@ def screen(a) -> int:
         run = F.compute_runway(info["facts"], months, today) if info.get("facts") else None
         mkt = info["mkt"]
         mcap = info["mcap"]
-        keep, reasons = M.size_filter(mcap, mkt.avg_dollar_vol, mkt.reverse_splits_24m)
+        splits = M.combine_splits(mkt.reverse_splits_24m, info.get("sec_splits"))
+        keep, reasons = M.size_filter(mcap, mkt.avg_dollar_vol, splits)
         row = {
             "ticker": r.ticker, "company": r.sec_name, "cik": r.cik, "sponsor": t.sponsor,
             "sec_sic": f"{r.sic} {r.sic_desc}",
@@ -116,6 +122,8 @@ def screen(a) -> int:
             "_filter_notes": "; ".join(reasons),
             "data_notes": "; ".join(
                 reasons + info["errors"]
+                + ([f"price history starts {mkt.history_start} (< 24 months; split check relies on SEC 8-Ks)"]
+                   if mkt.history_start and mkt.reverse_splits_24m is None else [])
                 + ([] if mkt.price else [f"market: {e}" for e in mkt.errors] or ["market: no price"])
                 + ([] if info.get("shares") else ["shares: no dei:EntityCommonStockSharesOutstanding in XBRL "
                                                   "(20-F filers often omit it; not derived from IFRS counts "

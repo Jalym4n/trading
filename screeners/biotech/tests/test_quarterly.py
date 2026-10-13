@@ -124,6 +124,31 @@ def test_zero_tagged_cash_falls_back_to_us_gaap_cash():
     assert cash_instant(only_zero)[0]["val"] == 0
 
 
+def test_reverse_split_sources_combine():
+    from biocat.market import combine_splits
+    assert combine_splits(None, ["2026-06-01 8-K Item 5.03"]) == ["2026-06-01 8-K Item 5.03"]   # ELOX case
+    assert combine_splits([], None) == []            # full-window feed, SEC check failed
+    assert combine_splits(None, []) == []            # short feed, SEC found no 5.03 split
+    assert combine_splits(None, None) is None        # nothing known
+
+
+def test_split_sentence_requires_ratio_and_effect():
+    from biocat.financials import split_sentences_effected
+    # real ELOX 8-K (2026-06-01) wording: ratio and effect in different sentences
+    elox = ("Stockholders approved, via written consent, amendments to effect a reverse stock split at a ratio "
+            "ranging from any whole number between 1-for-2 to 1-for-20, with the exact ratio to be determined at the "
+            "sole discretion of the Board. On May 27, 2026, the Board approved a 1-for-11 reverse stock split of the "
+            "Company's issued and outstanding shares of Common Stock. The Reverse Stock Split and Authorized Share "
+            "Reduction became effective as of 5:00 p.m. Eastern Time on May 29, 2026.")
+    got = split_sentences_effected(elox)
+    assert got and "1-for-11" in got[0] and "Authorized Share Reduction became effective" in got[1]
+    # annual-meeting authorization only: NOT a split
+    assert not split_sentences_effected(
+        "Stockholders approved a proposal to authorize the Board to effect a reverse stock split at a ratio in the "
+        "range of 1-for-5 to 1-for-30. The amendment to the bylaws became effective on May 5, 2026.")
+    assert not split_sentences_effected("The amended bylaws became effective on May 5, 2026.")
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

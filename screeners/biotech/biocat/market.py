@@ -27,6 +27,7 @@ class Market:
     reverse_splits_24m: list[str] | None = None   # None = unknown (no split feed)
     source: str | None = None
     errors: list[str] = field(default_factory=list)
+    history_start: str | None = None
 
 
 def _from_yahoo(http, ticker: str, today: dt.date, days: int) -> Market:
@@ -47,10 +48,14 @@ def _from_yahoo(http, ticker: str, today: dt.date, days: int) -> Market:
         when = dt.datetime.fromtimestamp(s["date"], dt.timezone.utc).date()
         if when >= cutoff and s.get("numerator", 1) < s.get("denominator", 1):
             rev.append(f"{when.isoformat()} {s['numerator']}:{s['denominator']}")
+    first = dt.datetime.fromtimestamp(rows[0][0], dt.timezone.utc).date()
+    # history shorter than the window cannot show "no split": unknown unless one was seen
+    covered = first <= cutoff + dt.timedelta(days=14)
     return Market(price=float(rows[-1][1]),
                   price_date=dt.datetime.fromtimestamp(rows[-1][0], dt.timezone.utc).date().isoformat(),
                   avg_dollar_vol=sum(c * v for _, c, v in last) / len(last),
-                  reverse_splits_24m=sorted(rev), source="yahoo")
+                  reverse_splits_24m=sorted(rev) if (rev or covered) else None, source="yahoo",
+                  history_start=first.isoformat())
 
 
 def _num(s: str) -> float:
@@ -92,6 +97,16 @@ def fetch_market(http, ticker: str, today: dt.date, days: int = 30) -> Market:
         except Exception as e:  # noqa: BLE001 - any feed failure means "unknown", not "drop"
             errors.append(f"{fn.__name__}: {e}")
     return Market(errors=errors)
+
+
+def combine_splits(feed: list | None, sec: list | None) -> list | None:
+    """Known if either source found one; known-none only if a source that
+    covers the window found none; otherwise unknown."""
+    if feed or sec:
+        return sorted(set(feed or []) | set(sec or []))
+    if feed == [] or sec == []:
+        return []
+    return None
 
 
 def size_filter(market_cap: float | None, adv: float | None, rev_splits: list | None,

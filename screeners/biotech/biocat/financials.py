@@ -21,6 +21,8 @@ float to the top of a sorted column.
 from __future__ import annotations
 
 import datetime as dt
+import re
+import html
 from dataclasses import dataclass
 
 FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
@@ -206,6 +208,58 @@ def fts_count(http, phrase: str, cik: int, since: dt.date, max_pages: int = 10) 
             seen.add(adsh)
             keep.append({"form": s.get("form"), "file_date": s.get("file_date"), "adsh": adsh})
     return len(keep), sorted(keep, key=lambda x: x["file_date"], reverse=True)
+
+
+SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
+
+
+_RATIO = re.compile(r"\b(?:1|one)[- ]for[- ](\d{1,4}|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|"
+                    r"fifteen|twenty|twenty[- ]five|thirty|forty|fifty)\b", re.I)
+_EFFECTED = re.compile(r"\b(effective|effected|became effective|filed a certificate of amendment)\b", re.I)
+
+
+def split_sentences_effected(text: str) -> list[str]:
+    """Evidence that a reverse split was EFFECTED, from one document: a sentence
+    giving a single 1-for-N ratio for the reverse split (ranges, proposals and
+    board discretion excluded) AND a sentence saying the reverse split became
+    effective / was effected. Returns [ratio sentence, effect sentence] or []."""
+    t = re.sub(r"<[^>]+>", " ", text)
+    t = re.sub(r"\s+", " ", html.unescape(t))
+    sents = [x.strip() for x in re.split(r"(?<=[.;])\s+(?=[A-Z])", t)]
+    rs = [x for x in sents if re.search(r"reverse (?:stock )?split", x, re.I)]
+    # "Authorized Share Reduction" is a noun phrase in real 8-Ks; only the verb hedges
+    hedge = re.compile(r"\b(to authorize|authorizing|propos\w*|may effect|discretion|ranging|range of|between|"
+                       r"up to|not to exceed)\b", re.I)
+    ratio = [x for x in rs if _RATIO.search(x) and not hedge.search(x)]
+    effect = [x for x in rs if re.search(r"\b(became effective|was effected|effected (?:a|the)|is effective|"
+                                          r"were automatically combined)\b", x, re.I) and not hedge.search(x)]
+    return [ratio[0][:300], effect[0][:300]] if ratio and effect else []
+
+
+def sec_reverse_splits(http, cik: int, today: dt.date, days: int = 730) -> list[str]:
+    """Reverse splits EFFECTED in the window, from the company's own 8-Ks.
+
+    A split needs a charter amendment, disclosed under 8-K Item 5.03. Each such
+    8-K in the window is read; it counts only if one sentence names the reverse
+    split, a 1-for-N ratio and effect language (see split_sentences_effected).
+    Price feeds miss splits when a symbol's history restarts (ELOX: OTC history
+    dropped at its 2026-06 Nasdaq listing, 1-for-11 split 2026-05-29 not in the
+    feed). Raises on fetch failure so the caller records "unknown", never "none".
+    """
+    since = today - dt.timedelta(days=days)
+    sub = http.get_json(SUBMISSIONS_URL.format(cik=cik))
+    r = sub.get("filings", {}).get("recent", {})
+    found = []
+    for acc, form, d, items, doc in zip(r.get("accessionNumber", []), r.get("form", []), r.get("filingDate", []),
+                                        r.get("items", []), r.get("primaryDocument", [])):
+        if form not in ("8-K", "8-K/A") or "5.03" not in (items or "") or _d(d) < since or not doc:
+            continue
+        url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{doc}"
+        hits = split_sentences_effected(http.get_text(url))
+        if hits:
+            m = _RATIO.search(hits[0])
+            found.append(f"{d} 8-K {m.group(0)}")
+    return sorted(found)
 
 
 def dilution_facts(http, cik: int, today: dt.date, lookback_days: int = 3 * 365) -> dict:
