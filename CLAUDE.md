@@ -420,8 +420,11 @@ joins (Vertex, Thryv, Polaris, Vantage), now fixed and regression-tested. Run
 two (2026-10-13) adds `integrity_report.md`, which lists rows whose values fail
 consistency checks (impossible runway, masked with no control, cash > 150 days
 old, likely delisted). Market cap now includes pre-funded warrants (from the
-filing's XBRL class breakdown); that moved ZURA and IRD above $400M. 61
-candidates; 14 rows / 7 tickers are deregistered (Form 15). See `screeners/biotech/README.md`.
+filing's XBRL class breakdown, else a stated balance in the filing text);
+that moved ZURA and IRD above $400M. Every row carries `market_cap_confidence`;
+31 of 61 are unverified and their cash/market-cap fields are withheld.
+Reverse splits come from 8-Ks with effective date and ratio (ELOX 2026-05-29,
+1-for-11, excluded). 61 candidates; 14 rows / 7 tickers deregistered (Form 15). See `screeners/biotech/README.md`.
 
 The reasoning: technical analysis on SPY intraday is the lowest-prior corner of
 the market. Domain expertise in healthcare is a real structural advantage. This

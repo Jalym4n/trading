@@ -194,9 +194,10 @@ def build(row: dict, record: dict, history_md: list[str], related: dict, today: 
             f"{_g(ps, 'identificationModule', 'briefTitle')}", "",
             "| field | value |", "|---|---|"] + \
            [f"| {k} | {row.get(k)} |" for k in
-            ("company", "cik", "sec_sic", "sponsor", "phase", "catalyst_date", "date_type", "months_out", "market_cap",
-             "market_cap_source", "market_cap_common", "prefunded_warrant_shares", "prefunded_status",
-             "prefunded_detail", "avg_dollar_vol", "cash_usd", "cash_asof", "cash_tags", "burn_q_usd",
+            ("company", "cik", "sec_sic", "sponsor", "phase", "catalyst_date", "date_type", "months_out", "true_market_cap",
+             "reported_market_cap", "pre_funded_warrants", "share_count_source", "market_cap_confidence",
+             "prefunded_detail", "reverse_split_date", "reverse_split_ratio", "months_since_reverse_split",
+             "reverse_split_source", "reverse_split_cover_check", "avg_dollar_vol", "cash_usd", "cash_asof", "cash_tags", "burn_q_usd",
              "burn_quarters", "burn_status", "runway_q",
              "runway_needed_q", "funded_through", "days_since_cash_asof", "cash_today_est", "cash_to_mcap_est",
              "total_debt_usd", "debt_asof", "debt_components", "has_convertible", "ev_est", "company_status",

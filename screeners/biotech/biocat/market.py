@@ -99,14 +99,44 @@ def fetch_market(http, ticker: str, today: dt.date, days: int = 30) -> Market:
     return Market(errors=errors)
 
 
-def combine_splits(feed: list | None, sec: list | None) -> list | None:
-    """Known if either source found one; known-none only if a source that
-    covers the window found none; otherwise unknown."""
-    if feed or sec:
-        return sorted(set(feed or []) | set(sec or []))
-    if feed == [] or sec == []:
-        return []
-    return None
+def feed_split_events(feed: list | None) -> list[dict] | None:
+    """Price-feed split strings ('2025-07-25 1.0:10.0') -> events. None stays None (unknown)."""
+    if feed is None:
+        return None
+    out = []
+    for f in feed:
+        d, ratio = f.split()[0], f.split()[1]
+        num, den = (float(x) for x in ratio.split(":"))
+        out.append({"effective_date": d, "date_basis": "price-feed split date", "filing_date": None,
+                    "ratio": f"1-for-{den / num:g}", "source": "price feed", "evidence": f})
+    return out
+
+
+def latest_reverse_split(feed_events: list | None, sec_events: list | None, today: dt.date,
+                         same_split_days: int = 15) -> dict:
+    """Most recent reverse split from either source. Events within
+    same_split_days of each other are one split; the SEC record is kept and the
+    other source noted as confirming. reverse_split_date None with
+    reverse_split_known False when neither source could be read."""
+    known = feed_events is not None or sec_events is not None
+    evs = sorted((sec_events or []) + (feed_events or []), key=lambda e: e["effective_date"])
+    if not evs:
+        return {"reverse_split_date": None, "reverse_split_ratio": None, "months_since_reverse_split": None,
+                "reverse_split_source": None if known else "unknown: no feed history and no SEC check",
+                "reverse_split_known": known, "_split_events": []}
+    last = evs[-1]
+    near = [e for e in evs if abs((dt.date.fromisoformat(e["effective_date"])
+                                   - dt.date.fromisoformat(last["effective_date"])).days) <= same_split_days]
+    sec = next((e for e in reversed(near) if e["source"] != "price feed"), None)
+    pick = sec or last
+    other = [e["source"] for e in near if e is not pick]
+    d = dt.date.fromisoformat(pick["effective_date"])
+    months = round((today - d).days / 30.4375, 1)
+    return {"reverse_split_date": pick["effective_date"], "reverse_split_ratio": pick["ratio"],
+            "months_since_reverse_split": months,
+            "reverse_split_source": f"{pick['source']} ({pick['date_basis']})"
+                                    + (f"; confirmed by {', '.join(other)}" if other else ""),
+            "reverse_split_known": True, "_split_events": evs}
 
 
 def size_filter(market_cap: float | None, adv: float | None, rev_splits: list | None,

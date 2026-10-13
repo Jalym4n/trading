@@ -8,7 +8,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from biocat.derive import (cash_aging, company_status, control_arm, design_flags, ev_est,  # noqa: E402
                            site_facts)
-from biocat.financials import compute_runway, debt_facts, prefunded_from_instance  # noqa: E402
+from biocat.financials import (compute_runway, cover_step_down, debt_facts, prefunded_from_instance,  # noqa: E402
+                               prefunded_from_text)
+from biocat.market import feed_split_events, latest_reverse_split  # noqa: E402
 from biocat.integrity import boolean_shares, checks, null_shares  # noqa: E402
 
 TODAY = dt.date(2026, 10, 12)
@@ -201,7 +203,8 @@ def test_integrity_checks_catch_the_run_one_defects():
                       ["ITCI"],            # likely delisted or acquired
                       ["UPB"],             # pcd moved earlier
                       ["TTRX"],            # <= 1 site with >= 50 patients
-                      []]                  # pre-funded count not determinable
+                      [],                  # market_cap_confidence unverified
+                      []]                  # XBRL and text disagree
 
 
 def test_boolean_share_flags_low_discrimination():
@@ -292,6 +295,68 @@ def test_prefunded_only_at_an_old_event_date_is_not_determinable():
 def test_prefunded_none_when_no_class_is_prefunded():
     assert prefunded_from_instance(_instance(D, [(OUT, 514500, D, [])])).shares == 0.0      # CGTX: total only
     assert prefunded_from_instance(_instance(D, [])).status == "none"                        # no warrant facts
+
+
+# ------------------------------------------ pre-funded warrants: text path --
+def test_prefunded_text_states_a_balance():
+    pali_cover = ("As of August 6, 2026, there were 174,270,558 shares of common stock, $0.01 par value, outstanding. "
+                  "This number does not include 37,814,754 shares of common stock issuable upon the exercise of "
+                  "pre-funded warrants outstanding as of August 6, 2026 (which are immediately exercisable).")
+    r = prefunded_from_text(pali_cover)
+    assert (r["count"], r["kind"], r["verified"]) == (37814754.0, "cover_note", True)
+    pali_note = ("As of June 30, 2026 , 37,814,754 of the October 2025 Offering Pre-funded Common Stock Warrants "
+                 "remained unexercised.")
+    assert prefunded_from_text(pali_note)["count"] == 37814754.0
+    # ACRV reserved-shares table: current column is a dash (all exercised), prior 7,060,000
+    acrv = ("June 30, 2026 December 31, 2025 Options to purchase common stock 8,132,397 6,176,141 Pre-funded "
+            "warrants to purchase common stock — 7,060,000 Unvested restricted stock units 1,018,593 222,252")
+    r = prefunded_from_text(acrv)
+    assert (r["count"], r["kind"], r["verified"]) == (0.0, "table_row", True)
+
+
+def test_prefunded_text_average_or_issuance_is_not_a_verified_balance():
+    # NKTX EPS denominator: an average for the period
+    nktx = ("Denominator: Weighted average common shares outstanding 71,494,824 70,977,594 Add: weighted average "
+            "of common stock to be issued upon exercise of pre-funded warrants 3,000,031 3,000,031 3,000,031")
+    r = prefunded_from_text(nktx)
+    assert (r["count"], r["kind"], r["verified"]) == (3000031.0, "eps_weighted", False)
+    # VTVT: issuance sentence + EPS policy sentence, no balance stated
+    vtvt = ("In August 2025, the Company issued and sold 682,018 shares of Class A common stock and Pre-funded "
+            "Warrants to purchase 4,561,714 shares of Class A common stock at a purchase price of $ 15.255. "
+            "The shares underlying the pre-funded warrants have been included in the calculation of the weighted "
+            "average number of shares outstanding.")
+    r = prefunded_from_text(vtvt)
+    assert r["count"] is None and r["mentions"] == 2
+    assert prefunded_from_text("No warrants here.") == {"count": None, "kind": None, "verified": False,
+                                                       "mentions": 0, "evidence": None}
+
+
+# ------------------------------------------------------------ reverse splits --
+def test_latest_reverse_split_prefers_sec_and_merges_sources():
+    sec = [{"effective_date": "2026-05-29", "date_basis": "stated effective date", "filing_date": "2026-06-01",
+            "ratio": "1-for-11", "source": "8-K 0001193125-26-249692", "evidence": "x"}]
+    # ELOX: price feed starts at the 2026-06-09 relisting, so it has no split at all
+    r = latest_reverse_split(None, sec, TODAY)
+    assert (r["reverse_split_date"], r["reverse_split_ratio"]) == ("2026-05-29", "1-for-11")
+    assert r["months_since_reverse_split"] == 4.5
+    # the same split seen by both sources is one split, SEC record kept
+    feed = feed_split_events(["2026-05-29 1.0:11.0"])
+    r2 = latest_reverse_split(feed, sec, TODAY)
+    assert r2["reverse_split_date"] == "2026-05-29" and "confirmed by price feed" in r2["reverse_split_source"]
+    assert feed[0]["ratio"] == "1-for-11"
+    # nothing readable -> unknown, not "none"
+    u = latest_reverse_split(None, None, TODAY)
+    assert u["reverse_split_known"] is False and u["reverse_split_date"] is None
+    assert latest_reverse_split([], [], TODAY)["reverse_split_known"] is True
+
+
+def test_cover_step_down_corroborates_a_split():
+    f = {"facts": {"dei": {"EntityCommonStockSharesOutstanding": {"units": {"shares": [
+        {"end": "2026-03-12", "val": 5071935}, {"end": "2026-05-01", "val": 7573935},
+        {"end": "2026-08-07", "val": 4036459}]}}}}}
+    assert cover_step_down(f, "2026-05-29") == "2026-05-01 7,573,935 -> 2026-08-07 4,036,459 (x0.53)"
+    assert cover_step_down(f, "2025-01-01") == "no cover-count step-down spanning 2025-01-01"
+    assert cover_step_down({"facts": {}}) is None
 
 
 if __name__ == "__main__":

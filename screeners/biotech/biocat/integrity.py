@@ -55,7 +55,7 @@ def checks(rows: list[dict]) -> list[tuple[str, list[tuple[str, str]]]]:
                   f"burn_status={r.get('burn_status')}")
     add("company_status == likely_delisted_or_acquired",
         lambda r: r.get("company_status") == "likely_delisted_or_acquired",
-        lambda r: f"market_cap={r.get('market_cap')} latest_financial_filing={r.get('latest_financial_filing')} "
+        lambda r: f"true_market_cap={r.get('true_market_cap')} latest_financial_filing={r.get('latest_financial_filing')} "
                   f"latest_filing={r.get('latest_filing_form')} {r.get('latest_filing_date')} "
                   f"deregistration={r.get('deregistration_filing')}")
     add("pcd_slip_months < 0 (primary completion date moved EARLIER: real or parse error?)",
@@ -66,10 +66,14 @@ def checks(rows: list[dict]) -> list[tuple[str, list[tuple[str, str]]]]:
         lambda r: r.get("n_sites") is not None and r["n_sites"] <= 1 and (r.get("enrollment") or 0) >= 50,
         lambda r: f"enrollment={r.get('enrollment')} n_sites={r.get('n_sites')} "
                   f"n_versions={r.get('n_versions')} site_list_maturity={r.get('site_list_maturity')}")
-    add("pre-funded warrant count not determinable (market_cap counts common shares only)",
-        lambda r: r.get("prefunded_status") in ("not_determinable", "no_instance", "fetch_failed")
-        and r.get("market_cap_common") is not None,
-        lambda r: f"prefunded_status={r.get('prefunded_status')}: {r.get('prefunded_detail')}")
+    add("market_cap_confidence == unverified (share count not reconciled to a filing; cash_to_mcap_est and "
+        "ev_est withheld)",
+        lambda r: r.get("market_cap_confidence") == "unverified",
+        lambda r: f"true_market_cap={r.get('true_market_cap')} pre_funded={r.get('pre_funded_warrants')} "
+                  f"source: {r.get('share_count_source')}")
+    add("pre-funded warrants: XBRL and filing text disagree",
+        lambda r: "TEXT DISAGREES" in (r.get("prefunded_detail") or ""),
+        lambda r: r.get("prefunded_detail"))
     return out
 
 
@@ -97,9 +101,26 @@ def report(rows: list[dict], cols: list[str], today: dt.date) -> str:
     res = checks(rows)
     nulls = null_shares(rows, cols)
     bools = boolean_shares(rows, cols)
+    n = len(rows)
+    ver = sum(r.get("market_cap_confidence") == "verified" for r in rows)
+    with_run = [r for r in rows if r.get("funded_through") in (True, False)]
+    short = sum(r.get("funded_through") is False for r in with_run)
     md = [f"# Integrity report, {today.isoformat()}", "",
-          f"{len(rows)} candidate rows. Each section lists the rows that fail one check, with the values "
-          "that fail it. A listed row is a value to inspect, not a verdict; no row is dropped.", ""]
+          f"{n} candidate rows. Each section lists the rows that fail one check, with the values "
+          "that fail it. A listed row is a value to inspect, not a verdict; no row is dropped.", "",
+          "## What each field is worth", "",
+          "**Depends on the share count** (reliable only where `market_cap_confidence = verified`; "
+          f"{ver} of {n} rows): `true_market_cap`, `cash_to_mcap_est`, `ev_est`. On unverified rows "
+          "`cash_to_mcap_est` and `ev_est` are withheld, and `true_market_cap` is a lower bound when the "
+          "pre-funded count is unknown.", "",
+          "**Depends on the price feed, not the share count**: `avg_dollar_vol` (price x volume), "
+          "`reported_market_cap`.", "",
+          "**Independent of share count and price** (safe): `runway_q`, `runway_needed_q`, `funded_through`, "
+          "`burn_q_usd`, `cash_today_est`, every trial-design field (`control_arm`, `masking`, `allocation`, "
+          "`enrollment`, `is_efficacy_scale`, ...), `pcd_slip_months`, `n_versions`, `endpoint_changes`.", "",
+          f"`runway_q` uses only cash and operating cash flow from XBRL; no market cap enters it. It is the "
+          f"most trustworthy filter in the tool. In this run `funded_through` is False on {short} of "
+          f"{len(with_run)} rows that have a runway ({short / max(len(with_run), 1):.0%}).", ""]
     for name, hits in res:
         md += [f"## {name}", ""]
         md += [f"- **{rid}**: {why}" for rid, why in hits] or ["None."]

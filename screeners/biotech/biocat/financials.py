@@ -236,6 +236,9 @@ def split_sentences_effected(text: str) -> list[str]:
     effective / was effected. Returns [ratio sentence, effect sentence] or []."""
     t = re.sub(r"<[^>]+>", " ", text)
     t = re.sub(r"\s+", " ", html.unescape(t))
+    # "5:00 p.m. Eastern Time on May 29, 2026" must stay one sentence
+    t = re.sub(r"\b([ap])\.\s?m\.", r"\1m", t, flags=re.I)
+    t = re.sub(r"\b(Inc|Corp|Co|Ltd|No|Nos|Mr|Ms|Dr|U\.S)\.", lambda m_: m_.group(1).replace(".", ""), t)
     sents = [x.strip() for x in re.split(r"(?<=[.;])\s+(?=[A-Z])", t)]
     rs = [x for x in sents if re.search(r"reverse (?:stock )?split", x, re.I)]
     # "Authorized Share Reduction" is a noun phrase in real 8-Ks; only the verb hedges
@@ -247,30 +250,81 @@ def split_sentences_effected(text: str) -> list[str]:
     return [ratio[0][:300], effect[0][:300]] if ratio and effect else []
 
 
-def sec_reverse_splits(http, cik: int, today: dt.date, days: int = 730) -> list[str]:
-    """Reverse splits EFFECTED in the window, from the company's own 8-Ks.
+_MONTHS = {m: i for i, m in enumerate(["january", "february", "march", "april", "may", "june", "july", "august",
+                                        "september", "october", "november", "december"], 1)}
+_DATE_RX = re.compile(r"(January|February|March|April|May|June|July|August|September|October|November|December)"
+                      r"\s+(\d{1,2}),\s*(\d{4})", re.I)
+
+
+def _iso(m) -> str:
+    return dt.date(int(m.group(3)), _MONTHS[m.group(1).lower()], int(m.group(2))).isoformat()
+
+
+def _ratio_text(sentence: str) -> str:
+    """'1-for-11' / 'one-for-eleven' -> '1-for-11'."""
+    words = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+             "eleven": 11, "twelve": 12, "fifteen": 15, "twenty": 20, "twenty-five": 25, "twenty five": 25,
+             "thirty": 30, "forty": 40, "fifty": 50}
+    n = _RATIO.search(sentence).group(1).lower()
+    return f"1-for-{int(n) if n.isdigit() else words.get(n, n)}"
+
+
+def reverse_split_events(http, cik: int, today: dt.date, days: int = 1095) -> list[dict]:
+    """Reverse splits EFFECTED in the last `days` (default 36 months), from the
+    company's own 8-Ks, with effective date and ratio.
 
     A split needs a charter amendment, disclosed under 8-K Item 5.03. Each such
-    8-K in the window is read; it counts only if one sentence names the reverse
-    split, a 1-for-N ratio and effect language (see split_sentences_effected).
-    Price feeds miss splits when a symbol's history restarts (ELOX: OTC history
-    dropped at its 2026-06 Nasdaq listing, 1-for-11 split 2026-05-29 not in the
-    feed). Raises on fetch failure so the caller records "unknown", never "none".
-    """
+    8-K is read; it counts only if one sentence gives a single 1-for-N ratio for
+    the reverse split and another says it became effective (ranges, proposals
+    and board discretion excluded: a risk factor or a shareholder authorization
+    is not a split). The effective date is the date in the effect sentence
+    ("became effective as of 5:00 p.m. Eastern Time on May 29, 2026"), else the
+    8-K filing date, labelled as such. Price feeds miss splits when a symbol's
+    history restarts (ELOX relisted 2026-06-09). Raises on fetch failure so the
+    caller records "unknown", never "none"."""
     since = today - dt.timedelta(days=days)
     sub = http.get_json(SUBMISSIONS_URL.format(cik=cik))
     r = sub.get("filings", {}).get("recent", {})
-    found = []
+    out = []
     for acc, form, d, items, doc in zip(r.get("accessionNumber", []), r.get("form", []), r.get("filingDate", []),
                                         r.get("items", []), r.get("primaryDocument", [])):
         if form not in ("8-K", "8-K/A") or "5.03" not in (items or "") or _d(d) < since or not doc:
             continue
         url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{doc}"
         hits = split_sentences_effected(http.get_text(url))
-        if hits:
-            m = _RATIO.search(hits[0])
-            found.append(f"{d} 8-K {m.group(0)}")
-    return sorted(found)
+        if not hits:
+            continue
+        ratio_sent, effect_sent = hits
+        m = _DATE_RX.search(effect_sent) or _DATE_RX.search(ratio_sent)
+        out.append({"effective_date": _iso(m) if m else d,
+                    "date_basis": "stated effective date" if m else "8-K filing date (no effective date stated)",
+                    "filing_date": d, "ratio": _ratio_text(ratio_sent), "source": f"8-K {acc}",
+                    "evidence": effect_sent[:240]})
+    return sorted(out, key=lambda e: e["effective_date"])
+
+
+def cover_step_down(facts: dict | None, around: str | None = None, max_ratio: float = 0.67) -> str | None:
+    """Corroboration from dei:EntityCommonStockSharesOutstanding: consecutive
+    cover-page counts where the later is < max_ratio of the earlier. A reverse
+    split shrinks the count even when an offering lands in the same quarter
+    (ELOX 7,573,935 on 2026-05-01 -> 4,036,459 on 2026-08-07, x0.53). When
+    `around` (a split date) is given, the step spanning it is reported.
+    None if fewer than two cover counts exist."""
+    rows = ((facts or {}).get("facts", {}).get("dei", {}).get("EntityCommonStockSharesOutstanding", {})
+            .get("units", {}).get("shares", []))
+    pts = sorted({r["end"]: r["val"] for r in rows}.items())
+    if len(pts) < 2:
+        return None
+    steps = [(a, b) for a, b in zip(pts, pts[1:]) if a[1] and b[1] / a[1] < max_ratio]
+    if around:
+        spanning = [(a, b) for a, b in steps if a[0] <= around <= b[0]]
+        steps = spanning or []
+        if not steps:
+            return f"no cover-count step-down spanning {around}"
+    if not steps:
+        return "no cover-count step-down"
+    a, b = steps[-1]
+    return f"{a[0]} {a[1]:,.0f} -> {b[0]} {b[1]:,.0f} (x{b[1] / a[1]:.2f})"
 
 
 def dilution_facts(http, cik: int, today: dt.date, lookback_days: int = 3 * 365) -> dict:
@@ -484,3 +538,108 @@ def prefunded_warrants(http, cik: int, submissions: dict | None) -> Prefunded:
         return Prefunded(None, None, "fetch_failed", f"{e}", None)
     p.source = acc
     return p
+
+
+# ------------------------------------------ pre-funded warrants: text path --
+_MONTH = r"(?:January|February|March|April|May|June|July|August|September|October|November|December)"
+_DATE = rf"{_MONTH}\s+\d{{1,2}},\s*\d{{4}}"
+_NUM = r"\d{1,3}(?:,\d{3})+|\d{4,}"
+_PF = r"pre-?\s?funded"
+# (kind, regex, verified?)  every pattern states a CURRENT BALANCE, not an issuance
+_TEXT_PATTERNS = [
+    # cover page: "This number does not include 37,814,754 shares of common stock issuable upon the
+    # exercise of pre-funded warrants outstanding as of August 6, 2026" (PALI 10-Q)
+    ("cover_note", re.compile(rf"does not include\s+({_NUM})\s+shares[^.]{{0,160}}?{_PF}\s+(?:common stock\s+)?"
+                              rf"warrants?\s+outstanding\s+as of\s+({_DATE})", re.I), True),
+    # "As of June 30, 2026, 37,814,754 of the October 2025 Offering Pre-funded Common Stock Warrants
+    # remained unexercised" (PALI 10-Q)
+    ("as_of_balance", re.compile(rf"As of\s+({_DATE})\s*,?\s*(?:there were\s+)?({_NUM})\b[^.]{{0,120}}?{_PF}"
+                                 rf"[^.]{{0,60}}?warrants?[^.]{{0,40}}?\b(?:remained|were|are|was)\s+"
+                                 rf"(?:issued and\s+)?(?:outstanding|unexercised)", re.I), True),
+    # "pre-funded warrants to purchase 3,000,031 shares ... remained outstanding as of June 30, 2026"
+    ("balance_as_of", re.compile(rf"{_PF}\s+warrants?\s+(?:to purchase\s+)?(?:an aggregate of\s+)?(?:up to\s+)?"
+                                 rf"({_NUM})\s+shares[^.]{{0,80}}?\b(?:remained|were|are)\s+(?:outstanding|unexercised)"
+                                 rf"\s+as of\s+({_DATE})", re.I), True),
+    # reserved-shares / outstanding-securities table row, current column first:
+    # "Pre-funded warrants to purchase common stock — 7,060,000" (ACRV 10-Q: 0 now, 7,060,000 prior)
+    ("table_row", re.compile(rf"{_PF}\s+warrants?(?:\s+to purchase(?: shares of)? common stock)?(?:\s+outstanding)?"
+                             rf"\s+(—|-|{_NUM})\s+(?:—|-|{_NUM})(?!\s*\$)", re.I), True),
+    # EPS denominator: "weighted average of common stock to be issued upon exercise of pre-funded
+    # warrants 3,000,031" (NKTX 10-Q). An AVERAGE for the period, not a balance -> unverified
+    ("eps_weighted", re.compile(rf"weighted[- ]average[^.]{{0,90}}?{_PF}\s+warrants?\s+({_NUM})", re.I), False),
+]
+
+
+def prefunded_from_text(text: str) -> dict:
+    """Outstanding pre-funded warrants stated in a 10-Q/10-K's own words.
+
+    Only sentences that state a CURRENT balance count; issuance and exercise
+    sentences are ignored (ACRV issued 7,060,000 and its table shows 0 today).
+    Returns {count, kind, verified, evidence, mentions}; count None when the
+    filing mentions pre-funded warrants but states no balance."""
+    t = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", text or "")))
+    mentions = len(re.findall(rf"{_PF}\s+(?:common stock\s+)?warrants?", t, re.I))
+    for kind, rx, verified in _TEXT_PATTERNS:
+        m = next((m for m in rx.finditer(t)
+                  # a "table row" inside an EPS denominator is a period average, not a balance
+                  if not (kind == "table_row" and re.search(r"weighted[- ]average", t[max(0, m.start() - 160):m.start()],
+                                                            re.I))), None)
+        if not m:
+            continue
+        raw = m.group(2) if kind == "as_of_balance" else m.group(1)
+        count = 0.0 if raw in ("—", "-") else float(raw.replace(",", ""))
+        return {"count": count, "kind": kind, "verified": verified, "mentions": mentions,
+                "evidence": t[max(0, m.start() - 40):m.end() + 40].strip()[:400]}
+    return {"count": None, "kind": None, "verified": False, "mentions": mentions, "evidence": None}
+
+
+@dataclass
+class ShareCount:
+    pre_funded: float | None
+    source: str                # human-readable: where each number came from
+    confidence: str            # verified / unverified
+    detail: str
+
+
+def share_count(http, cik: int, submissions: dict | None, xbrl: "Prefunded") -> ShareCount:
+    """Combine the XBRL class breakdown with the filing text.
+
+    verified   XBRL pre-funded classes at the balance date; or a text sentence
+               stating the current balance; or no pre-funded class in XBRL AND
+               no mention of pre-funded warrants anywhere in the filing text.
+    unverified everything else: the text mentions pre-funded warrants but states
+               no balance (VTVT 10-Q: "included in the weighted average number of
+               shares outstanding", no count), an EPS weighted average, or no
+               instance/text could be read. Count None unless a number was stated."""
+    txt = None
+    if submissions:
+        r = submissions.get("filings", {}).get("recent", {})
+        for acc, form, doc in zip(r.get("accessionNumber", []), r.get("form", []), r.get("primaryDocument", [])):
+            if form in FINANCIAL_PRIMARY and doc:
+                try:
+                    txt = prefunded_from_text(http.get_text(
+                        f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{doc}"))
+                    txt["filing"] = f"{form} {acc}"
+                except Exception as e:  # noqa: BLE001
+                    txt = {"count": None, "kind": None, "verified": False, "mentions": None,
+                           "evidence": f"text fetch failed: {e}", "filing": f"{form} {acc}"}
+                break
+    tx = txt or {"count": None, "kind": None, "verified": False, "mentions": None, "evidence": None, "filing": None}
+    if xbrl.status in ("reconciled", "named", "reconciled_plus_named"):
+        note = ""
+        if tx["count"] is not None and tx["verified"] and xbrl.shares and \
+                abs(tx["count"] - xbrl.shares) > 0.01 * xbrl.shares:
+            note = f"; TEXT DISAGREES: {tx['kind']} states {tx['count']:,.0f}"
+        return ShareCount(xbrl.shares, f"XBRL warrant classes at {xbrl.asof} ({xbrl.status})", "verified",
+                          xbrl.detail + note)
+    if tx["count"] is not None and tx["verified"]:
+        return ShareCount(tx["count"], f"filing text ({tx['kind']}, {tx['filing']})", "verified", tx["evidence"])
+    if tx["count"] is not None:
+        return ShareCount(tx["count"], f"filing text ({tx['kind']}: a period average, not a balance; {tx['filing']})",
+                          "unverified", tx["evidence"])
+    if xbrl.status == "none" and tx["mentions"] == 0:
+        return ShareCount(0.0, f"no pre-funded class in XBRL and no mention in {tx['filing']}", "verified",
+                          xbrl.detail)
+    why = (f"{tx['mentions']} mentions of pre-funded warrants in {tx['filing']} but no stated balance"
+           if tx["mentions"] else f"XBRL {xbrl.status}; filing text not readable")
+    return ShareCount(None, why, "unverified", f"{xbrl.status}: {xbrl.detail}")
