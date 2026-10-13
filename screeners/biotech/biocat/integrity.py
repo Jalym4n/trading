@@ -66,6 +66,10 @@ def checks(rows: list[dict]) -> list[tuple[str, list[tuple[str, str]]]]:
         lambda r: r.get("n_sites") is not None and r["n_sites"] <= 1 and (r.get("enrollment") or 0) >= 50,
         lambda r: f"enrollment={r.get('enrollment')} n_sites={r.get('n_sites')} "
                   f"n_versions={r.get('n_versions')} site_list_maturity={r.get('site_list_maturity')}")
+    add("pre-funded warrant count not determinable (market_cap counts common shares only)",
+        lambda r: r.get("prefunded_status") in ("not_determinable", "no_instance", "fetch_failed")
+        and r.get("market_cap_common") is not None,
+        lambda r: f"prefunded_status={r.get('prefunded_status')}: {r.get('prefunded_detail')}")
     return out
 
 

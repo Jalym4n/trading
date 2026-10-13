@@ -20,7 +20,8 @@ from collections import Counter
 from . import journal as J
 
 CSV_COLS = ["ticker", "company", "cik", "nct_id", "phase", "catalyst_date", "date_type", "months_out",
-            "company_status", "market_cap", "avg_dollar_vol",
+            "company_status", "market_cap", "market_cap_common", "prefunded_warrant_shares", "prefunded_status",
+            "avg_dollar_vol",
             "cash_usd", "cash_asof", "days_since_cash_asof", "burn_q_usd", "burn_status",
             "cash_today_est", "cash_to_mcap_est", "total_debt_usd", "debt_asof", "has_convertible", "ev_est",
             "runway_q", "runway_needed_q", "funded_through",
@@ -89,21 +90,29 @@ def screen(a) -> int:
             except Exception as e:  # noqa: BLE001
                 info["sec_splits"] = None
                 info["errors"].append(f"sec reverse-split check: {e}")
-            info["mcap"], info["mcap_src"] = None, None
+            try:
+                info["submissions"] = http.get_json(I.SUBMISSIONS_URL.format(cik=r.cik))
+            except Exception as e:  # noqa: BLE001
+                info["submissions"] = None
+                info["errors"].append(f"submissions: {e}")
+            info["pf"] = F.prefunded_warrants(http, r.cik, info["submissions"])
+            info["mcap"], info["mcap_common"], info["mcap_src"] = None, None, None
             if info.get("shares") and info["mkt"].price:
-                info["mcap"] = info["shares"] * info["mkt"].price
-                info["mcap_src"] = f"dei:EntityCommonStockSharesOutstanding ({info['shares_asof']}) x price"
+                pf = info["pf"].shares
+                info["mcap_common"] = info["shares"] * info["mkt"].price
+                info["mcap"] = (info["shares"] + (pf or 0)) * info["mkt"].price
+                info["mcap_src"] = (f"(dei:EntityCommonStockSharesOutstanding {info['shares']:,.0f} at "
+                                    f"{info['shares_asof']}"
+                                    + (f" + pre-funded warrants {pf:,.0f} at {info['pf'].asof}" if pf else "")
+                                    + ") x price"
+                                    + ("" if pf is not None else
+                                       f"; pre-funded warrants NOT included ({info['pf'].status})"))
             elif not info.get("shares"):
                 try:
                     info["mcap"] = M.nasdaq_market_cap(http, r.ticker)
                     info["mcap_src"] = "Nasdaq summary MarketCap (unofficial)" if info["mcap"] else None
                 except Exception as e:  # noqa: BLE001
                     info["errors"].append(f"nasdaq summary: {e}")
-            try:
-                info["submissions"] = http.get_json(I.SUBMISSIONS_URL.format(cik=r.cik))
-            except Exception as e:  # noqa: BLE001
-                info["submissions"] = None
-                info["errors"].append(f"submissions: {e}")
             company_cache[r.cik] = info
         info = company_cache[r.cik]
         run = F.compute_runway(info["facts"], months, today) if info.get("facts") else None
@@ -127,6 +136,9 @@ def screen(a) -> int:
             "nct_id": t.nct_id, "phase": t.phase, "phase_rank": t.phase_rank,
             "catalyst_date": t.pcd, "date_type": t.pcd_type, "months_out": months,
             "market_cap": round(mcap) if mcap else None,
+            "market_cap_common": round(info["mcap_common"]) if info.get("mcap_common") else None,
+            "prefunded_warrant_shares": info["pf"].shares, "prefunded_status": info["pf"].status,
+            "prefunded_detail": f"{info['pf'].detail} (filing {info['pf'].source})",
             "avg_dollar_vol": round(mkt.avg_dollar_vol) if mkt.avg_dollar_vol else None,
             "cash_usd": run.cash_usd if run else None, "cash_asof": run.cash_asof if run else None,
             "burn_q_usd": run.burn_q_usd if run else None,

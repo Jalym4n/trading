@@ -49,6 +49,7 @@ a dated timeline, **E** statistical-plan terms with the sentence they occur in,
 | `burn_status` | burning / cash_positive / stale / no_data / **burn_implausible**: average quarterly burn < $250k with cash > $10M, or runway > 40 quarters. Burn and runway are then withheld; `burn_quarters` in the dossier still shows the inputs |
 | `days_since_cash_asof`, `cash_today_est`, `cash_to_mcap_est` | `cash_today_est = cash_usd - burn_q_usd x days/91.25`, an ESTIMATE (linear burn, no financing since the balance date); empty unless burning |
 | `total_debt_usd`, `debt_asof`, `has_convertible` | sum of LongTermDebtNoncurrent, LongTermDebtCurrent, ConvertibleNotesPayable(Current), OperatingLeaseLiabilityNoncurrent at the cash date (XBRL companyfacts). Empty when no tag exists (unknown, not zero). Components print in the dossier, so a tag that double-counts another is visible |
+| `market_cap`, `market_cap_common`, `prefunded_warrant_shares`, `prefunded_status` | market cap = (common + pre-funded warrants) x price; status reconciled / named / reconciled_plus_named / none / not_determinable / no_instance; the per-class breakdown prints in the dossier |
 | `ev_est` | `market_cap + total_debt_usd - cash_today_est`; empty if any input is |
 | `company_status` | `likely_delisted_or_acquired` when market cap is empty AND (newest financial filing and newest filing of any type both > 270 days old, OR a Form 15/25 filed on or after the newest financial filing); otherwise `active` |
 | `shelf_count`, `atm_count`, `days_since_latest_atm_filing` | counts of filings mentioning a shelf / an ATM in 3 years. The old shelf-AND-ATM boolean was True on 94% of rows and was removed |
@@ -158,9 +159,19 @@ HTML-entity-escaped and is unescaped before comparison.
   they are kept (never drop on missing data) and labelled
   `company_status = likely_delisted_or_acquired`. Run of 2026-10-13: 14 rows,
   7 tickers (ITCI, BPMC, FOLD, DAWN, APLS, CNTA, DVAX), each with a Form 15-12G.
-- **Market cap counts common shares only** (`dei:EntityCommonStockSharesOutstanding`).
-  Pre-funded warrants are left out, which can understate the cap several-fold
-  (ELOX: $56M common only, $159M with its 7.4M pre-funded warrants). Not yet fixed.
+- **Market cap includes pre-funded warrants** (`market_cap`; `market_cap_common` is the
+  old common-only figure). Pre-funded warrants are shares in all but name (strike
+  $0.0001 to $0.11) and companies count them in basic EPS. The count comes from
+  the latest 10-Q/10-K XBRL instance at its balance-sheet date: a class is
+  pre-funded if its member name says so, or, on the class axis that reconciles
+  to the filing's total warrants, its strike is <= $0.15. Classes reported
+  outside the total (IRD) are added once; facts on other axes are events or
+  duplicates and are ignored (ELOX). Tagged only at an old date (NKTX), or no
+  instance (20-F/40-F filers): count unknown, `market_cap` is common only, and
+  integrity_report.md lists the row. Common shares are as of the cover date,
+  warrants as of the balance date; an exercise in between is counted twice.
+  Run of 2026-10-13: ZURA ($383M to $500M) and IRD ($387M to $461M) now exceed
+  the $400M cap and drop out; ANNX, KRRO and PALI rise but stay in.
 - Stage 1 returned 1,494 trials, not ~3,000: the industry-sponsor and
   primary-completion window filters are strict.
 - Some issuers have no ticker on SEC and are

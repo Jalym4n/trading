@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from biocat.derive import (cash_aging, company_status, control_arm, design_flags, ev_est,  # noqa: E402
                            site_facts)
-from biocat.financials import compute_runway, debt_facts  # noqa: E402
+from biocat.financials import compute_runway, debt_facts, prefunded_from_instance  # noqa: E402
 from biocat.integrity import boolean_shares, checks, null_shares  # noqa: E402
 
 TODAY = dt.date(2026, 10, 12)
@@ -200,7 +200,8 @@ def test_integrity_checks_catch_the_run_one_defects():
                       ["UPB"],             # cash older than 150 days
                       ["ITCI"],            # likely delisted or acquired
                       ["UPB"],             # pcd moved earlier
-                      ["TTRX"]]            # <= 1 site with >= 50 patients
+                      ["TTRX"],            # <= 1 site with >= 50 patients
+                      []]                  # pre-funded count not determinable
 
 
 def test_boolean_share_flags_low_discrimination():
@@ -210,6 +211,87 @@ def test_boolean_share_flags_low_discrimination():
     rows[0]["c"] = False                                                     # 0% -> flagged
     assert boolean_shares(rows, ["c"])[0][4] is True
     assert null_shares([{"x": None}, {"x": 1}, {"x": ""}, {"x": 2}], ["x"]) == [("x", 2, 0.5)]
+
+
+# --------------------------------------------------- pre-funded warrants --
+def _instance(period_end, facts):
+    """facts: [(concept, value, date, [(axis, member), ...])] -> minimal XBRL instance."""
+    ctx, body = [], []
+    for i, (concept, val, date, mems) in enumerate(facts):
+        seg = "".join(f'<xbrldi:explicitMember dimension="{a}">{m}</xbrldi:explicitMember>' for a, m in mems)
+        seg = f"<xbrli:segment>{seg}</xbrli:segment>" if seg else ""
+        ctx.append(f'<xbrli:context id="c{i}"><xbrli:entity><xbrli:identifier scheme="x">1</xbrli:identifier>'
+                   f'{seg}</xbrli:entity><xbrli:period><xbrli:instant>{date}</xbrli:instant></xbrli:period>'
+                   f'</xbrli:context>')
+        body.append(f'<us-gaap:{concept} contextRef="c{i}">{val}</us-gaap:{concept}>')
+    return ('<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" '
+            'xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:us-gaap="http://fasb.org/us-gaap/2024" '
+            'xmlns:dei="http://xbrl.sec.gov/dei/2024">'
+            + "".join(ctx) + f"<dei:DocumentPeriodEndDate>{period_end}</dei:DocumentPeriodEndDate>"
+            + "".join(body) + "</xbrli:xbrl>")
+
+
+OUT, STRIKE = "ClassOfWarrantOrRightOutstanding", "ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights1"
+D = "2026-06-30"
+SAX = "us-gaap:SubsidiarySaleOfStockAxis"
+
+
+def test_prefunded_elox_shape_reconciles_and_ignores_duplicate_axes():
+    # ELOX 10-Q 2026-06-30, reduced: class axis sums to the total; the June pre-funded
+    # class and an exercise event ALSO appear on PlanNameAxis with penny strikes
+    xml = _instance(D, [
+        (OUT, 7434321, D, []),
+        (OUT, 50402, D, [(SAX, "elox:CommonWarrantsMember")]), (STRIKE, 54.07, D, [(SAX, "elox:CommonWarrantsMember")]),
+        (OUT, 4358919, D, [(SAX, "elox:March2026PreFundedWarrantMember")]),
+        (OUT, 3025000, D, [(SAX, "elox:JuneTwoThousandTwentySixPreFundedWarrantMember")]),
+        (OUT, 3025000, D, [("us-gaap:PlanNameAxis", "elox:SecondQuarter2026EquityActivityMember")]),
+        (STRIKE, 0.01, D, [("us-gaap:PlanNameAxis", "elox:SecondQuarter2026EquityActivityMember")]),
+        (OUT, 600000, D, [("srt:InvesteeAxis", "elox:DomiciliumMember"), ("us-gaap:PlanNameAxis", "elox:Q2Member")]),
+    ])
+    p = prefunded_from_instance(xml)
+    assert (p.shares, p.status, p.asof) == (7383919.0, "reconciled", D)
+
+
+def test_prefunded_reconciled_by_strike_without_a_name():
+    xml = _instance(D, [(OUT, 1100, D, []),
+                        (OUT, 1000, D, [(SAX, "x:Series2025Member")]), (STRIKE, 0.0001, D, [(SAX, "x:Series2025Member")]),
+                        (OUT, 100, D, [(SAX, "x:Series2023Member")]), (STRIKE, 5.0, D, [(SAX, "x:Series2023Member")])])
+    p = prefunded_from_instance(xml)
+    assert (p.shares, p.status) == (1000.0, "reconciled")
+
+
+def test_prefunded_outside_the_total_is_added():
+    # IRD 10-Q 2026-06-30: total 19,616,292 = two exercise-price classes; 16,009,928
+    # pre-funded reported outside it
+    ax = "us-gaap:ClassOfWarrantOrRightAxis"
+    xml = _instance(D, [(OUT, 19616292, D, []),
+                        (OUT, 18439821, D, [(ax, "ird:WarrantExercisePriceOneMember")]),
+                        (OUT, 1176471, D, [(ax, "ird:WarrantExercisePriceTwoMember")]),
+                        (OUT, 16009928, D, [("us-gaap:EquityAxis", "ird:PreFundedWarrantsMember")]),
+                        (STRIKE, 0.0001, D, [("us-gaap:EquityAxis", "ird:PreFundedWarrantsMember")])])
+    p = prefunded_from_instance(xml)
+    assert (p.shares, p.status) == (16009928.0, "named")
+
+
+def test_prefunded_named_without_a_total():
+    # ZURA 10-Q 2026-06-30: one class, no total
+    xml = _instance(D, [(OUT, 29295396, D, [(SAX, "zura:PreFundedWarrantsMember")]),
+                        (STRIKE, 0.001, D, [(SAX, "zura:PreFundedWarrantsMember")])])
+    p = prefunded_from_instance(xml)
+    assert (p.shares, p.status) == (29295396.0, "named")
+
+
+def test_prefunded_only_at_an_old_event_date_is_not_determinable():
+    # NKTX: the latest 10-Q tags pre-funded warrants only at the 2024-03-31 issuance
+    xml = _instance(D, [(OUT, 3000031, "2024-03-31", [(SAX, "nktx:PreFundedWarrantMember"),
+                                                      ("us-gaap:SubsidiarySaleOfStockAxis2", "nktx:SaleMember")])])
+    p = prefunded_from_instance(xml)
+    assert p.shares is None and p.status == "not_determinable"
+
+
+def test_prefunded_none_when_no_class_is_prefunded():
+    assert prefunded_from_instance(_instance(D, [(OUT, 514500, D, [])])).shares == 0.0      # CGTX: total only
+    assert prefunded_from_instance(_instance(D, [])).status == "none"                        # no warrant facts
 
 
 if __name__ == "__main__":

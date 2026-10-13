@@ -339,3 +339,148 @@ def debt_facts(facts: dict, prefer_date: str | None = None) -> Debt:
         conv = conv or bool(v and v > 0)
     total = float(sum(comp.values())) if comp else None
     return Debt(total, asof, comp, conv)
+
+
+# --------------------------------------------------- pre-funded warrants --
+PREFUNDED_NAME = re.compile(r"pre-?funded|penny", re.I)
+PREFUNDED_MAX_STRIKE = 0.15     # $/share; pre-funded strikes are nominal ($0.0001 to $0.01, $0.11 after a 1:11 split)
+FINANCIAL_PRIMARY = ("10-Q", "10-K", "10-Q/A", "10-K/A")
+
+
+@dataclass
+class Prefunded:
+    shares: float | None        # None = not determinable; 0.0 = classes reconciled, none pre-funded
+    asof: str | None
+    status: str                 # reconciled / reconciled_plus_named / named / none / not_determinable /
+                                # no_instance / fetch_failed
+    detail: str                 # per-class counts and strikes, or why not determinable
+    source: str | None          # filing accession
+
+
+def _instance_url(http, cik: int, submissions: dict) -> tuple[str | None, str | None]:
+    r = submissions.get("filings", {}).get("recent", {})
+    for acc, form in zip(r.get("accessionNumber", []), r.get("form", [])):
+        if form in FINANCIAL_PRIMARY:
+            base = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}"
+            items = http.get_json(f"{base}/index.json")["directory"]["item"]
+            names = [i["name"] for i in items]
+            inst = [n for n in names if n.endswith("_htm.xml")] or \
+                   [n for n in names if n.endswith(".xml") and not re.search(r"(_cal|_def|_lab|_pre|FilingSummary)", n)]
+            return (f"{base}/{inst[0]}" if inst else None), acc
+    return None, None
+
+
+def prefunded_from_instance(xml_text: str) -> Prefunded:
+    """Pre-funded warrant shares at the filing's balance-sheet date
+    (dei:DocumentPeriodEndDate), from one XBRL instance.
+
+    A class is pre-funded if its member name says pre-funded / penny, or, on a
+    class axis that reconciles to the total, its strike is <= PREFUNDED_MAX_STRIKE.
+      1. If the single-member ClassOfWarrantOrRightOutstanding facts on one
+         axis (or on all axes together) sum to the non-dimensional total, that
+         is the class breakdown. Facts elsewhere are events or duplicates
+         (ELOX 10-Q 2026-06-30: an exercise of 600,000 and the June 3,025,000
+         also sit on PlanNameAxis).
+      2. Pre-funded classes found there -> status reconciled.
+      3. Pre-funded-NAMED classes at the balance date that are not in the
+         reconciled breakdown are reported outside the total (IRD: total 19.6M
+         excludes 16.0M pre-funded) and are added -> named / reconciled_plus_named.
+      4. Pre-funded named only at other dates (an issuance event) -> None,
+         not_determinable. No pre-funded class anywhere -> 0, none.
+    """
+    import xml.etree.ElementTree as ET
+    try:
+        root = ET.fromstring(xml_text.encode("utf-8") if isinstance(xml_text, str) else xml_text)
+    except ET.ParseError as e:
+        return Prefunded(None, None, "fetch_failed", f"instance parse error: {e}", None)
+    local = lambda t: t.split("}")[-1]  # noqa: E731
+    short = lambda m: m.split(":")[-1]  # noqa: E731
+    ctx, period_end = {}, None
+    for c in root.iter():
+        if local(c.tag) == "context":
+            mem = tuple((m.get("dimension"), (m.text or "").strip()) for m in c.iter()
+                        if local(m.tag) == "explicitMember")
+            when = [e.text for e in c.iter() if local(e.tag) in ("instant", "endDate")]
+            ctx[c.get("id")] = (mem, when[-1].strip() if when else None)
+        elif local(c.tag) == "DocumentPeriodEndDate" and c.text:
+            period_end = c.text.strip()
+    outst, strike = [], {}
+    for e in root:
+        t = local(e.tag)
+        if t not in ("ClassOfWarrantOrRightOutstanding", "ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights1"):
+            continue
+        mem, when = ctx.get(e.get("contextRef"), ((), None))
+        try:
+            v = float(e.text)
+        except (TypeError, ValueError):
+            continue
+        if t == "ClassOfWarrantOrRightOutstanding":
+            outst.append((mem, when, v))
+        elif len(mem) == 1:
+            strike.setdefault(mem[0], v)
+    if not outst:
+        return Prefunded(0.0, period_end, "none", "no ClassOfWarrantOrRightOutstanding in the filing", None)
+    d = period_end or max(w for _, w, _ in outst if w)
+    named_any = [(m, w, v) for m, w, v in outst if any(PREFUNDED_NAME.search(x) for _, x in m)]
+    total = next((v for m, w, v in outst if not m and w == d), None)
+    single = [(m[0], v) for m, w, v in outst if w == d and len(m) == 1]
+
+    def is_pf(member, axis_name, by_strike):
+        return bool(PREFUNDED_NAME.search(member)) or \
+            (by_strike and strike.get((axis_name, member), 99) <= PREFUNDED_MAX_STRIKE)
+
+    recon = None
+    if total:
+        groups = {}
+        for (axis, mem), v in single:
+            groups.setdefault(axis, {})[mem] = v
+        candidates = list(groups.items()) + [("(all axes)", {m: v for g in groups.values() for m, v in g.items()})]
+        for axis, members in candidates:
+            if abs(sum(members.values()) - total) <= 0.005 * total:
+                recon = (axis, members)
+                break
+    parts, status = [], None
+    if recon:
+        axis, members = recon
+        pf = {m: v for m, v in members.items()
+              if is_pf(m, axis, True) or (axis == "(all axes)" and PREFUNDED_NAME.search(m))}
+        parts += [(m, v) for m, v in pf.items()]
+        status = "reconciled" if pf else None
+        in_recon = set(members)
+    else:
+        in_recon = set()
+    # pre-funded-named classes at the balance date outside the reconciled breakdown
+    outside = {}
+    for (axis, mem), v in single:
+        if PREFUNDED_NAME.search(mem) and mem not in in_recon and not (recon and status == "reconciled"):
+            outside.setdefault(mem, v)          # same member on two axes counts once
+    if outside:
+        parts += list(outside.items())
+        status = "reconciled_plus_named" if status == "reconciled" else "named"
+    detail_tot = f"total {total:,.0f}" if total else "no total"
+    if parts:
+        n = float(sum(v for _, v in parts))
+        det = f"{detail_tot} at {d}; pre-funded: " + "; ".join(
+            f"{short(m)}={v:,.0f}@{next((s_ for (a, mm), s_ in strike.items() if mm == m), 'n/a')}" for m, v in parts)
+        return Prefunded(n, d, status, det, None)
+    if named_any:
+        dates = sorted({w for _, w, _ in named_any if w})
+        return Prefunded(None, d, "not_determinable",
+                         f"pre-funded warrants tagged only at {', '.join(dates)}, not at the balance date {d}", None)
+    return Prefunded(0.0, d, "none", f"{detail_tot} at {d}; no class named pre-funded"
+                     + (f"; reconciled on {short(recon[0])}" if recon else ""), None)
+
+
+def prefunded_warrants(http, cik: int, submissions: dict | None) -> Prefunded:
+    if not submissions:
+        return Prefunded(None, None, "fetch_failed", "no submissions record", None)
+    try:
+        url, acc = _instance_url(http, cik, submissions)
+        if not url:
+            return Prefunded(None, None, "no_instance",
+                             "no 10-Q/10-K XBRL instance (20-F/40-F filer, or no periodic report yet)", acc)
+        p = prefunded_from_instance(http.get_text(url))
+    except Exception as e:  # noqa: BLE001
+        return Prefunded(None, None, "fetch_failed", f"{e}", None)
+    p.source = acc
+    return p
