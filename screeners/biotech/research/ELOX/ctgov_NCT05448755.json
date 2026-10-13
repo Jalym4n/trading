@@ -1,0 +1,1083 @@
+{
+ "protocolSection": {
+  "identificationModule": {
+   "nctId": "NCT05448755",
+   "orgStudyIdInfo": {
+    "id": "EL-014"
+   },
+   "organization": {
+    "fullName": "Eloxx Pharmaceuticals, Inc.",
+    "class": "INDUSTRY"
+   },
+   "briefTitle": "A Study of ELX-02 in Patients With Alport Syndrome",
+   "officialTitle": "A Phase 2 Open Label Pilot Study to Evaluate the Safety and Efficacy of Subcutaneously Administered ELX-02 in Patients With Alport Syndrome With Col4A5 and Col4A3/4 Nonsense Mutation"
+  },
+  "statusModule": {
+   "statusVerifiedDate": "2026-02",
+   "overallStatus": "COMPLETED",
+   "expandedAccessInfo": {
+    "hasExpandedAccess": false
+   },
+   "startDateStruct": {
+    "date": "2022-11-28",
+    "type": "ACTUAL"
+   },
+   "primaryCompletionDateStruct": {
+    "date": "2023-09-11",
+    "type": "ACTUAL"
+   },
+   "completionDateStruct": {
+    "date": "2023-09-11",
+    "type": "ACTUAL"
+   },
+   "studyFirstSubmitDate": "2022-06-29",
+   "studyFirstSubmitQcDate": "2022-07-03",
+   "studyFirstPostDateStruct": {
+    "date": "2022-07-07",
+    "type": "ACTUAL"
+   },
+   "resultsFirstSubmitDate": "2024-09-17",
+   "resultsFirstSubmitQcDate": "2026-02-19",
+   "resultsFirstPostDateStruct": {
+    "date": "2026-02-24",
+    "type": "ACTUAL"
+   },
+   "lastUpdateSubmitDate": "2026-02-19",
+   "lastUpdatePostDateStruct": {
+    "date": "2026-02-24",
+    "type": "ACTUAL"
+   }
+  },
+  "sponsorCollaboratorsModule": {
+   "responsibleParty": {
+    "type": "SPONSOR"
+   },
+   "leadSponsor": {
+    "name": "Eloxx Pharmaceuticals, Inc.",
+    "class": "INDUSTRY"
+   }
+  },
+  "oversightModule": {
+   "oversightHasDmc": false,
+   "isFdaRegulatedDrug": false,
+   "isFdaRegulatedDevice": false
+  },
+  "descriptionModule": {
+   "briefSummary": "This is a Phase 2 open label pilot study to evaluate the safety and efficacy of subcutaneously administered ELX-02 in patients with X-linked or autosomal recessive Alport Syndrome with Col4A5 and Col4A3/4 nonsense mutation.\n\nIn total, up to 8 participants, with a minimum of 3 adults, will be enrolled in the trial.\n\nThe study will be comprised of the following periods for each participant:\n\n* a Screening period of up to 6 weeks (42 days)\n* a total Treatment Period of 8 weeks (60 days)\n* a safety/efficacy Follow-up Period of 12 weeks (90 days) after the last treatment The Treatment Period will be a treatment of ELX-02 0.75 mg/kg SC QD for 8 weeks."
+  },
+  "conditionsModule": {
+   "conditions": [
+    "Alport Syndrome"
+   ],
+   "keywords": [
+    "Aminoglycoside",
+    "Nonsense Mutation",
+    "Translational read through"
+   ]
+  },
+  "designModule": {
+   "studyType": "INTERVENTIONAL",
+   "phases": [
+    "PHASE2"
+   ],
+   "designInfo": {
+    "allocation": "NA",
+    "interventionModel": "SINGLE_GROUP",
+    "primaryPurpose": "TREATMENT",
+    "maskingInfo": {
+     "masking": "NONE"
+    }
+   },
+   "enrollmentInfo": {
+    "count": 3,
+    "type": "ACTUAL"
+   }
+  },
+  "armsInterventionsModule": {
+   "armGroups": [
+    {
+     "label": "Open label study drug treatment",
+     "type": "EXPERIMENTAL",
+     "interventionNames": [
+      "Drug: ELX-02"
+     ]
+    }
+   ],
+   "interventions": [
+    {
+     "type": "DRUG",
+     "name": "ELX-02",
+     "description": "ELX-02 is a small molecule, new chemical entity being developed for the treatment of genetic diseases caused by nonsense mutations. ELX-02 is a eukaryotic ribosomal selective glycoside (ERSG).",
+     "armGroupLabels": [
+      "Open label study drug treatment"
+     ]
+    }
+   ]
+  },
+  "outcomesModule": {
+   "primaryOutcomes": [
+    {
+     "measure": "Number of Participants With Adverse Events Associated With Administration of 0.75 mg/kg of ELX-02 Once Daily",
+     "description": "Treatment Emerging Adverse Events were defined as any adverse events with onset after the first administration of study medication through the end of the study, or any event that was present at baseline but worsened in intensity or was subsequently considered drug-related by the Investigator through the end of the study. Severe Treatment Emerging Adverse Event is a Treatment Emerging Adverse Events with CTCAE Grade 3 or above. Related Treatment Emerging Adverse Events is defined as a Treatment Emerging Adverse Events with a certain, probable/likely, or possible relationship to the study drug. Serious Adverse Events were Adverse Events resulting in any of the following outcomes or deemed significant for any other reason: death; initial or prolonged inpatient hospitalization; life-threatening.",
+     "timeFrame": "From the time of first dosing through the end of the follow-up period, a total of 5 months"
+    }
+   ],
+   "secondaryOutcomes": [
+    {
+     "measure": "Change From Baseline in Proteinuria",
+     "description": "Change from baseline to End Of Treatment. Measurement of urine protein/ creatinine ratio (UPCR) in urine samples",
+     "timeFrame": "From screening assessment to end of study treatment, total of 3 timepoints for results at Baseline, Week 4 and End of Treatment at Day 60."
+    },
+    {
+     "measure": "Change From Baseline to End of Treatment in Collagen IV Expression (Combined Average of Alpha 3 and Alpha 4 Chains)",
+     "description": "Collagen IV expression was assessed by measuring the combined average of alpha 3 and alpha 4 chains, using Immunofluorescence method. Results are reported as percentage change from baseline to End of Treatment. Increase in Collagen IV expression indicate kidney structural improvement.",
+     "timeFrame": "Baseline to End of Treatment (at Day 60)"
+    },
+    {
+     "measure": "Change From Baseline to End of Treatment in Collagen IV Expression (Foot Process Width in Renal Biopsy)",
+     "description": "Collagen IV expression was assessed by measuring podocyte foot process width in renal biopsy specimens, using Transmission Electron Microscopy (TEM) method. Results are reported as percentage change from baseline to End of Treatment.\n\nDecrease values indicate kidney structural and morphological improvement.",
+     "timeFrame": "Baseline to End of Treatment (at Day 60)"
+    },
+    {
+     "measure": "Change From Baseline to End of Treatment in Collagen IV Expression (Filtration Slit Density in Renal Biopsy)",
+     "description": "Collagen IV expression was assessed by measuring filtration slit density in renal biopsy specimens, using 3D-Structured Illumination Microscopy method. Results are reported as change from baseline. Increase values indicate improvement and protein recovery.",
+     "timeFrame": "Baseline to End of Treatment (at Day 60)"
+    }
+   ]
+  },
+  "eligibilityModule": {
+   "eligibilityCriteria": "Inclusion Criteria:\n\n* A confirmed diagnosis of X-linked or autosomal recessive Alport Syndrome with a documented nonsense mutation of Col4A5 in a male or nonsense mutation of Col4A3 or Col4A4 (male or female)\n* The nonsense mutation should be UAG or UGA\n* eGFR\\>60 ml/min/1.73 m2 (based on CKD-EPI for ages \u226518 and Schwartz formula for participants \\<18)\n* Urinary protein based on two spot urine collections \\[urine protein/creatinine ratio (UPCR) \u2265 500 mg/g\\]\n* Stable regimen of ACEi/ARB for at least 4 weeks before screening (unless there is a contraindication)\n\nExclusion Criteria:\n\n* History of any organ transplantation\n* Mutation consistent with autosomal dominant Alport Syndrome\n* Liver disease characterized by cirrhosis or portal hypertension. Participants with alanine aminotransferase (ALT), aspartate aminotransferase (AST), and/or a total bilirubin 3.0 times the upper limit of normal (ULN) will be excluded\n* History of congestive heart failure diagnosed clinically or with documented left ventricular ejection fraction (LVEF) \u2264 40%\n* History of dialysis",
+   "healthyVolunteers": false,
+   "sex": "ALL",
+   "minimumAge": "6 Years",
+   "maximumAge": "30 Years",
+   "stdAges": [
+    "CHILD",
+    "ADULT"
+   ]
+  },
+  "contactsLocationsModule": {
+   "locations": [
+    {
+     "facility": "Monash Medical Center",
+     "city": "Clayton",
+     "state": "Victoria",
+     "zip": "3168",
+     "country": "Australia",
+     "geoPoint": {
+      "lat": -37.91667,
+      "lon": 145.11667
+     }
+    },
+    {
+     "facility": "Royal Children's Hospital",
+     "city": "Parkville",
+     "state": "Victoria",
+     "zip": "3051",
+     "country": "Australia",
+     "geoPoint": {
+      "lat": -37.78333,
+      "lon": 144.95
+     }
+    },
+    {
+     "facility": "Royal Free Hospital",
+     "city": "London",
+     "zip": "NW3 2QG",
+     "country": "United Kingdom",
+     "geoPoint": {
+      "lat": 51.50853,
+      "lon": -0.12574
+     }
+    },
+    {
+     "facility": "Great Ormond Street Hospital",
+     "city": "London",
+     "zip": "WC1N 3JH",
+     "country": "United Kingdom",
+     "geoPoint": {
+      "lat": 51.50853,
+      "lon": -0.12574
+     }
+    }
+   ]
+  },
+  "referencesModule": {
+   "references": [
+    {
+     "pmid": "40938675",
+     "type": "DERIVED",
+     "citation": "Rheault MN. Treatment Approaches for Alport Syndrome. J Am Soc Nephrol. 2026 Jan 1;37(1):172-179. doi: 10.1681/ASN.0000000897. Epub 2025 Sep 12."
+    }
+   ],
+   "seeAlsoLinks": [
+    {
+     "label": "Eloxx Pharmaceuticals Website",
+     "url": "http://www.eloxxpharma.com"
+    }
+   ]
+  }
+ },
+ "resultsSection": {
+  "participantFlowModule": {
+   "preAssignmentDetails": "The study consisted of 3 periods for each subject; a screening period of 6 weeks, a treatment period of 8 weeks and a safety follow up period of 12 weeks after the last treatment.",
+   "recruitmentDetails": "A total of 3 subjects (two 12 years old and one 18 years old) were enrolled in this study.",
+   "groups": [
+    {
+     "id": "FG000",
+     "title": "Open Label Study Drug Treatment",
+     "description": "ELX-02: ELX-02 is a small molecule, new chemical entity being developed for the treatment of genetic diseases caused by nonsense mutations. ELX-02 is a eukaryotic ribosomal selective glycoside (ERSG)."
+    }
+   ],
+   "periods": [
+    {
+     "title": "Overall Study",
+     "milestones": [
+      {
+       "type": "STARTED",
+       "achievements": [
+        {
+         "groupId": "FG000",
+         "numSubjects": "3"
+        }
+       ]
+      },
+      {
+       "type": "COMPLETED",
+       "achievements": [
+        {
+         "groupId": "FG000",
+         "numSubjects": "3"
+        }
+       ]
+      },
+      {
+       "type": "NOT COMPLETED",
+       "achievements": [
+        {
+         "groupId": "FG000",
+         "numSubjects": "0"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "baselineCharacteristicsModule": {
+   "groups": [
+    {
+     "id": "BG000",
+     "title": "ELX-02: All Patients",
+     "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+    }
+   ],
+   "denoms": [
+    {
+     "units": "Participants",
+     "counts": [
+      {
+       "groupId": "BG000",
+       "value": "3"
+      }
+     ]
+    }
+   ],
+   "measures": [
+    {
+     "title": "Age, Customized",
+     "paramType": "COUNT_OF_PARTICIPANTS",
+     "unitOfMeasure": "Participants",
+     "classes": [
+      {
+       "title": "Between 12 and 18",
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "2"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "title": "Between 18 and 30",
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Sex: Female, Male",
+     "paramType": "COUNT_OF_PARTICIPANTS",
+     "unitOfMeasure": "Participants",
+     "classes": [
+      {
+       "categories": [
+        {
+         "title": "Female",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "1"
+          }
+         ]
+        },
+        {
+         "title": "Male",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "2"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Ethnicity (NIH/OMB)",
+     "paramType": "COUNT_OF_PARTICIPANTS",
+     "unitOfMeasure": "Participants",
+     "classes": [
+      {
+       "categories": [
+        {
+         "title": "Hispanic or Latino",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        },
+        {
+         "title": "Not Hispanic or Latino",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "3"
+          }
+         ]
+        },
+        {
+         "title": "Unknown or Not Reported",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Race (NIH/OMB)",
+     "paramType": "COUNT_OF_PARTICIPANTS",
+     "unitOfMeasure": "Participants",
+     "classes": [
+      {
+       "categories": [
+        {
+         "title": "American Indian or Alaska Native",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        },
+        {
+         "title": "Asian",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        },
+        {
+         "title": "Native Hawaiian or Other Pacific Islander",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        },
+        {
+         "title": "Black or African American",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        },
+        {
+         "title": "White",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "3"
+          }
+         ]
+        },
+        {
+         "title": "More than one race",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        },
+        {
+         "title": "Unknown or Not Reported",
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "0"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Region of Enrollment",
+     "paramType": "NUMBER",
+     "unitOfMeasure": "participants",
+     "classes": [
+      {
+       "title": "United Kingdom",
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "BG000",
+           "value": "3"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "outcomeMeasuresModule": {
+   "outcomeMeasures": [
+    {
+     "type": "PRIMARY",
+     "title": "Number of Participants With Adverse Events Associated With Administration of 0.75 mg/kg of ELX-02 Once Daily",
+     "description": "Treatment Emerging Adverse Events were defined as any adverse events with onset after the first administration of study medication through the end of the study, or any event that was present at baseline but worsened in intensity or was subsequently considered drug-related by the Investigator through the end of the study. Severe Treatment Emerging Adverse Event is a Treatment Emerging Adverse Events with CTCAE Grade 3 or above. Related Treatment Emerging Adverse Events is defined as a Treatment Emerging Adverse Events with a certain, probable/likely, or possible relationship to the study drug. Serious Adverse Events were Adverse Events resulting in any of the following outcomes or deemed significant for any other reason: death; initial or prolonged inpatient hospitalization; life-threatening.",
+     "reportingStatus": "POSTED",
+     "paramType": "COUNT_OF_PARTICIPANTS",
+     "unitOfMeasure": "Participants",
+     "timeFrame": "From the time of first dosing through the end of the follow-up period, a total of 5 months",
+     "groups": [
+      {
+       "id": "OG000",
+       "title": "Study Treatment: ELX-02 0.75 mg/kg",
+       "description": "Patients received 0.75 mg/kg SC daily for 60 days"
+      }
+     ],
+     "denoms": [
+      {
+       "units": "Participants",
+       "counts": [
+        {
+         "groupId": "OG000",
+         "value": "3"
+        }
+       ]
+      }
+     ],
+     "classes": [
+      {
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "OG000",
+           "value": "3"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "SECONDARY",
+     "title": "Change From Baseline in Proteinuria",
+     "description": "Change from baseline to End Of Treatment. Measurement of urine protein/ creatinine ratio (UPCR) in urine samples",
+     "populationDescription": "Measurements in 3 enrolled patients. Individual data is repeated due to study sample size.",
+     "reportingStatus": "POSTED",
+     "paramType": "GEOMETRIC_MEAN",
+     "dispersionType": "Standard Deviation",
+     "unitOfMeasure": "mg/g",
+     "timeFrame": "From screening assessment to end of study treatment, total of 3 timepoints for results at Baseline, Week 4 and End of Treatment at Day 60.",
+     "groups": [
+      {
+       "id": "OG000",
+       "title": "ELX-02 Patient 1",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG001",
+       "title": "ELX-02 Patient 2",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG002",
+       "title": "ELX-02: Patient 3",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      }
+     ],
+     "denoms": [
+      {
+       "units": "Participants",
+       "counts": [
+        {
+         "groupId": "OG000",
+         "value": "1"
+        },
+        {
+         "groupId": "OG001",
+         "value": "1"
+        },
+        {
+         "groupId": "OG002",
+         "value": "1"
+        }
+       ]
+      }
+     ],
+     "classes": [
+      {
+       "title": "Baseline",
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "OG000",
+           "value": "1299.5",
+           "spread": "1.37"
+          },
+          {
+           "groupId": "OG001",
+           "value": "1646.3",
+           "spread": "1.24"
+          },
+          {
+           "groupId": "OG002",
+           "value": "1645.3",
+           "spread": "1.26"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "title": "Week 4",
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "OG000",
+           "value": "1943.3",
+           "spread": "1.13"
+          },
+          {
+           "groupId": "OG001",
+           "value": "706.8",
+           "spread": "1.25"
+          },
+          {
+           "groupId": "OG002",
+           "value": "3522.2",
+           "spread": "1.14"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "title": "End of Treatment",
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "OG000",
+           "value": "2465.7",
+           "spread": "1.7"
+          },
+          {
+           "groupId": "OG001",
+           "value": "1028.1",
+           "spread": "1.65"
+          },
+          {
+           "groupId": "OG002",
+           "value": "2634.7",
+           "spread": "1.2"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "SECONDARY",
+     "title": "Change From Baseline to End of Treatment in Collagen IV Expression (Combined Average of Alpha 3 and Alpha 4 Chains)",
+     "description": "Collagen IV expression was assessed by measuring the combined average of alpha 3 and alpha 4 chains, using Immunofluorescence method. Results are reported as percentage change from baseline to End of Treatment. Increase in Collagen IV expression indicate kidney structural improvement.",
+     "populationDescription": "Analysis performed with immunofluorescence and light microscopy",
+     "reportingStatus": "POSTED",
+     "paramType": "NUMBER",
+     "unitOfMeasure": "percentage of change from baseline",
+     "timeFrame": "Baseline to End of Treatment (at Day 60)",
+     "groups": [
+      {
+       "id": "OG000",
+       "title": "ELX-02 Patient 1",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG001",
+       "title": "ELX-02 Patient 2",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG002",
+       "title": "ELX-02: Patient 3",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      }
+     ],
+     "denoms": [
+      {
+       "units": "Participants",
+       "counts": [
+        {
+         "groupId": "OG000",
+         "value": "1"
+        },
+        {
+         "groupId": "OG001",
+         "value": "1"
+        },
+        {
+         "groupId": "OG002",
+         "value": "1"
+        }
+       ]
+      }
+     ],
+     "classes": [
+      {
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "OG000",
+           "value": "38.5"
+          },
+          {
+           "groupId": "OG001",
+           "value": "8.3"
+          },
+          {
+           "groupId": "OG002",
+           "value": "170.8"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "SECONDARY",
+     "title": "Change From Baseline to End of Treatment in Collagen IV Expression (Foot Process Width in Renal Biopsy)",
+     "description": "Collagen IV expression was assessed by measuring podocyte foot process width in renal biopsy specimens, using Transmission Electron Microscopy (TEM) method. Results are reported as percentage change from baseline to End of Treatment.\n\nDecrease values indicate kidney structural and morphological improvement.",
+     "populationDescription": "Analysis performed with transmission electron microscopy",
+     "reportingStatus": "POSTED",
+     "paramType": "NUMBER",
+     "unitOfMeasure": "percentage of change from baseline",
+     "timeFrame": "Baseline to End of Treatment (at Day 60)",
+     "groups": [
+      {
+       "id": "OG000",
+       "title": "ELX-02 Patient 1",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG001",
+       "title": "ELX-02 Patient 2",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG002",
+       "title": "ELX-02: Patient 3",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      }
+     ],
+     "denoms": [
+      {
+       "units": "Participants",
+       "counts": [
+        {
+         "groupId": "OG000",
+         "value": "1"
+        },
+        {
+         "groupId": "OG001",
+         "value": "1"
+        },
+        {
+         "groupId": "OG002",
+         "value": "1"
+        }
+       ]
+      }
+     ],
+     "classes": [
+      {
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "OG000",
+           "value": "-18.7"
+          },
+          {
+           "groupId": "OG001",
+           "value": "6.8"
+          },
+          {
+           "groupId": "OG002",
+           "value": "-45"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "SECONDARY",
+     "title": "Change From Baseline to End of Treatment in Collagen IV Expression (Filtration Slit Density in Renal Biopsy)",
+     "description": "Collagen IV expression was assessed by measuring filtration slit density in renal biopsy specimens, using 3D-Structured Illumination Microscopy method. Results are reported as change from baseline. Increase values indicate improvement and protein recovery.",
+     "populationDescription": "Analysis performed with transmission electron microscopy",
+     "reportingStatus": "POSTED",
+     "paramType": "NUMBER",
+     "unitOfMeasure": "Change from baseline in \u00b5m-1",
+     "timeFrame": "Baseline to End of Treatment (at Day 60)",
+     "groups": [
+      {
+       "id": "OG000",
+       "title": "ELX-02 Patient 1",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG001",
+       "title": "ELX-02 Patient 2",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      },
+      {
+       "id": "OG002",
+       "title": "ELX-02: Patient 3",
+       "description": "Patients received ELX-02 0.75 milligram per kilograms (mg/kg) subcutaneously (SC) daily for 60 days"
+      }
+     ],
+     "denoms": [
+      {
+       "units": "Participants",
+       "counts": [
+        {
+         "groupId": "OG000",
+         "value": "1"
+        },
+        {
+         "groupId": "OG001",
+         "value": "1"
+        },
+        {
+         "groupId": "OG002",
+         "value": "1"
+        }
+       ]
+      }
+     ],
+     "classes": [
+      {
+       "categories": [
+        {
+         "measurements": [
+          {
+           "groupId": "OG000",
+           "value": "0.496"
+          },
+          {
+           "groupId": "OG001",
+           "value": "0.207"
+          },
+          {
+           "groupId": "OG002",
+           "value": "0.931"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "adverseEventsModule": {
+   "frequencyThreshold": "0",
+   "timeFrame": "From baseline to End of Study (at Day 150, last follow-up visit)",
+   "description": "Safety population consisted of all treated patients who received at least one dose of study medication. No deaths or serious adverse events occurred, other adverse events that occurred during the study are reported in the tables below.",
+   "eventGroups": [
+    {
+     "id": "EG000",
+     "title": "Open Label Study Drug Treatment",
+     "description": "ELX-02: ELX-02 is a small molecule, new chemical entity being developed for the treatment of genetic diseases caused by nonsense mutations. ELX-02 is a eukaryotic ribosomal selective glycoside (ERSG).",
+     "deathsNumAffected": 0,
+     "deathsNumAtRisk": 3,
+     "seriousNumAffected": 0,
+     "seriousNumAtRisk": 3,
+     "otherNumAffected": 3,
+     "otherNumAtRisk": 3
+    }
+   ],
+   "otherEvents": [
+    {
+     "term": "Headache",
+     "organSystem": "Nervous system disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 2,
+       "numAffected": 2,
+       "numAtRisk": 3
+      }
+     ]
+    },
+    {
+     "term": "postural dizziness",
+     "organSystem": "Nervous system disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 1,
+       "numAffected": 1,
+       "numAtRisk": 3
+      }
+     ]
+    },
+    {
+     "term": "lethargy",
+     "organSystem": "Nervous system disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 1,
+       "numAffected": 1,
+       "numAtRisk": 3
+      }
+     ]
+    },
+    {
+     "term": "Migraine",
+     "organSystem": "Nervous system disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 1,
+       "numAffected": 1,
+       "numAtRisk": 3
+      }
+     ]
+    },
+    {
+     "term": "Injection site erythema",
+     "organSystem": "General disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 2,
+       "numAffected": 2,
+       "numAtRisk": 3
+      }
+     ]
+    },
+    {
+     "term": "Injection site pruritus",
+     "organSystem": "General disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 1,
+       "numAffected": 1,
+       "numAtRisk": 3
+      }
+     ]
+    },
+    {
+     "term": "Chills",
+     "organSystem": "General disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 1,
+       "numAffected": 1,
+       "numAtRisk": 3
+      }
+     ]
+    },
+    {
+     "term": "Oropharyngeal pain",
+     "organSystem": "Respiratory, thoracic and mediastinal disorders",
+     "assessmentType": "SYSTEMATIC_ASSESSMENT",
+     "stats": [
+      {
+       "groupId": "EG000",
+       "numEvents": 4,
+       "numAffected": 2,
+       "numAtRisk": 3
+      }
+     ]
+    }
+   ]
+  },
+  "moreInfoModule": {
+   "certainAgreement": {
+    "piSponsorEmployee": false,
+    "restrictiveAgreement": false
+   },
+   "pointOfContact": {
+    "title": "Head of Clinical Operations",
+    "organization": "Eloxx Pharmaceuticals",
+    "email": "lior.horonchik@eloxxpharma.com",
+    "phone": "0584003313"
+   }
+  }
+ },
+ "documentSection": {
+  "largeDocumentModule": {
+   "largeDocs": [
+    {
+     "typeAbbrev": "Prot_SAP",
+     "hasProtocol": true,
+     "hasSap": true,
+     "hasIcf": false,
+     "label": "Study Protocol and Statistical Analysis Plan",
+     "date": "2023-03-21",
+     "uploadDate": "2025-12-09T06:09",
+     "filename": "Prot_SAP_000.pdf",
+     "size": 1541394
+    }
+   ]
+  }
+ },
+ "derivedSection": {
+  "miscInfoModule": {
+   "versionHolder": "2026-10-09"
+  },
+  "conditionBrowseModule": {
+   "meshes": [
+    {
+     "id": "D009394",
+     "term": "Nephritis, Hereditary"
+    }
+   ],
+   "ancestors": [
+    {
+     "id": "D014564",
+     "term": "Urogenital Abnormalities"
+    },
+    {
+     "id": "D052776",
+     "term": "Female Urogenital Diseases"
+    },
+    {
+     "id": "D005261",
+     "term": "Female Urogenital Diseases and Pregnancy Complications"
+    },
+    {
+     "id": "D000091642",
+     "term": "Urogenital Diseases"
+    },
+    {
+     "id": "D009393",
+     "term": "Nephritis"
+    },
+    {
+     "id": "D007674",
+     "term": "Kidney Diseases"
+    },
+    {
+     "id": "D014570",
+     "term": "Urologic Diseases"
+    },
+    {
+     "id": "D052801",
+     "term": "Male Urogenital Diseases"
+    },
+    {
+     "id": "D000013",
+     "term": "Congenital Abnormalities"
+    },
+    {
+     "id": "D009358",
+     "term": "Congenital, Hereditary, and Neonatal Diseases and Abnormalities"
+    },
+    {
+     "id": "D003095",
+     "term": "Collagen Diseases"
+    },
+    {
+     "id": "D003240",
+     "term": "Connective Tissue Diseases"
+    },
+    {
+     "id": "D017437",
+     "term": "Skin and Connective Tissue Diseases"
+    }
+   ]
+  },
+  "interventionBrowseModule": {
+   "meshes": [
+    {
+     "id": "C000709849",
+     "term": "ELX-02"
+    }
+   ]
+  }
+ },
+ "hasResults": true
+}

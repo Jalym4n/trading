@@ -1,0 +1,473 @@
+{
+ "protocolSection": {
+  "identificationModule": {
+   "nctId": "NCT07523581",
+   "orgStudyIdInfo": {
+    "id": "EL-017"
+   },
+   "organization": {
+    "fullName": "Eloxx Pharmaceuticals, Inc.",
+    "class": "INDUSTRY"
+   },
+   "briefTitle": "EXACT Study: A Blinded Study in Patients With Alport Syndrome to Evaluate Exaluren Efficacy and Safety",
+   "officialTitle": "A Randomized, Double-Blind, Placebo-Controlled, Delayed-Start Study to Evaluate the Efficacy and Safety of Exaluren in Alport Syndrome Patients With Nonsense Mutations in COL4A3/4/5 Genes"
+  },
+  "statusModule": {
+   "statusVerifiedDate": "2026-07",
+   "overallStatus": "RECRUITING",
+   "expandedAccessInfo": {
+    "hasExpandedAccess": false
+   },
+   "startDateStruct": {
+    "date": "2026-06-30",
+    "type": "ACTUAL"
+   },
+   "primaryCompletionDateStruct": {
+    "date": "2027-06-30",
+    "type": "ESTIMATED"
+   },
+   "completionDateStruct": {
+    "date": "2027-12-31",
+    "type": "ESTIMATED"
+   },
+   "studyFirstSubmitDate": "2026-04-05",
+   "studyFirstSubmitQcDate": "2026-04-05",
+   "studyFirstPostDateStruct": {
+    "date": "2026-04-13",
+    "type": "ACTUAL"
+   },
+   "lastUpdateSubmitDate": "2026-09-29",
+   "lastUpdatePostDateStruct": {
+    "date": "2026-09-30",
+    "type": "ACTUAL"
+   }
+  },
+  "sponsorCollaboratorsModule": {
+   "responsibleParty": {
+    "type": "SPONSOR"
+   },
+   "leadSponsor": {
+    "name": "Eloxx Pharmaceuticals, Inc.",
+    "class": "INDUSTRY"
+   }
+  },
+  "oversightModule": {
+   "isFdaRegulatedDrug": true,
+   "isFdaRegulatedDevice": false
+  },
+  "descriptionModule": {
+   "briefSummary": "This is a randomized, double-Blind, placebo-controlled study to evaluate the efficacy and safety of exaluren in Alport Syndrome patients with nonsense mutations in COL4A3/4/5 genes.\n\nTargeted 24 patients aged 12 and older will be enrolled in the trial.\n\nThe study will be comprised of the following periods for each participant:\n\n* a Screening period of up to 6 weeks (42 days)\n* a total Treatment Period of exaluren 0.75 mg/kg or placebo administered daily subcutaneously for 32 weeks: Part 1: patients are randomized to either exaluren or placebo for 16 weeks. Part 2: all patients across both randomized arms receive exaluren for 16 additional weeks.\n* a safety/efficacy Follow-up Period of 4 weeks after the last treatment"
+  },
+  "conditionsModule": {
+   "conditions": [
+    "Alport Syndrome, X-Linked",
+    "Alport Syndrome, Autosomal Recessive"
+   ],
+   "keywords": [
+    "Nonsense Mutation",
+    "Translational read through"
+   ]
+  },
+  "designModule": {
+   "studyType": "INTERVENTIONAL",
+   "phases": [
+    "PHASE2"
+   ],
+   "designInfo": {
+    "allocation": "RANDOMIZED",
+    "interventionModel": "SEQUENTIAL",
+    "primaryPurpose": "TREATMENT",
+    "maskingInfo": {
+     "masking": "QUADRUPLE",
+     "whoMasked": [
+      "PARTICIPANT",
+      "CARE_PROVIDER",
+      "INVESTIGATOR",
+      "OUTCOMES_ASSESSOR"
+     ]
+    }
+   },
+   "enrollmentInfo": {
+    "count": 24,
+    "type": "ESTIMATED"
+   }
+  },
+  "armsInterventionsModule": {
+   "armGroups": [
+    {
+     "label": "Exaluren",
+     "type": "EXPERIMENTAL",
+     "interventionNames": [
+      "Drug: Exaluren"
+     ]
+    },
+    {
+     "label": "Placebo",
+     "type": "PLACEBO_COMPARATOR",
+     "interventionNames": [
+      "Drug: Exaluren"
+     ]
+    }
+   ],
+   "interventions": [
+    {
+     "type": "DRUG",
+     "name": "Exaluren",
+     "description": "Exaluren is a synthetic Eukaryotic Ribosome Selective Glycoside (ERSG)",
+     "armGroupLabels": [
+      "Exaluren",
+      "Placebo"
+     ]
+    }
+   ]
+  },
+  "outcomesModule": {
+   "primaryOutcomes": [
+    {
+     "measure": "The change in the degree of podocyte foot process effacement",
+     "description": "Measured in kidney biopsies by the change in the Filtration Slit Density (FSD)",
+     "timeFrame": "Baseline to Week 16"
+    },
+    {
+     "measure": "The change in the degree of podocyte foot process effacement",
+     "description": "Measured in kidney biopsies by the change in the Filtration Slit Density (FSD)",
+     "timeFrame": "Baseline to Week 32"
+    }
+   ],
+   "secondaryOutcomes": [
+    {
+     "measure": "The percentage change in Urine Protein Creatinine Ratio (UPCR)",
+     "description": "Calculated from geometric mean of 3 consecutive days of first void urine collection",
+     "timeFrame": "Baseline to Week 16"
+    },
+    {
+     "measure": "The percentage change in Urine Protein Creatinine Ratio (UPCR)",
+     "description": "Calculated from geometric mean of 3 consecutive days of first void urine collection",
+     "timeFrame": "Baseline to Week 32"
+    }
+   ],
+   "otherOutcomes": [
+    {
+     "measure": "The percentage change in estimated Glomerular Filtration Rate (eGFR)",
+     "description": "Change in eGFR level",
+     "timeFrame": "Baseline to Week 16 and Week 32"
+    },
+    {
+     "measure": "The change in the degree of podocyte foot process effacement",
+     "description": "Measured by the change in Foot Process Width (FPW)",
+     "timeFrame": "Baseline to Week 16 and Week 32"
+    },
+    {
+     "measure": "The change in collagen expression",
+     "description": "Measured by structural changes",
+     "timeFrame": "Baseline to Week 16 and Week 32"
+    },
+    {
+     "measure": "Evaluate the safety and tolerability of Exaluren",
+     "description": "The incidence and characteristics of adverse events (AEs)",
+     "timeFrame": "Screening to End of Study (Week 36)"
+    }
+   ]
+  },
+  "eligibilityModule": {
+   "eligibilityCriteria": "Inclusion Criteria:\n\n* A confirmed diagnosis of X-linked or autosomal recessive Alport Syndrome with a documented nonsense mutation of COL4A5 in a male or nonsense mutation of COL4A3 or COL4A4 (male or female)\n* eGFR\\>40 ml/min/1.73 m2\n* Urinary protein based on two spot urine collections \\[urine protein/creatinine ratio (UPCR) \u2265 300 mg/g\\]\n* Stable regimen of ACEi/ARB for at least 12 weeks before Day 1\n\nExclusion Criteria:\n\n* History of any organ transplantation\n* Liver disease characterized by cirrhosis or portal hypertension. Participants with alanine aminotransferase (ALT), aspartate aminotransferase (AST), and/or a total bilirubin 1.5 times the upper limit of normal (ULN) will be excluded\n* History of dialysis\n* Acute kidney injury within 4 weeks before screening\n* Active dizziness",
+   "healthyVolunteers": false,
+   "sex": "ALL",
+   "minimumAge": "12 Years",
+   "stdAges": [
+    "CHILD",
+    "ADULT",
+    "OLDER_ADULT"
+   ]
+  },
+  "contactsLocationsModule": {
+   "locations": [
+    {
+     "facility": "University of California, Los Angeles",
+     "status": "NOT_YET_RECRUITING",
+     "city": "Los Angeles",
+     "state": "California",
+     "zip": "90095",
+     "country": "United States",
+     "contacts": [
+      {
+       "name": "Anjay Rastogi",
+       "role": "CONTACT",
+       "phone": "310-794-5023",
+       "email": "COREKidneyResearch@mednet.ucla.edu"
+      }
+     ],
+     "geoPoint": {
+      "lat": 34.05223,
+      "lon": -118.24368
+     }
+    },
+    {
+     "facility": "Stanford University",
+     "status": "NOT_YET_RECRUITING",
+     "city": "Stanford",
+     "state": "California",
+     "zip": "94305",
+     "country": "United States",
+     "contacts": [
+      {
+       "name": "Richard Lafayette",
+       "role": "CONTACT",
+       "phone": "650-498-6063",
+       "email": "czar@stanford.edu"
+      }
+     ],
+     "geoPoint": {
+      "lat": 37.42411,
+      "lon": -122.16608
+     }
+    },
+    {
+     "facility": "Denver Nephrologists PC, Colorado Kidney Care PC",
+     "status": "RECRUITING",
+     "city": "Denver",
+     "state": "Colorado",
+     "zip": "80220",
+     "country": "United States",
+     "contacts": [
+      {
+       "name": "Laura Kooienga",
+       "role": "CONTACT",
+       "phone": "303-364-4775",
+       "email": "lkooienga@cokidneycare.com"
+      }
+     ],
+     "geoPoint": {
+      "lat": 39.73915,
+      "lon": -104.9847
+     }
+    },
+    {
+     "facility": "University of Minnesota",
+     "status": "NOT_YET_RECRUITING",
+     "city": "Minneapolis",
+     "state": "Minnesota",
+     "zip": "55455",
+     "country": "United States",
+     "contacts": [
+      {
+       "name": "Michelle Rheault",
+       "role": "CONTACT",
+       "phone": "612-626-2922",
+       "email": "rheau002@umn.edu"
+      }
+     ],
+     "geoPoint": {
+      "lat": 44.97997,
+      "lon": -93.26384
+     }
+    },
+    {
+     "facility": "Hackensack University Medical Center",
+     "status": "NOT_YET_RECRUITING",
+     "city": "Hackensack",
+     "state": "New Jersey",
+     "zip": "07601",
+     "country": "United States",
+     "contacts": [
+      {
+       "name": "Kenneth Lieberman",
+       "role": "CONTACT",
+       "phone": "551-996-8228",
+       "email": "kenneth.lieberman@hmhn.org"
+      }
+     ],
+     "geoPoint": {
+      "lat": 40.88593,
+      "lon": -74.04347
+     }
+    },
+    {
+     "facility": "University of Pennsylvania",
+     "status": "NOT_YET_RECRUITING",
+     "city": "Philadelphia",
+     "state": "Pennsylvania",
+     "zip": "19104",
+     "country": "United States",
+     "contacts": [
+      {
+       "name": "Gaia Coppock",
+       "role": "CONTACT",
+       "phone": "215-662-2638",
+       "email": "gaia.coppock@pennmedicine.upenn.edu"
+      }
+     ],
+     "geoPoint": {
+      "lat": 39.95238,
+      "lon": -75.16362
+     }
+    },
+    {
+     "facility": "Renal Associates, P.A.",
+     "status": "NOT_YET_RECRUITING",
+     "city": "San Antonio",
+     "state": "Texas",
+     "zip": "78109",
+     "country": "United States",
+     "contacts": [
+      {
+       "name": "Pablo Pergola",
+       "role": "CONTACT",
+       "phone": "210-223-4444",
+       "email": "ppergola@raparesearch.com"
+      }
+     ],
+     "geoPoint": {
+      "lat": 29.42412,
+      "lon": -98.49363
+     }
+    },
+    {
+     "facility": "Alder Hey Children's NHS Foundation Trust",
+     "status": "NOT_YET_RECRUITING",
+     "city": "Liverpool",
+     "zip": "L12 2AP",
+     "country": "United Kingdom",
+     "contacts": [
+      {
+       "name": "Caroline Jones",
+       "role": "CONTACT",
+       "phone": "0151 252 5570",
+       "email": "Caroline.Jones@alderhey.nhs.uk"
+      }
+     ],
+     "geoPoint": {
+      "lat": 53.41058,
+      "lon": -2.97794
+     }
+    },
+    {
+     "facility": "Royal Free Hospital",
+     "status": "RECRUITING",
+     "city": "London",
+     "zip": "NW3 2QG",
+     "country": "United Kingdom",
+     "contacts": [
+      {
+       "name": "Daniel Gale, MD",
+       "role": "CONTACT",
+       "phone": "+442074726491",
+       "email": "d.gale@ucl.ac.uk"
+      }
+     ],
+     "geoPoint": {
+      "lat": 51.50853,
+      "lon": -0.12574
+     }
+    },
+    {
+     "facility": "Great Ormond Street Hospital",
+     "status": "RECRUITING",
+     "city": "London",
+     "zip": "WC1N 3JH",
+     "country": "United Kingdom",
+     "contacts": [
+      {
+       "name": "Zainab Arslan, MD",
+       "role": "CONTACT",
+       "phone": "0207 405 9200",
+       "phoneExt": "7867",
+       "email": "Zainab.Arslan@gosh.nhs.uk"
+      }
+     ],
+     "geoPoint": {
+      "lat": 51.50853,
+      "lon": -0.12574
+     }
+    },
+    {
+     "facility": "Royal Manchester Children's Hospital",
+     "status": "NOT_YET_RECRUITING",
+     "city": "Manchester",
+     "zip": "M13 9WL",
+     "country": "United Kingdom",
+     "contacts": [
+      {
+       "name": "Rachel Lennon, MD",
+       "role": "CONTACT",
+       "phone": "0161 701 1676",
+       "email": "rachel.lennon@mft.nhs.uk"
+      }
+     ],
+     "geoPoint": {
+      "lat": 53.48095,
+      "lon": -2.23743
+     }
+    }
+   ]
+  }
+ },
+ "derivedSection": {
+  "miscInfoModule": {
+   "versionHolder": "2026-10-09"
+  },
+  "conditionBrowseModule": {
+   "meshes": [
+    {
+     "id": "D009394",
+     "term": "Nephritis, Hereditary"
+    }
+   ],
+   "ancestors": [
+    {
+     "id": "D014564",
+     "term": "Urogenital Abnormalities"
+    },
+    {
+     "id": "D052776",
+     "term": "Female Urogenital Diseases"
+    },
+    {
+     "id": "D005261",
+     "term": "Female Urogenital Diseases and Pregnancy Complications"
+    },
+    {
+     "id": "D000091642",
+     "term": "Urogenital Diseases"
+    },
+    {
+     "id": "D009393",
+     "term": "Nephritis"
+    },
+    {
+     "id": "D007674",
+     "term": "Kidney Diseases"
+    },
+    {
+     "id": "D014570",
+     "term": "Urologic Diseases"
+    },
+    {
+     "id": "D052801",
+     "term": "Male Urogenital Diseases"
+    },
+    {
+     "id": "D000013",
+     "term": "Congenital Abnormalities"
+    },
+    {
+     "id": "D009358",
+     "term": "Congenital, Hereditary, and Neonatal Diseases and Abnormalities"
+    },
+    {
+     "id": "D003095",
+     "term": "Collagen Diseases"
+    },
+    {
+     "id": "D003240",
+     "term": "Connective Tissue Diseases"
+    },
+    {
+     "id": "D017437",
+     "term": "Skin and Connective Tissue Diseases"
+    }
+   ]
+  }
+ },
+ "hasResults": false
+}

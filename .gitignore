@@ -19,3 +19,5 @@ screeners/biotech/**/.cache/
 journal.jsonl
 __pycache__/
 screeners/biotech/biocat_out.log
+screeners/biotech/research/*/filings/
+screeners/biotech/research/*.zip
