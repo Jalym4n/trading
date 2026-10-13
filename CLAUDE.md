@@ -416,8 +416,11 @@ mechanical sort only. Revision history comes from the undocumented
 `/api/int/studies/{nct}/history` route (needs an `ncbi_sid` cookie). Thesis
 journal (`biocat journal`) is append-only and hash-chained; scored entries are
 final. Audit `identity.csv` before using a row: the first run had four false
-joins (Vertex, Thryv, Polaris, Vantage), now fixed and regression-tested. See
-`screeners/biotech/README.md`.
+joins (Vertex, Thryv, Polaris, Vantage), now fixed and regression-tested. Run
+two (2026-10-13) adds `integrity_report.md`, which lists rows whose values fail
+consistency checks (impossible runway, masked with no control, cash > 150 days
+old, likely delisted). 63 candidates; 14 rows / 7 tickers are deregistered
+(Form 15). See `screeners/biotech/README.md`.
 
 The reasoning: technical analysis on SPY intraday is the lowest-prior corner of
 the market. Domain expertise in healthcare is a real structural advantage. This

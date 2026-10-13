@@ -33,6 +33,9 @@ CASH_TAGS = ["CashAndCashEquivalentsAtCarryingValue", "Cash",
 STI_TAGS = ["ShortTermInvestments", "MarketableSecuritiesCurrent",
             "AvailableForSaleSecuritiesDebtSecuritiesCurrent"]
 OCF_TAG = "NetCashProvidedByUsedInOperatingActivities"
+MIN_PLAUSIBLE_BURN = 250_000      # $/quarter; below this with >$10M cash the burn is an artifact
+MIN_CASH_FOR_FLOOR = 10_000_000
+MAX_PLAUSIBLE_RUNWAY_Q = 40       # quarters; runway is never emitted above this (hard ceiling 200)
 QUARTER_DAYS = (75, 105)          # one fiscal quarter, allowing 52/53-week calendars
 
 
@@ -144,7 +147,7 @@ class Runway:
     cash_asof: str | None
     cash_tags: str
     burn_q_usd: float | None          # positive number = cash consumed per quarter
-    burn_status: str                  # burning / cash_positive / no_data / stale
+    burn_status: str                  # burning / cash_positive / no_data / stale / burn_implausible
     quarters_used: list[dict]
     runway_q: float | None
     runway_needed_q: float | None
@@ -176,6 +179,14 @@ def compute_runway(facts: dict, months_out: float | None, today: dt.date,
                       None, needed, None)
     burn = -avg_ocf
     runway = round(cash / burn, 2) if cash is not None else None
+    # Sanity floors. A YTD-differencing artifact (one quarter -18.9M, the next
+    # +18.9M: ZURA 2026) averages to a near-zero "burn" and a five-digit runway
+    # that sorts to the top of any column. The quarters stay visible in
+    # quarters_used; the ratio is withheld.
+    if (burn < MIN_PLAUSIBLE_BURN and (cash or 0) > MIN_CASH_FOR_FLOOR) or \
+            (runway is not None and runway > MAX_PLAUSIBLE_RUNWAY_Q):
+        return Runway(cash, cash_asof, " + ".join(tags_used), None, "burn_implausible", recent,
+                      None, needed, None)
     funded = (runway >= needed) if (runway is not None and needed is not None) else None
     return Runway(cash, cash_asof, " + ".join(tags_used), burn, "burning", recent, runway, needed, funded)
 
@@ -263,12 +274,17 @@ def sec_reverse_splits(http, cik: int, today: dt.date, days: int = 730) -> list[
 
 
 def dilution_facts(http, cik: int, today: dt.date, lookback_days: int = 3 * 365) -> dict:
-    """Shelf AND ATM both present within the lookback (a shelf is effective 3 years)."""
+    """Counts of filings mentioning a shelf / an ATM within the lookback, and the
+    age of the newest ATM mention. Counts only: a shelf-AND-ATM boolean fired on
+    94% of run-one rows and was removed. runway_q vs runway_needed_q is the
+    funding comparison."""
     since = today - dt.timedelta(days=lookback_days)
     n_shelf, shelf = fts_count(http, "shelf registration", cik, since)
     n_atm, atm = fts_count(http, "at-the-market", cik, since)
+    latest_atm = max((h["file_date"] for h in atm), default=None)
     return {"shelf_count": n_shelf, "atm_count": n_atm,
-            "dilution_risk": bool(n_shelf and n_atm),     # fact: both present, nothing more
+            "latest_atm_filing": latest_atm,
+            "days_since_latest_atm_filing": (today - _d(latest_atm)).days if latest_atm else None,
             "shelf_filings": shelf[:10], "atm_filings": atm[:10],
             "lookback_since": since.isoformat()}
 
@@ -286,3 +302,40 @@ def shares_outstanding(facts: dict) -> tuple[float | None, str | None]:
     accn = next(iter(same_filing))
     total = sum(r["val"] for r in at_end if r.get("accn") == accn)
     return float(total), end
+
+
+# ------------------------------------------------------------------ debt --
+DEBT_TAGS = ["LongTermDebtNoncurrent", "LongTermDebtCurrent", "ConvertibleNotesPayable",
+             "ConvertibleNotesPayableCurrent", "OperatingLeaseLiabilityNoncurrent"]
+CONVERTIBLE_TAGS = ["ConvertibleNotesPayable", "ConvertibleNotesPayableCurrent", "ConvertibleDebtNoncurrent",
+                    "ConvertibleDebtCurrent", "ConvertibleLongTermNotesPayable", "ConvertibleSubordinatedDebt"]
+
+
+@dataclass
+class Debt:
+    total_debt_usd: float | None     # None = no debt tag at all (unknown), 0.0 = tags present, all zero
+    debt_asof: str | None
+    components: dict                 # tag -> value at debt_asof
+    has_convertible: bool | None
+
+
+def debt_facts(facts: dict, prefer_date: str | None = None) -> Debt:
+    """Sum of DEBT_TAGS at one balance-sheet date (prefer the cash date, else
+    the latest date any of them carries). Components are reported so a tag
+    that double-counts another (a convertible inside LongTermDebt) is visible.
+    has_convertible: any CONVERTIBLE_TAGS value > 0 at that date."""
+    dates = {f["end"] for t in DEBT_TAGS + CONVERTIBLE_TAGS for f in _units(facts, t) if "start" not in f}
+    if not dates:
+        return Debt(None, None, {}, None)
+    asof = prefer_date if prefer_date in dates else max(dates)
+    comp = {}
+    for t in DEBT_TAGS:
+        v, _tag = instant_at(facts, [t], asof)
+        if v is not None:
+            comp[t] = v
+    conv = False
+    for t in CONVERTIBLE_TAGS:
+        v, _tag = instant_at(facts, [t], asof)
+        conv = conv or bool(v and v > 0)
+    total = float(sum(comp.values())) if comp else None
+    return Debt(total, asof, comp, conv)

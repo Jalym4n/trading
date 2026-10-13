@@ -11,6 +11,7 @@ import datetime as dt
 from collections import Counter
 
 from .textscan import STAT_SIGNALS, multiplicity_hits, stat_signal_hits, subjective_terms, walk_text
+from .derive import control_arm
 from .trials import months_between, parse_date
 
 CONTROL_TYPES = {"PLACEBO_COMPARATOR", "ACTIVE_COMPARATOR", "SHAM_COMPARATOR"}
@@ -68,7 +69,7 @@ def bias_section(ps: dict, ep_text: str) -> tuple[list[str], dict]:
     who = _g(di, "maskingInfo", "whoMasked", default=[]) or []
     arms = _g(ps, "armsInterventionsModule", "armGroups", default=[]) or []
     types = Counter(a.get("type", "UNSPECIFIED") for a in arms)
-    controls = sorted(t for t in types if t in CONTROL_TYPES)
+    ctrl = control_arm(ps)
     terms = subjective_terms(ep_text)
     out = ["## B. Bias controls", "",
            "| field | value |", "|---|---|",
@@ -78,14 +79,14 @@ def bias_section(ps: dict, ep_text: str) -> tuple[list[str], dict]:
            f"| `designModule.designInfo.interventionModel` | {di.get('interventionModel')} |",
            f"| `armsInterventionsModule.armGroups[].type` | "
            f"{', '.join(f'{k} x{v}' for k, v in sorted(types.items())) or '(no arms listed)'} |",
-           f"| control arm types present (placebo / active / sham) | {', '.join(controls) or 'none'} |", ""]
+           f"| control_arm (derived: yes / no / unknown) | {ctrl['control_arm']} |",
+           f"| control_arm basis | {ctrl['control_arm_basis']} |", ""]
     if masking == "NONE" and terms:
         out += [f"Derived observation: open-label; primary endpoint matched [{', '.join(terms)}]. "
                 f"(Inputs: masking=NONE; vocabulary match on primaryOutcomes[].measure + description.)", ""]
     elif terms:
         out += [f"Primary endpoint text matched [{', '.join(terms)}]; masking={masking}.", ""]
-    return out, {"masking": masking, "allocation": di.get("allocation"),
-                 "has_control_arm": bool(controls)}
+    return out, {"masking": masking, "allocation": di.get("allocation"), **ctrl}
 
 
 def enrollment_section(ps: dict, today: dt.date) -> tuple[list[str], dict]:
@@ -108,7 +109,8 @@ def enrollment_section(ps: dict, today: dt.date) -> tuple[list[str], dict]:
     if typ == "ESTIMATED" and months is not None and months > 24:
         out += [f"Derived observation: enrollmentInfo.type=ESTIMATED and the trial started "
                 f"{months} months ago (> 24).", ""]
-    return out, {"enrollment": n, "enrollment_type": typ, "n_sites": len(locs)}
+    return out, {"enrollment": n, "enrollment_type": typ, "n_sites": len(locs),
+                 "start_date": _g(ps, "statusModule", "startDateStruct", "date"), "months_since_start": months}
 
 
 def stats_section(ps: dict) -> list[str]:
@@ -142,7 +144,7 @@ def experimental_interventions(ps: dict) -> list[str]:
     out = []
     for iv in ivs:
         types = {arm_type.get(lbl) for lbl in iv.get("armGroupLabels") or []}
-        if iv.get("name") and "EXPERIMENTAL" in types and not types & CONTROL_TYPES:
+        if iv.get("name") and "EXPERIMENTAL" in types and not types & (CONTROL_TYPES | {"NO_INTERVENTION"}):
             out.append(iv["name"])
     return out
 
@@ -195,7 +197,10 @@ def build(row: dict, record: dict, history_md: list[str], related: dict, today: 
             ("company", "cik", "sec_sic", "sponsor", "phase", "catalyst_date", "date_type", "months_out", "market_cap",
              "market_cap_source", "avg_dollar_vol", "cash_usd", "cash_asof", "cash_tags", "burn_q_usd",
              "burn_quarters", "burn_status", "runway_q",
-             "runway_needed_q", "funded_through", "shelf_count", "atm_count", "dilution_risk", "data_notes")] + \
+             "runway_needed_q", "funded_through", "days_since_cash_asof", "cash_today_est", "cash_to_mcap_est",
+             "total_debt_usd", "debt_asof", "debt_components", "has_convertible", "ev_est", "company_status",
+             "latest_filing_date", "latest_filing_form", "deregistration_filing", "shelf_count", "atm_count",
+             "days_since_latest_atm_filing", "data_notes")] + \
            ["", f"Generated {today.isoformat()} from ClinicalTrials.gov API v2 and SEC EDGAR. "
                 "Fields are reported as registered; nothing here is an assessment.", ""]
     md = "\n".join(head + a + b + c + history_md + e + f) + "\n"

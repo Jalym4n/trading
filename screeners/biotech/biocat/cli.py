@@ -20,15 +20,21 @@ from collections import Counter
 from . import journal as J
 
 CSV_COLS = ["ticker", "company", "cik", "nct_id", "phase", "catalyst_date", "date_type", "months_out",
-            "market_cap", "avg_dollar_vol", "cash_usd", "cash_asof", "burn_q_usd", "burn_status",
-            "runway_q", "runway_needed_q", "funded_through", "shelf_count", "atm_count", "dilution_risk",
-            "n_primary_endpoints", "masking", "allocation", "has_control_arm", "enrollment",
-            "enrollment_type", "n_sites", "n_versions", "endpoint_changed", "pcd_slips", "pcd_slip_months"]
+            "company_status", "market_cap", "avg_dollar_vol",
+            "cash_usd", "cash_asof", "days_since_cash_asof", "burn_q_usd", "burn_status",
+            "cash_today_est", "cash_to_mcap_est", "total_debt_usd", "debt_asof", "has_convertible", "ev_est",
+            "runway_q", "runway_needed_q", "funded_through",
+            "shelf_count", "atm_count", "days_since_latest_atm_filing",
+            "n_primary_endpoints", "masking", "allocation", "control_arm", "control_arm_types",
+            "enrollment", "enrollment_type", "enrollment_stale", "is_efficacy_scale", "is_single_arm_open_label",
+            "n_sites", "patients_per_site", "site_list_maturity",
+            "n_versions", "n_endpoint_changes", "endpoint_changes", "pcd_slips", "pcd_slip_months"]
 
 
 def screen(a) -> int:
     from .net import Http
     from . import trials as T, identity as I, financials as F, market as M, dossier as D, history as H
+    from . import derive as X, integrity as Q
 
     today = dt.date.fromisoformat(a.today) if a.today else dt.date.today()
     os.makedirs(os.path.join(a.out, "dossiers"), exist_ok=True)
@@ -75,7 +81,7 @@ def screen(a) -> int:
             try:
                 info["dil"] = F.dilution_facts(http, r.cik, today)
             except Exception as e:  # noqa: BLE001
-                info["dil"] = {"shelf_count": None, "atm_count": None, "dilution_risk": None}
+                info["dil"] = {"shelf_count": None, "atm_count": None, "days_since_latest_atm_filing": None}
                 info["errors"].append(f"fts: {e}")
             info["mkt"] = M.fetch_market(http, r.ticker, today)
             try:
@@ -93,6 +99,11 @@ def screen(a) -> int:
                     info["mcap_src"] = "Nasdaq summary MarketCap (unofficial)" if info["mcap"] else None
                 except Exception as e:  # noqa: BLE001
                     info["errors"].append(f"nasdaq summary: {e}")
+            try:
+                info["submissions"] = http.get_json(I.SUBMISSIONS_URL.format(cik=r.cik))
+            except Exception as e:  # noqa: BLE001
+                info["submissions"] = None
+                info["errors"].append(f"submissions: {e}")
             company_cache[r.cik] = info
         info = company_cache[r.cik]
         run = F.compute_runway(info["facts"], months, today) if info.get("facts") else None
@@ -100,7 +111,17 @@ def screen(a) -> int:
         mcap = info["mcap"]
         splits = M.combine_splits(mkt.reverse_splits_24m, info.get("sec_splits"))
         keep, reasons = M.size_filter(mcap, mkt.avg_dollar_vol, splits)
+        debt = F.debt_facts(info["facts"], run.cash_asof if run else None) if info.get("facts") \
+            else F.Debt(None, None, {}, None)
+        aged = X.cash_aging(run.cash_usd if run else None, run.cash_asof if run else None,
+                            run.burn_q_usd if run else None, run.burn_status if run else None, mcap, today)
+        status = X.company_status(info.get("submissions"), mcap, today)
         row = {
+            **aged, **status,
+            "total_debt_usd": debt.total_debt_usd, "debt_asof": debt.debt_asof,
+            "debt_components": "; ".join(f"{k}={v:,.0f}" for k, v in debt.components.items()) or None,
+            "has_convertible": debt.has_convertible,
+            "ev_est": X.ev_est(mcap, debt.total_debt_usd, aged["cash_today_est"]),
             "ticker": r.ticker, "company": r.sec_name, "cik": r.cik, "sponsor": t.sponsor,
             "sec_sic": f"{r.sic} {r.sic_desc}",
             "nct_id": t.nct_id, "phase": t.phase, "phase_rank": t.phase_rank,
@@ -118,7 +139,7 @@ def screen(a) -> int:
             "burn_quarters": "; ".join(f"{q['start']}..{q['end']} {q['val']:+,.0f} ({q['derived_from']})"
                                        for q in run.quarters_used) if run and run.quarters_used else None,
             "funded_through": run.funded_through if run else None,
-            **{k: info["dil"].get(k) for k in ("shelf_count", "atm_count", "dilution_risk")},
+            **{k: info["dil"].get(k) for k in ("shelf_count", "atm_count", "days_since_latest_atm_filing")},
             "_filter_notes": "; ".join(reasons),
             "data_notes": "; ".join(
                 reasons + info["errors"]
@@ -158,12 +179,21 @@ def screen(a) -> int:
                 related[name] = []
         md, facts = D.build(row, rec, hist_md, related, today)
         row.update({"n_primary_endpoints": facts["n_primary"], "masking": facts["masking"],
-                    "allocation": facts["allocation"], "has_control_arm": facts["has_control_arm"],
+                    "allocation": facts["allocation"], "control_arm": facts["control_arm"],
+                    "control_arm_types": facts["control_arm_types"],
+                    "control_arm_basis": facts["control_arm_basis"],
                     "enrollment": facts["enrollment"], "enrollment_type": facts["enrollment_type"],
-                    "n_sites": facts["n_sites"]})
+                    "n_sites": facts["n_sites"], "start_date": facts["start_date"]})
+        row.update(X.design_flags(facts["allocation"], facts["masking"], facts["control_arm"],
+                                  facts["enrollment_type"], facts["months_since_start"]))
         if hist:
-            row.update({"n_versions": hist["n_versions"], "endpoint_changed": hist["endpoint_changed"],
-                        "pcd_slips": hist["pcd_slips"], "pcd_slip_months": hist["pcd_slip_months"]})
+            row.update({"n_versions": hist["n_versions"], "n_endpoint_changes": len(hist["endpoint_changes"]),
+                        "endpoint_changes": json.dumps([{k: c[k] for k in ("version", "date", "from", "to", "kind",
+                                                                         "status_at_change")}
+                                                        for c in hist["endpoint_changes"]]),
+                        "pcd_slips": hist["pcd_slips"], "pcd_slip_months": hist["pcd_slip_months"],
+                        "_pcd_values": hist["pcd_values"]})
+        row.update(X.site_facts(facts["enrollment"], facts["n_sites"], row.get("n_versions")))
         with open(os.path.join(a.out, "dossiers", f"{row['ticker']}-{row['nct_id']}.md"), "w") as f:
             f.write(md)
 
@@ -172,6 +202,8 @@ def screen(a) -> int:
         w.writeheader()
         for row in rows:
             w.writerow(row)
+    with open(os.path.join(a.out, "integrity_report.md"), "w") as f:
+        f.write(Q.report(rows, CSV_COLS, today))
     with open(os.path.join(a.out, "dropped.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["ticker", "nct_id", "market_cap", "avg_dollar_vol", "_filter_notes"],
                            extrasaction="ignore")

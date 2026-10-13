@@ -137,22 +137,43 @@ def snapshot(study: dict) -> dict:
 
 
 def _months(a: str | None, b: str | None) -> float | None:
+    """Months from date a to date b. When either is month-precision only
+    ("2027-07"), both are compared at month precision: "2027-07-14" -> "2027-07"
+    drops the day, it does not move the date (NGEN NCT07799532 read -0.4)."""
     da, db = parse_date(a), parse_date(b)
     if not (da and db):
         return None
+    if len(a.strip()) <= 7 or len(b.strip()) <= 7:
+        return float((db.year - da.year) * 12 + (db.month - da.month))
     return round((db - da).days / 30.4375, 1)
 
 
-def change_kind(a: list[tuple[str, str]], b: list[tuple[str, str]]) -> str:
-    """Mechanical classification of an endpoint edit, nothing more."""
-    if len(a) != len(b):
+def norm_text(t: str | None) -> str:
+    """Comparison key: HTML-unescaped, lowercase, punctuation stripped,
+    whitespace collapsed. Two outcome texts that differ only in case,
+    punctuation, spacing or entity escaping compare equal."""
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", html.unescape(t or "").lower()).split())
+
+
+def norm_outcomes(xs: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    return [(norm_text(m), norm_text(t)) for m, t in xs]
+
+
+def change_kind(a: list[tuple[str, str]], b: list[tuple[str, str]]) -> str | None:
+    """Mechanical classification of an endpoint edit, nothing more.
+    None when the normalised texts are equal (no change)."""
+    na, nb = norm_outcomes(a), norm_outcomes(b)
+    if na == nb:
+        return None
+    if len(na) != len(nb):
         return "number of primary outcomes changed"
-    fold = lambda xs: [(" ".join(m.lower().split()), " ".join(t.lower().split())) for m, t in xs]  # noqa: E731
-    if fold(a) == fold(b):
-        return "letter case / whitespace only"
-    if [m for m, _ in fold(a)] == [m for m, _ in fold(b)]:
+    if [m for m, _ in na] == [m for m, _ in nb]:
         return "timeFrame text changed, measure text unchanged"
     return "measure text changed"
+
+
+def _fmt_outcomes(xs: list[tuple[str, str]]) -> list[str]:
+    return [f"{m} [timeFrame: {t}]" if t else m for m, t in xs]
 
 
 def timeline(snaps: list[tuple[int, str, dict]]) -> dict:
@@ -167,10 +188,11 @@ def timeline(snaps: list[tuple[int, str, dict]]) -> dict:
                            f"({s['pcd_type']}); enrollment={s['enroll']} ({s['enroll_type']})"))
             prev = s
             continue
-        if s["primary"] != prev["primary"]:
-            kind = change_kind(prev["primary"], s["primary"])
-            ep_changes.append({"version": v, "date": date, "from": prev["primary"], "to": s["primary"],
-                               "status_at_change": s["status"], "kind": kind})
+        kind = change_kind(prev["primary"], s["primary"])
+        if kind:
+            ep_changes.append({"version": v, "date": date, "from": _fmt_outcomes(prev["primary"]),
+                               "to": _fmt_outcomes(s["primary"]), "kind": kind,
+                               "status_at_change": s["status"]})
             events.append((v, date, "PRIMARY ENDPOINT CHANGED",
                            f"{kind}; count {len(prev['primary'])} -> {len(s['primary'])}; "
                            f"overallStatus={s['status']}"))
@@ -217,8 +239,8 @@ def render(h: dict) -> list[str]:
            f"({h['first_date']} to {h['last_date']}); versions read: {h['n_fetched']} "
            f"(v0 plus every version listing Outcome Measures, Study Status, Study Design or Eligibility)."
            + (" **Truncated: not every relevant version was read.**" if h.get("truncated") else ""), "",
-           f"- primary endpoint changed: **{'yes' if h['endpoint_changed'] else 'no'}** "
-           f"({len(h['endpoint_changes'])} version(s))",
+           f"- primary endpoint text changes (after normalising case, punctuation, spacing): "
+           f"**{len(h['endpoint_changes'])}**",
            f"- primary completion date: {len(h['pcd_values'])} distinct value(s); moved later "
            f"{h['pcd_slips']} time(s), earlier {h['pcd_moves_earlier']} time(s); first to latest "
            f"{h['pcd_slip_months']} months",
@@ -235,9 +257,9 @@ def render(h: dict) -> list[str]:
     for c in h["endpoint_changes"]:
         out += [f"### Primary endpoint change at version {c['version']} ({c['date']}), "
                 f"overallStatus={c['status_at_change']}", "", f"Kind (mechanical): {c['kind']}", "", "From:"]
-        out += [f"> {i + 1}. {m} | timeFrame: {t}" for i, (m, t) in enumerate(c["from"])] or ["> (none)"]
+        out += [f"> {i + 1}. {x}" for i, x in enumerate(c["from"])] or ["> (none)"]
         out += ["", "To:"]
-        out += [f"> {i + 1}. {m} | timeFrame: {t}" for i, (m, t) in enumerate(c["to"])] or ["> (none)"]
+        out += [f"> {i + 1}. {x}" for i, x in enumerate(c["to"])] or ["> (none)"]
         out.append("")
     for c in h["eligibility_changes"]:
         out += [f"### Eligibility change at version {c['version']} ({c['date']}): "

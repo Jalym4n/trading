@@ -31,7 +31,7 @@ def test_slips_endpoint_change_enrollment_and_eligibility():
     h = timeline(snaps)
     assert h["pcd_slips"] == 2 and h["pcd_moves_earlier"] == 0
     assert [p[2] for p in h["pcd_values"]] == ["2025-06", "2025-12", "2026-03-15"]
-    assert h["pcd_slip_months"] == 9.4          # 2025-06-01 -> 2026-03-15 = 287 days
+    assert h["pcd_slip_months"] == 9.0          # 2025-06 -> 2026-03-15: month precision, June to March
     assert h["endpoint_changed"] and h["endpoint_changes"][0]["version"] == 7
     assert h["endpoint_changes"][0]["kind"] == "measure text changed"
     assert h["enrollment_changes"] == [{"version": 5, "date": "2024-09-01", "from": 100, "to": 60,
@@ -71,9 +71,33 @@ def test_related_trials_query_only_the_experimental_asset():
     assert experimental_interventions(unlinked) == ["X-101"]
 
 
+def test_endpoint_normalisation_ignores_case_punctuation_whitespace():
+    a = [("Change from Baseline in HbA1c (%), at Week 26", "Week 26")]
+    b = [("change  from baseline in HbA1c %  at week 26.", "week-26")]
+    c = [("Change from baseline in HbA1c &amp; body weight at Week 26", "Week 26")]
+    assert change_kind(a, b) is None
+    h = timeline([(0, "d0", snapshot(study("2025-06", outcomes=a))),
+                  (1, "d1", snapshot(study("2025-06", outcomes=b)))])
+    assert h["endpoint_changes"] == [] and not h["endpoint_changed"]
+    h2 = timeline([(0, "d0", snapshot(study("2025-06", outcomes=a))),
+                   (1, "d1", snapshot(study("2025-06", outcomes=c)))])
+    e = h2["endpoint_changes"][0]
+    assert e["kind"] == "measure text changed" and e["version"] == 1
+    assert e["from"] == ["Change from Baseline in HbA1c (%), at Week 26 [timeFrame: Week 26]"]
+    assert e["to"] == ["Change from baseline in HbA1c & body weight at Week 26 [timeFrame: Week 26]"]
+
+
+def test_month_precision_change_is_not_a_move():
+    # NGEN NCT07799532: 2027-07-14 -> 2027-07 only dropped the day
+    h = timeline([(0, "d0", snapshot(study("2027-07-14"))), (2, "d2", snapshot(study("2027-07")))])
+    assert h["pcd_slip_months"] == 0.0 and h["pcd_moves_earlier"] == 0 and h["pcd_slips"] == 0
+    # BMEA NCT07502495: 2027-06 -> 2027-03 is a real 3-month move earlier
+    h2 = timeline([(0, "d0", snapshot(study("2027-06"))), (3, "d3", snapshot(study("2027-03")))])
+    assert h2["pcd_slip_months"] == -3.0 and h2["pcd_moves_earlier"] == 1
+
+
 def test_change_kind():
-    assert change_kind([("Change in body weight", "W68")], [("Change in Body Weight", "W68")]) == \
-        "letter case / whitespace only"
+    assert change_kind([("Change in body weight", "W68")], [("Change in Body Weight", "W68")]) is None
     assert change_kind([("A", "W1")], [("A", "W2")]) == "timeFrame text changed, measure text unchanged"
     assert change_kind([("A", "W1")], [("A", "W1"), ("B", "W1")]) == "number of primary outcomes changed"
 
