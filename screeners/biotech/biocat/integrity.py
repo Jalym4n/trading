@@ -267,7 +267,7 @@ def report(rows: list[dict], cols: list[str], today: dt.date, violations: list |
         if r.get("pre_funded_method") != "not_found" or r.get("ticker") in seen_t:
             continue
         seen_t.add(r.get("ticker"))
-        md += [f"### {r.get('ticker')} ({r.get('share_count_source')})", ""]
+        md += [f"### {r.get('ticker')} ({r.get('share_count_source') or r.get('prefunded_detail')})", ""]
         md += [f"{i}. ...{c}..." for i, c in enumerate(r.get("_pf_contexts") or [], 1)] or ["(no visible mention text)"]
         md.append("")
     if not seen_t:

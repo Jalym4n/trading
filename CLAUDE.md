@@ -424,14 +424,19 @@ filing's XBRL class breakdown, else a stated balance in the filing text);
 that moved ZURA and IRD above $400M. Every row carries `market_cap_confidence`;
 31 of 61 are unverified and their cash/market-cap fields are withheld.
 Reverse splits come from 8-Ks with effective date and ratio (ELOX 2026-05-29,
-1-for-11, excluded). Run of 2026-10-13 (fixes 1-8) routes rows to four files:
-`candidates.csv`, `watchlist_repeat_failure.csv` (>= 2 prior controlled trials
-of the molecule missed their primary endpoint, per a stated source: EVMN,
-AKBA), `excluded_dilution_risk.csv` (must raise before the readout AND sub-$1:
-CGTX, HUMA, ONCY, RNTX) and `excluded_delisted.csv`. Runway is the lower of
-computed and company-stated; primary outcomes are classified (clinical /
-safety / pk_pd / biomarker); `untested` marks molecules with >= 3 prior trials
-and no clinical primary (CGTX). Validations: `tests/live_*.py`. See `screeners/biotech/README.md`.
+1-for-11, excluded). Round 3 (2026-10-13) turned flags into gates: rows route to
+`candidates.csv` (survivors only), `excluded_delisted.csv` (Form 25 removing the
+common, read from the filing), `excluded_underfunded.csv` (`funded_through`
+False), `excluded_dilution_risk.csv` (shortfall >= 50% of market cap, runway < 2
+q, or must raise with >= 35%; share price is not a test), `excluded_not_evidence.csv`
+(single-arm or safety-only primary) and `watchlist_repeat_failure.csv`. Funnel:
+61 -> 14 delisted, 20 underfunded, 1 dilution, 11 not evidence, 3 watchlist ->
+**12 survivors**. Track record is keyed on ONE primary molecule per trial
+(widely-used partners excluded by CT.gov trial count > 150 or an earlier FDA
+approval) and computed once per key; an outcome counts only on a comparator trial
+with a clinical or biomarker primary, from an unblocked source with a direction.
+Two hard invariants fail the run if broken. `success_reaction_flag` marks stated
+successes the market sold off (UPB VALIANT 2026-02-11, -47%). Validations: `tests/live_*.py`. See `screeners/biotech/README.md`.
 
 The reasoning: technical analysis on SPY intraday is the lowest-prior corner of
 the market. Domain expertise in healthcare is a real structural advantage. This

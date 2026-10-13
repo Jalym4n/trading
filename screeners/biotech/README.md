@@ -228,11 +228,18 @@ HTML-entity-escaped and is unescaped before comparison.
   (`burn_quarters`). One inflow quarter can make runway very large (ZURA,
   2026-10-12: -18.9M then +18.9M, runway 10,302 quarters; VTVT +9.2M then
   -11.4M, 75 quarters). Both are now `burn_implausible` with no runway.
-- **No quote, stale filings.** Acquired or delisted issuers still sponsor
-  trials under their old names. With no price their market cap is unknown, so
-  they are kept (never drop on missing data) and labelled
-  `company_status = likely_delisted_or_acquired`. Run of 2026-10-13: 14 rows,
-  7 tickers (ITCI, BPMC, FOLD, DAWN, APLS, CNTA, DVAX), each with a Form 15-12G.
+- **Delisting is read from filings, not the price feed.** A Form 25 / 25-NSE
+  filed after the last periodic report, removing the COMMON stock (its
+  `descriptionClassSecurity` is read; HUMA's 2026-08-25 Form 25 removed only its
+  warrants), is `delisted`. A Form 15 alone is `check_manually`. Run of
+  2026-10-13: 14 rows, 7 tickers (ITCI, BPMC, FOLD, DAWN, APLS, CNTA, DVAX),
+  every one with a dated Form 25 (APLS 2026-05-14). Issuers that have never filed
+  a 10-Q (RTSN, STA, NUOX: S-1 or just-listed) are `check_manually` with
+  `delisting_signal = no_periodic_filing_yet`: no runway can be computed, so
+  they pass the funding gate on missing data and carry a warning.
+- **Funnel, run of 2026-10-13:** 61 rows; delisted 14, underfunded 20, dilution
+  1, not evidence 11, repeat-failure watchlist 3 (AKBA, EVMN, MNOV), **12
+  survivors**. `integrity_report.md` has the table and the independent counts.
 - **Market cap includes pre-funded warrants** (`true_market_cap`; `reported_market_cap`
   is the common-only figure). Pre-funded warrants are shares in all but name (strike
   $0.0001 to $0.11) and companies count them in basic EPS. The count comes from
@@ -245,9 +252,11 @@ HTML-entity-escaped and is unescaped before comparison.
   integrity_report.md lists the row. Common shares are as of the cover date,
   warrants as of the balance date; an exercise in between is counted twice.
   Run of 2026-10-13: ZURA ($383M to $500M) and IRD ($387M to $461M) now exceed
-  the $400M cap and drop out; ANNX, KRRO and PALI rise but stay in. 31 of 61
-  rows are `unverified`: most mention pre-funded warrants without stating a
-  balance (VTVT, BMEA, RNTX, EYPT), the rest have no readable 10-Q/10-K.
+  the $400M cap and drop out; ANNX, KRRO and PALI rise but stay in. Round 3
+  (four extraction methods) resolved CRBP, EYPT and VTVT from XBRL; 28 of 61
+  rows remain `unverified`. RNTX, BMEA, RNXT, AGEN and TNYA describe issuances
+  but never state a balance (their mentions are printed in the report); the rest
+  have no 10-Q/10-K at all (20-F filers, S-1 filers, delisted issuers).
   ELOX end to end: `tests/live_elox.py` asserts 7,383,919 pre-funded, ~$159M,
   split 2026-05-29 1-for-11, excluded.
 - Stage 1 returned 1,494 trials, not ~3,000: the industry-sponsor and

@@ -605,12 +605,16 @@ def identify_molecule(http, record: dict, sponsor: str | None, filing: str = "")
         ranked.append(((code or mentions > 0), iv.get("type") in ASSET_TYPES, mentions, -i, keys))
     ranked.sort(reverse=True)
     if not ranked:
-        return {"primary_molecule_key": None, "molecule_synonyms": [], "combination_partners": partners,
-                "widely_used_excluded": excluded, "_ranking": []}
+        return {"primary_molecule_key": None, "molecule_synonyms": [], "combination_partners": list(dict.fromkeys(partners)),
+                "widely_used_excluded": list(dict.fromkeys(excluded)), "_ranking": []}
     top = ranked[0][4]
-    return {"primary_molecule_key": top[0], "molecule_synonyms": top[1:],
-            "combination_partners": [r[4][0] for r in ranked[1:]] + partners,
-            "widely_used_excluded": excluded,
+    own = set(top)
+    # one intervention per dose arm ("EVO756 100 mg", "EVO756 300 mg") is still the same molecule
+    syn = list(dict.fromkeys(k for r in ranked if r[4][0] in own for k in r[4] if k != top[0]))
+    rest = list(dict.fromkeys(r[4][0] for r in ranked[1:] if r[4][0] not in own))
+    return {"primary_molecule_key": top[0], "molecule_synonyms": syn,
+            "combination_partners": rest + [k for k in dict.fromkeys(partners) if k not in own and k not in rest],
+            "widely_used_excluded": list(dict.fromkeys(excluded)),
             "_ranking": [f"{r[4][0]} (code/filing={r[0]}, drug/bio={r[1]}, filing mentions={r[2]})" for r in ranked]}
 
 
