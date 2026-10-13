@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from biocat.derive import lead_program  # noqa: E402
 from biocat.financials import cash_components, runway_crosscheck, stated_runway  # noqa: E402
+from biocat.outcomes import classify_outcome  # noqa: E402
 from biocat.track import (NON_OUTCOME, attribute_press, effect_direction, evidence_grade,  # noqa: E402
                           molecule_key, molecule_keys, track_record_for_key, why_stopped_outcome)
 from biocat.trials import Trial  # noqa: E402
@@ -336,8 +337,18 @@ def test_gates_and_routing():
     assert f == "candidates.csv" and "25.0%" in r["dilution_warning"]
     assert run(candidate_evidence_grade="single_arm")[0] == "excluded_not_evidence.csv"
     assert run(primary_is_safety_only=True)[0] == "excluded_not_evidence.csv"
-    f, r = run(company_status="check_manually")
+    f, r = run(company_status="check_manually", delisting_signal="form_15_only")
     assert f == "candidates.csv" and "CHECK MANUALLY" in r["row_warnings"]
+
+
+
+def test_prior_trial_vocabulary():
+    # AKBA praliciguat: both controlled failures have efficacy primaries the first vocabulary missed
+    assert classify_outcome("Change From Baseline in Peak Oxygen Consumption (VO2) at Week 12") == "clinical"
+    assert classify_outcome("Percent Change From Baseline in Urine Albumin Creatinine Ratio (UACR)") == "biomarker"
+    # "clear" is a skin endpoint, not drug clearance
+    assert classify_outcome("Apparent Total Body Clearance (CL/F) on Day 14") == "pk_pd"
+    assert classify_outcome("Heart rate") == "safety"
 
 
 if __name__ == "__main__":

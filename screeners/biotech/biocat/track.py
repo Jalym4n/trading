@@ -436,8 +436,10 @@ def attribute_press(sentences: list[dict], key: str, trial: dict, all_controlled
         # the sentence's own naming first, then the 200 characters before it
         named = [o for o in all_controlled if _names_trial(p["sentence"], o)] or \
             [o for o in all_controlled if _names_trial(p["sentence"] + " " + p["before"][-200:], o)]
-        if named:
-            if len(named) != 1 or named[0]["nct_id"] != trial["nct_id"]:
+        if len(named) == 1:
+            # exactly one trial named; several named (EVMN: both org study IDs contain "EVO756") is no
+            # naming at all, and the condition rule below decides
+            if named[0]["nct_id"] != trial["nct_id"]:
                 continue
         else:
             pos = {o["nct_id"]: _last_pos(p["before"], _abbrev(o["condition"])) for o in all_controlled}

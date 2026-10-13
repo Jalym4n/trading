@@ -115,6 +115,8 @@ def company_info(http, cik: int, ticker: str, today: dt.date) -> dict:
         info["runway_stmt"] = None
         info["errors"].append(f"runway statement: {e}")
 
+    info["form25_class"] = form25_classes(http, cik, info["submissions"]) if info["submissions"] else {}
+
     from . import dilution as DL
     try:
         info["bid_notices"] = DL.bid_price_notices(http, cik, info["submissions"], today) \
@@ -152,6 +154,23 @@ def company_info(http, cik: int, ticker: str, today: dt.date) -> dict:
         except Exception as e:  # noqa: BLE001
             info["errors"].append(f"nasdaq summary: {e}")
     return info
+
+
+def form25_classes(http, cik: int, submissions: dict) -> dict:
+    """{accession: descriptionClassSecurity} for every Form 25 / 25-NSE in the recent filings."""
+    import re
+    r = submissions.get("filings", {}).get("recent", {})
+    out = {}
+    for acc, form, doc in zip(r.get("accessionNumber", []), r.get("form", []), r.get("primaryDocument", [])):
+        if not form.startswith("25"):
+            continue
+        try:
+            x = http.get_text(f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/primary_doc.xml")
+            m = re.search(r"<descriptionClassSecurity>(.*?)</descriptionClassSecurity>", x, re.S)
+            out[acc] = m.group(1).strip() if m else None
+        except Exception:  # noqa: BLE001
+            out[acc] = None
+    return out
 
 
 def screen(a) -> int:
@@ -207,7 +226,7 @@ def screen(a) -> int:
             else F.Debt(None, None, {}, None)
         aged = X.cash_aging(run.cash_usd if run else None, run.cash_asof if run else None,
                             run.burn_q_usd if run else None, run.burn_status if run else None, mcap, today)
-        status = X.company_status(info.get("submissions"), today)
+        status = X.company_status(info.get("submissions"), today, form25_class=info.get("form25_class"))
         ev = X.ev_est(mcap, debt.total_debt_usd, aged["cash_today_est"])
         if info["confidence"] != "verified":
             # an unverified share count never drives a cash-vs-market-cap conclusion
@@ -421,7 +440,7 @@ def screen(a) -> int:
     per = Counter(r["output_file"] for r in rows)
     log("wrote " + ", ".join(f"{per[n]} {n}" for n, _c in OUTPUTS) + f"; {len(rows)} dossiers -> {a.out} "
         f"(network calls {http.calls['network']}, cache hits {http.calls['cache']})")
-    if violations:
+    if any(bad for _name, bad in violations):
         for name, bad in violations:
             for line in bad:
                 print(f"INVARIANT VIOLATED: {name}: {line}", file=sys.stderr)
@@ -472,9 +491,12 @@ def gates(row: dict, by_nct: dict) -> dict:
     failed = [g for g in ("delisted", "underfunded", "dilution", "not_evidence") if out[f"{g}_gate"]]
     out["fails_gates"] = "|".join(failed) or None
     warn = []
-    if row.get("company_status") == "check_manually":
+    if row.get("delisting_signal") == "form_15_only":
         warn.append(f"CHECK MANUALLY: Form 15 deregistration filed {row.get('form_15_date')} with no Form 25; "
                     f"often routine, confirm the listing")
+    elif row.get("delisting_signal") == "no_periodic_filing_yet":
+        warn.append(f"CHECK MANUALLY: no 10-Q/10-K/20-F ever filed (latest filing {row.get('latest_filing_form')} "
+                    f"{row.get('latest_filing_date')}): an S-1 or newly listed issuer; no financials to screen")
     if out["dilution_warning"]:
         warn.append(out["dilution_warning"])
     if row.get("success_reaction_flag"):

@@ -44,13 +44,18 @@ NAMED_CLINICAL = re.compile(
     # event rates and incidence
     r"exacerbations?|hypoglyc[a]?emi\w*|relapses?|hospitali[sz]ations?|seizures?|flares?|"
     r"rate of infections?|infection rate|remission|response rate|responders?|survival|progression|"
-    r"success|almost clear|clear(?![- ]cell)|recurrence)", re.I)
+    r"success|almost clear|clear\b(?![- ]cell)|recurrence|"
+    r"peak (?:oxygen consumption|VO2)|VO2 ?max|exercise capacity|mean arterial pressure|intraocular pressure|IOP\b|"
+    r"patency|graft failure|thrombo(?:sis|tic) events?|GVHD|graft[- ]versus[- ]host|wound infection|"
+    r"(?:abstinent|heavy) drinking days|drinking days|abstinence|hair count|complete remission|\bCR\b|EFS\b|"
+    r"achieving a response)", re.I)
 SAFETY = re.compile(
     r"\b(?:TEAEs?|TEAs?|SAEs?|adverse events?|adverse reactions?|AEs?|side effects?|toxicit(?:y|ies)|"
     r"dose[- ]limiting|DLTs?|tolerability|safety|discontinu\w* due to|laboratory (?:abnormalit|value|test|parameter)|"
     r"clinical laboratory|lab abnormalit|vital signs?|ECGs?|electrocardiogram|QTc?|maximum tolerated dose|MTD|"
     r"dose escalation|dose expansion|RP2D|recommended phase 2 dose|clinical chemistry|hematology parameters?|"
-    r"infusion[- ](?:associated|related) reactions?|IARs?|injection[- ]site reactions?)\b",
+    r"infusion[- ](?:associated|related) reactions?|IARs?|injection[- ]site reactions?|heart rate|pulse|"
+    r"physical examination)\b",
     re.I)
 PK_PD = re.compile(
     r"\b(?:pharmacokinetic\w*|PK\b|AUC\w*|Cmax|Cmin|Ctrough|Tmax|half[- ]life|t1/2|clearance|"
@@ -65,10 +70,13 @@ BIOMARKER = re.compile(
     r"platelet count|enzyme activity|substrate|Gb3|dystrophin|gene expression|"
     # imaging tracer activity and immune readouts
     r"TSPO|amyloid PET|tracer|radioligand|antibody (?:level|titer|titre)s?|titers?|titres?|"
-    r"seroconversion|immunogenicity)\b|as measured by \[?(?:\d{1,3}\s?)?\[?(?:F|C|Ga|Zr|Cu)[- ]?\d{2}", re.I)
+    r"seroconversion|seroprotect\w*|immunogenicity|albumin|UACR|creatinine ratio|antibody concentrations?|INR|"
+    r"thrombin|uptake value|binding potential|liver stiffness|fatty liver|neutrophils?|IFN|interferon|"
+    r"immunohistochem\w*|infiltration|cGMP|HOMA[- ]IR|platelet (?:reactivity|function)|reactive hyperemia|"
+    r"myeloperoxidase|glucose concentration|glycemic)\b|as measured by \[?(?:\d{1,3}\s?)?\[?(?:F|C|Ga|Zr|Cu)[- ]?\d{2}", re.I)
 GENERIC_CLINICAL = re.compile(
     r"\b(?:survival|response rate|responders?|remission|relapse|recurrence|progression|exacerbations?|"
-    r"symptom score|symptoms?|score|scale|questionnaire|quality of life|function(?:al)? (?:score|status)|"
+    r"symptom score|symptoms?|scores?|scale|questionnaire|quality of life|function(?:al)? (?:score|status)|"
     r"frequency of|days with|time to|healing|clearance of (?:lesions|skin)|cure)\b", re.I)
 
 

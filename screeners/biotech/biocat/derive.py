@@ -112,18 +112,40 @@ STALE_DAYS = 270
 STALE_DAYS_ANNUAL_FILER = 455   # a 20-F / 40-F filer reports once a year (12 months + 3-month filing window)
 
 
-def company_status(submissions: dict | None, today: dt.date, stale_days: int = STALE_DAYS) -> dict:
+COMMON_CLASS = re.compile(r"common|ordinary|american depositary|\bADS\b|\bADR\b", re.I)
+OTHER_CLASS = re.compile(r"warrant|\bnotes?\b|debenture|\bunits?\b|\brights?\b|preferred", re.I)
+
+
+def removes_common(desc: str | None) -> bool:
+    """A Form 25 removes the common stock unless its descriptionClassSecurity names only
+    another class (HUMA 2026-08-25: "Redeemable Warrants, each whole warrant exercisable for one
+    share of Common Stock"). An unreadable description counts (the conservative reading)."""
+    if not desc:
+        return True
+    if OTHER_CLASS.search(desc) and not re.match(r"\s*(?:class [a-z] )?(?:common|ordinary|american depositary)",
+                                                   desc, re.I):
+        return False
+    return bool(COMMON_CLASS.search(desc)) or not OTHER_CLASS.search(desc)
+
+
+def company_status(submissions: dict | None, today: dt.date, stale_days: int = STALE_DAYS,
+                   form25_class: dict | None = None) -> dict:
     """Delisting facts from the SEC submissions record.
 
     form_25_filed  a Form 25 / 25-NSE (Notification of Removal from Listing) filed ON OR AFTER the
                    newest periodic financial report. An older Form 25 sits before current financials
                    (a warrant class or note series delisted; the common still reports) and is shown in
                    form_25_older, not counted.
+                   A Form 25 whose descriptionClassSecurity names only warrants / notes / units /
+                   preferred (form25_class: {accession: description}) removes that class, not the
+                   common, and is not counted.
     form_15_filed  a Form 15 deregistration, same timing rule. Demoted: a 15-12G alone is often routine.
     delisting_signal  form_25 > no_recent_financial_filing > form_15_only > none
     company_status    delisted on form_25 or no_recent_financial_filing (no 10-K/10-Q/20-F for more
                       than 270 days; 455 for an annual-only 20-F/40-F filer); check_manually on
-                      form_15_only; active otherwise; unknown when the record could not be read."""
+                      form_15_only, or on no_periodic_filing_yet (an S-1 / new IPO filer that has never
+                      filed a 10-Q/10-K: RTSN, STA, NUOX); active otherwise; unknown when the record
+                      could not be read."""
     empty = {"company_status": "unknown", "delisting_signal": None, "form_25_filed": None, "form_25_date": None,
              "form_25_accession": None, "form_25_older": None, "form_15_filed": None, "form_15_date": None,
              "latest_filing_date": None, "latest_filing_form": None, "latest_financial_filing": None,
@@ -137,14 +159,19 @@ def company_status(submissions: dict | None, today: dt.date, stale_days: int = S
     fin = max(((d, f) for d, f, _ in rows if f in FINANCIAL_FORMS), default=(None, None))
     f25 = sorted(((d, f, a) for d, f, a in rows if f in FORM_25), reverse=True)
     f15 = sorted(((d, f, a) for d, f, a in rows if f in FORM_15), reverse=True)
+    form25_class = form25_class or {}
+    other_class = [x for x in f25 if not removes_common(form25_class.get(x[2]))]
+    f25 = [x for x in f25 if x not in other_class]
     after = [x for x in f25 if fin[0] is None or x[0] >= fin[0]]
-    older = [x for x in f25 if x not in after]
+    older = [x for x in f25 if x not in after] + other_class
     f15_after = [x for x in f15 if fin[0] is None or x[0] >= fin[0]]
     days_fin = (today - dt.date.fromisoformat(fin[0])).days if fin[0] else None
     limit = STALE_DAYS_ANNUAL_FILER if fin[1] in ANNUAL_ONLY_FORMS else stale_days
     stale = days_fin is None or days_fin > limit
     if after:
         signal = "form_25"
+    elif fin[0] is None:
+        signal = "no_periodic_filing_yet"
     elif stale:
         signal = "no_recent_financial_filing"
     elif f15_after:
@@ -152,11 +179,13 @@ def company_status(submissions: dict | None, today: dt.date, stale_days: int = S
     else:
         signal = "none"
     status = {"form_25": "delisted", "no_recent_financial_filing": "delisted",
-              "form_15_only": "check_manually", "none": "active"}[signal]
+              "form_15_only": "check_manually", "no_periodic_filing_yet": "check_manually",
+              "none": "active"}[signal]
     return {**empty, "company_status": status, "delisting_signal": signal,
             "form_25_filed": bool(after), "form_25_date": after[-1][0] if after else None,
             "form_25_accession": after[-1][2] if after else None,
-            "form_25_older": "|".join(f"{f} {d}" for d, f, _ in older) or None,
+            "form_25_older": "|".join(f"{f} {d}" + (f" ({form25_class[a]})" if form25_class.get(a) else "")
+                                      for d, f, a in older) or None,
             "form_15_filed": bool(f15_after), "form_15_date": f15_after[-1][0] if f15_after else None,
             "latest_filing_date": latest[0], "latest_filing_form": latest[1],
             "latest_financial_filing": fin[0], "latest_financial_form": fin[1],

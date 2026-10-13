@@ -185,6 +185,17 @@ def test_company_status():
     assert (old25["company_status"], old25["form_25_filed"], old25["form_25_older"]) == \
         ("active", False, "25-NSE 2024-01-05")
     assert company_status(None, TODAY)["company_status"] == "unknown"
+    # HUMA: the exchange's 25-NSE after the 10-Q removes the WARRANTS, not the common stock
+    huma = _subs([("2026-08-25", "25-NSE"), ("2026-08-12", "10-Q")])
+    huma["filings"]["recent"]["accessionNumber"] = ["0001354457-26-000819", "x"]
+    w = company_status(huma, TODAY, form25_class={"0001354457-26-000819": "Redeemable Warrants, each whole warrant "
+                                                                          "exercisable for one share of Common Stock"})
+    assert (w["company_status"], w["form_25_filed"]) == ("active", False) and "Redeemable Warrants" in w["form_25_older"]
+    c = company_status(huma, TODAY, form25_class={"0001354457-26-000819": "Common Stock"})
+    assert c["company_status"] == "delisted"
+    # RTSN / STA / NUOX: S-1 and new-IPO filers have never filed a 10-Q; not delisted
+    ipo = st([("2026-10-09", "424B4"), ("2026-10-08", "EFFECT"), ("2025-12-11", "S-1")])
+    assert (ipo["company_status"], ipo["delisting_signal"]) == ("check_manually", "no_periodic_filing_yet")
 
 
 # ------------------------------------------------------------- integrity --

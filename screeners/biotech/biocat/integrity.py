@@ -58,9 +58,10 @@ def checks(rows: list[dict]) -> list[tuple[str, list[tuple[str, str]]]]:
         lambda r: f"signal={r.get('delisting_signal')} form_25={r.get('form_25_date')} ({r.get('form_25_accession')}) "
                   f"form_15={r.get('form_15_date')} latest_financial={r.get('latest_financial_form')} "
                   f"{r.get('latest_financial_filing')} ({r.get('days_since_financial_filing')} days)")
-    add("company_status == check_manually (Form 15 deregistration without a Form 25; row stays in candidates.csv)",
+    add("company_status == check_manually (Form 15 without a Form 25, or no periodic report ever filed; not excluded)",
         lambda r: r.get("company_status") == "check_manually",
-        lambda r: f"form_15={r.get('form_15_date')} latest_financial={r.get('latest_financial_form')} "
+        lambda r: f"signal={r.get('delisting_signal')} form_15={r.get('form_15_date')} latest filing "
+                  f"{r.get('latest_filing_form')} {r.get('latest_filing_date')} latest_financial={r.get('latest_financial_form')} "
                   f"{r.get('latest_financial_filing')}; true_market_cap={r.get('true_market_cap')}")
     add("pcd_slip_months < 0 (primary completion date moved EARLIER: real or parse error?)",
         lambda r: r.get("pcd_slip_months") is not None and r["pcd_slip_months"] < 0,
