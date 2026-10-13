@@ -82,8 +82,7 @@ def site_facts(enrollment: int | None, n_sites: int | None, n_versions: int | No
     not listed its sites yet (SGMT NCT07863193: 800 patients, 4 sites, v1)."""
     pps = round(enrollment / n_sites, 1) if enrollment and n_sites else None
     maturity = None if n_versions is None else ("new" if n_versions <= 2 else "established")
-    return {"patients_per_site": pps, "site_list_maturity": maturity,
-            "is_efficacy_scale": (enrollment >= 20) if enrollment is not None else None}
+    return {"patients_per_site": pps, "site_list_maturity": maturity}
 
 
 def cash_aging(cash_usd: float | None, cash_asof: str | None, burn_q_usd: float | None,
@@ -139,3 +138,53 @@ def company_status(submissions: dict | None, market_cap: float | None, today: dt
             "latest_filing_date": latest[0], "latest_filing_form": latest[1],
             "latest_financial_filing": fin,
             "deregistration_filing": f"{dereg[1]} {dereg[0]}" if dereg else None}
+
+
+def lead_program(candidate, sponsor_trials: list) -> dict:
+    """Where the candidate sits among the sponsor's trials in the screening
+    window. lead_program_guess = highest phase, then largest enrollment (a
+    mechanical tie-break, not a judgment of which program matters). The
+    candidate is never switched; a False candidate_is_lead_program is shown."""
+    trials = [t for t in sponsor_trials]
+    def key(t):
+        return (t.phase_rank, -(t.enrollment or 0))
+    lead = min(trials, key=key) if trials else None
+    max_n = max((t.enrollment or 0) for t in trials) if trials else 0
+    best_phase = min(t.phase_rank for t in trials) if trials else 0
+    others = [{"nct": t.nct_id, "phase": t.phase, "n": t.enrollment, "condition": ", ".join(t.conditions)[:80]}
+              for t in trials if t.nct_id != candidate.nct_id]
+    return {
+        "sponsor_trial_count_in_window": len(trials),
+        "candidate_is_largest_trial": (candidate.enrollment or 0) >= max_n,
+        "candidate_is_latest_phase": candidate.phase_rank <= best_phase,
+        "sponsor_other_trials": others,
+        "lead_program_guess": (f"{lead.nct_id} {lead.phase} n={lead.enrollment} {', '.join(lead.conditions)[:60]}"
+                               if lead else None),
+        "candidate_is_lead_program": lead is not None and lead.nct_id == candidate.nct_id,
+    }
+
+
+def runway_ceiling(computed_q: float | None, stmt: dict | None, cash_as_of: str | None) -> dict:
+    """The company's own runway statement caps the computed one.
+    runway_q_stated = (stated end - cash date) / 91.25 days, where stated end is
+    the START of the stated period ('into the fourth quarter of 2027' -> 2027-10-01;
+    'through 2027' -> 2027-12-31). 'At least ...' statements are floors and never
+    cap. runway_q = min(computed, stated); source agreed when within 1 quarter."""
+    out = {"runway_q_computed": computed_q, "runway_stated_text": stmt["sentence"] if stmt else None,
+           "runway_stated_source": stmt.get("url") if stmt else None, "runway_stated_end_date": None,
+           "runway_q_stated": None, "runway_disagreement_q": None, "runway_gap_flag": None,
+           "runway_q": computed_q, "runway_source": "computed" if computed_q is not None else None}
+    if stmt and stmt.get("hi") is not None and cash_as_of:
+        end = stmt["lo"]
+        out["runway_stated_end_date"] = end.isoformat()
+        sq = round((end - dt.date.fromisoformat(cash_as_of)).days / DAYS_PER_QUARTER, 2)
+        out["runway_q_stated"] = sq
+        if computed_q is None:
+            out["runway_q"], out["runway_source"] = sq, "stated"
+        else:
+            d = round(computed_q - sq, 2)
+            out["runway_disagreement_q"] = d
+            out["runway_gap_flag"] = d > 2.0
+            out["runway_q"] = min(computed_q, sq)
+            out["runway_source"] = "agreed" if abs(d) <= 1.0 else ("stated" if sq < computed_q else "computed")
+    return out

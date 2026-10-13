@@ -24,14 +24,37 @@ CSV_COLS = ["ticker", "company", "cik", "nct_id", "phase", "catalyst_date", "dat
             "share_count_source", "market_cap_confidence", "avg_dollar_vol",
             "reverse_split_date", "reverse_split_ratio", "months_since_reverse_split", "reverse_split_source",
             "reverse_split_cover_check",
-            "cash_usd", "cash_asof", "days_since_cash_asof", "burn_q_usd", "burn_status",
+            "total_liquid_cash", "cash_and_equivalents", "short_term_investments", "long_term_investments",
+            "restricted_cash", "cash_tags_found", "cash_confidence", "cash_as_of_date", "days_since_cash_asof",
+            "burn_q_usd", "burn_status",
             "cash_today_est", "cash_to_mcap_est", "total_debt_usd", "debt_asof", "has_convertible", "ev_est",
-            "runway_q", "runway_needed_q", "funded_through",
+            "runway_q", "runway_q_computed", "runway_q_stated", "runway_stated_end_date", "runway_disagreement_q",
+            "runway_source", "runway_gap_flag", "runway_stated_text", "runway_needed_q", "funded_through",
+            "share_price", "sub_dollar", "nasdaq_tier", "prior_bid_price_deficiency", "reverse_split_last_36mo",
+            "readout_lag_months", "readout_est_date", "months_runway_minus_months_to_catalyst",
+            "must_raise_before_catalyst", "dilution_at_current_price_pct",
             "shelf_count", "atm_count", "days_since_latest_atm_filing",
             "n_primary_endpoints", "masking", "allocation", "control_arm", "control_arm_types",
-            "enrollment", "enrollment_type", "enrollment_stale", "is_efficacy_scale", "is_single_arm_open_label",
+            "enrollment", "enrollment_type", "enrollment_stale", "is_single_arm_open_label",
+            "primary_outcomes_n", "primary_outcome_classes", "primary_outcome_is_clinical", "primary_is_safety_only",
+            "primary_outcome_text",
             "n_sites", "patients_per_site", "site_list_maturity",
-            "n_versions", "n_endpoint_changes", "endpoint_changes", "pcd_slips", "pcd_slip_months"]
+            "n_versions", "n_endpoint_changes", "endpoint_changes", "pcd_slips", "pcd_slip_months",
+            "candidate_evidence_grade", "molecule_keys", "prior_trials_total", "prior_controlled_trials",
+            "prior_controlled_failures", "prior_controlled_successes", "prior_controlled_outcome_unknown",
+            "prior_failure_indications", "prior_failure_ncts", "prior_terminated_for_futility",
+            "prior_trials_with_clinical_primary", "prior_trials_safety_primary_only",
+            "largest_prior_clinical_primary_n", "molecule_track_record", "track_record_warning",
+            "track_record_evidence_url", "headline_price_divergence", "divergence_events", "press_releases",
+            "sponsor_trial_count_in_window", "candidate_is_largest_trial", "candidate_is_latest_phase",
+            "candidate_is_lead_program", "lead_program_guess", "sponsor_other_trials", "lead_program_warning"]
+WATCHLIST_COLS = ["note"] + CSV_COLS
+KILL_COLS = ["kill_dates"] + CSV_COLS
+
+
+def mkt_date(cache: dict, row: dict) -> str | None:
+    info = cache.get(row.get("cik")) or {}
+    return getattr(info.get("mkt"), "price_date", None)
 
 
 def company_info(http, cik: int, ticker: str, today: dt.date) -> dict:
@@ -74,6 +97,26 @@ def company_info(http, cik: int, ticker: str, today: dt.date) -> dict:
         info["splits_24m"] = [f"{e['effective_date']} {e['ratio']} ({e['source']})" for e in split["_split_events"]
                               if (today - dt.date.fromisoformat(e["effective_date"])).days < 730]
 
+    try:
+        info["runway_stmt"] = F.runway_statement(http, cik, info["submissions"])
+    except Exception as e:  # noqa: BLE001
+        info["runway_stmt"] = None
+        info["errors"].append(f"runway statement: {e}")
+
+    from . import dilution as DL
+    try:
+        info["bid_notices"] = DL.bid_price_notices(http, cik, info["submissions"], today) \
+            if info["submissions"] else None
+    except Exception as e:  # noqa: BLE001
+        info["bid_notices"] = None
+        info["errors"].append(f"bid-price notices: {e}")
+    try:
+        prs = DL.press_releases(http, cik, info["submissions"]) if info["submissions"] else []
+        info["pr"] = DL.divergence(prs, info["mkt"].closes)
+    except Exception as e:  # noqa: BLE001
+        info["pr"] = {"press_releases": [], "headline_price_divergence": None, "divergence_events": []}
+        info["errors"].append(f"press releases: {e}")
+
     # ---- share count: common (dei cover) + pre-funded warrants (XBRL classes, else filing text)
     info["pf"] = F.prefunded_warrants(http, cik, info["submissions"])
     sc = F.share_count(http, cik, info["submissions"], info["pf"])
@@ -102,7 +145,8 @@ def company_info(http, cik: int, ticker: str, today: dt.date) -> dict:
 def screen(a) -> int:
     from .net import Http
     from . import trials as T, identity as I, financials as F, market as M, dossier as D, history as H
-    from . import derive as X, integrity as Q
+    from . import derive as X, integrity as Q, track as TR, dilution as DL
+    from .outcomes import classify_primary
 
     today = dt.date.fromisoformat(a.today) if a.today else dt.date.today()
     os.makedirs(os.path.join(a.out, "dossiers"), exist_ok=True)
@@ -131,6 +175,9 @@ def screen(a) -> int:
     # ---- stages 3 + 4 per resolved company --------------------------------
     rows, dropped = [], []
     company_cache: dict[int, dict] = {}
+    sponsor_trials: dict[str, list] = {}
+    for t in trials:
+        sponsor_trials.setdefault(t.sponsor, []).append(t)
     for t in trials:
         r = ok.get(t.sponsor)
         if not r:
@@ -153,8 +200,42 @@ def screen(a) -> int:
         if info["confidence"] != "verified":
             # an unverified share count never drives a cash-vs-market-cap conclusion
             aged["cash_to_mcap_est"], ev = None, None
+        comp = run.components if run else {}
+        ceil = X.runway_ceiling(run.runway_q if run else None, info.get("runway_stmt"), comp.get("cash_as_of_date"))
+        needed = run.runway_needed_q if run else (round(months / 3 + 2, 2) if months is not None else None)
+        funded_final = (ceil["runway_q"] >= needed) if (ceil["runway_q"] is not None and needed is not None) else None
+        tags = comp.get("cash_tags_found") or []
+        if ceil["runway_disagreement_q"] is not None and abs(ceil["runway_disagreement_q"]) > 2.0:
+            cash_conf = "partial"
+        elif len(tags) <= 1:
+            cash_conf = "single_tag"
+        else:
+            cash_conf = "verified"
+        pre = comp.get("liquid_cash_ex_long_term")
+        funded_pre = (round(pre / run.burn_q_usd, 2) >= run.runway_needed_q) \
+            if (run and run.burn_status == "burning" and pre is not None and run.runway_needed_q is not None) \
+            else (run.funded_through if run else None)
+        lead = X.lead_program(t, sponsor_trials.get(t.sponsor, [t]))
+        dil = DL.dilution_facts(
+            mkt.price, mkt.exchange, info.get("bid_notices"), info["split"], ceil["runway_q"],
+            comp.get("total_liquid_cash"), comp.get("cash_as_of_date"), months, mcap, today,
+            readout_lag_months=a.readout_lag_months)
         row = {
-            **aged, **status,
+            **aged, **status, **ceil, **lead, **dil,
+            "funded_through": funded_final, "_funded_through_computed": run.funded_through if run else None,
+            "headline_price_divergence": info["pr"]["headline_price_divergence"],
+            "divergence_events": json.dumps(info["pr"]["divergence_events"]),
+            "press_releases": json.dumps(info["pr"]["press_releases"]),
+            "lead_program_warning": None if lead["candidate_is_lead_program"] else
+            f"candidate is not the sponsor's highest-phase / largest trial in the window; lead guess: "
+            f"{lead['lead_program_guess']}",
+            "total_liquid_cash": comp.get("total_liquid_cash"), "cash_and_equivalents": comp.get("cash_and_equivalents"),
+            "short_term_investments": comp.get("short_term_investments"),
+            "long_term_investments": comp.get("long_term_investments"),
+            "restricted_cash": comp.get("restricted_cash"), "cash_tags_found": "|".join(tags) or None,
+            "cash_confidence": cash_conf if comp.get("total_liquid_cash") is not None else None,
+            "cash_as_of_date": comp.get("cash_as_of_date"), "_funded_through_pre_cash_fix": funded_pre,
+            "_liquid_ex_lti": pre,
             **{k: v for k, v in info["split"].items() if not k.startswith("_") and k != "reverse_split_known"},
             "total_debt_usd": debt.total_debt_usd, "debt_asof": debt.debt_asof,
             "debt_components": "; ".join(f"{k}={v:,.0f}" for k, v in debt.components.items()) or None,
@@ -170,16 +251,12 @@ def screen(a) -> int:
             "market_cap_confidence": info["confidence"],
             "prefunded_detail": f"{info['sc'].detail} (XBRL status {info['pf'].status}, filing {info['pf'].source})",
             "avg_dollar_vol": round(mkt.avg_dollar_vol) if mkt.avg_dollar_vol else None,
-            "cash_usd": run.cash_usd if run else None, "cash_asof": run.cash_asof if run else None,
             "burn_q_usd": run.burn_q_usd if run else None,
             "burn_status": run.burn_status if run else "no_data",
-            "runway_q": run.runway_q if run else None,
-            "runway_needed_q": run.runway_needed_q if run else
-            (round(months / 3 + 2, 2) if months is not None else None),
+            "runway_needed_q": needed,
             "cash_tags": run.cash_tags if run else None,
             "burn_quarters": "; ".join(f"{q['start']}..{q['end']} {q['val']:+,.0f} ({q['derived_from']})"
                                        for q in run.quarters_used) if run and run.quarters_used else None,
-            "funded_through": run.funded_through if run else None,
             **{k: info["dil"].get(k) for k in ("shelf_count", "atm_count", "days_since_latest_atm_filing")},
             "_filter_notes": "; ".join(reasons),
             "data_notes": "; ".join(
@@ -200,6 +277,7 @@ def screen(a) -> int:
 
     # ---- stage 5: dossiers ------------------------------------------------
     hist_client = H.HistoryClient(http)
+    press_cache: dict = {}
     for row in rows:
         try:
             rec = T.fetch_full(http, row["nct_id"])
@@ -218,7 +296,19 @@ def screen(a) -> int:
                 related[name] = T.related_trials(http, row["sponsor"], name, limit=D.RELATED_CAP)
             except Exception:  # noqa: BLE001
                 related[name] = []
+        exp_names = D.experimental_interventions(rec.get("protocolSection", {}))
+        try:
+            tr = TR.track_record(http, rec, row["sponsor"], row["cik"],
+                                 company_cache.get(row["cik"], {}).get("submissions"), exp_names, today, press_cache)
+        except Exception as e:  # noqa: BLE001
+            tr = None
+            row["data_notes"] = f"{row.get('data_notes')}; track record: {e}"
+        if tr:
+            row.update({k: (json.dumps(v) if isinstance(v, list) else v) for k, v in tr.items()
+                        if not k.startswith("_")})
         md, facts = D.build(row, rec, hist_md, related, today)
+        if tr:
+            md += "\n".join(TR.track_section(tr)) + "\n"
         row.update({"n_primary_endpoints": facts["n_primary"], "masking": facts["masking"],
                     "allocation": facts["allocation"], "control_arm": facts["control_arm"],
                     "control_arm_types": facts["control_arm_types"],
@@ -227,6 +317,9 @@ def screen(a) -> int:
                     "n_sites": facts["n_sites"], "start_date": facts["start_date"]})
         row.update(X.design_flags(facts["allocation"], facts["masking"], facts["control_arm"],
                                   facts["enrollment_type"], facts["months_since_start"]))
+        pc = classify_primary(rec.get("protocolSection", {}))
+        row["_primary_classes"] = pc["primary_outcome_classes"]
+        row.update({k: (json.dumps(v) if isinstance(v, list) else v) for k, v in pc.items()})
         if hist:
             row.update({"n_versions": hist["n_versions"], "n_endpoint_changes": len(hist["endpoint_changes"]),
                         "endpoint_changes": json.dumps([{k: c[k] for k in ("version", "date", "from", "to", "kind",
@@ -238,11 +331,36 @@ def screen(a) -> int:
         with open(os.path.join(a.out, "dossiers", f"{row['ticker']}-{row['nct_id']}.md"), "w") as f:
             f.write(md)
 
-    with open(os.path.join(a.out, "candidates.csv"), "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=CSV_COLS, extrasaction="ignore")
-        w.writeheader()
-        for row in rows:
-            w.writerow(row)
+    # ---- outputs: delisted and repeat-failure rows leave the main ranking, never the record
+    for row in rows:
+        if row.get("company_status") == "likely_delisted_or_acquired":
+            row["output_file"] = "excluded_delisted.csv"
+        elif row.get("must_raise_before_catalyst") and row.get("sub_dollar"):
+            row["output_file"] = "excluded_dilution_risk.csv"
+            row["kill_dates"] = (f"cash {row.get('total_liquid_cash')} as of {row.get('cash_as_of_date')}; runway "
+                                 f"{row.get('runway_q')} q ({row.get('runway_source')}) ends {row.get('runway_end_date')}; "
+                                 f"primary completion {row.get('catalyst_date')}, readout est. {row.get('readout_est_date')} "
+                                 f"(+{row.get('readout_lag_months')} months); margin "
+                                 f"{row.get('months_runway_minus_months_to_catalyst')} months; price "
+                                 f"{row.get('share_price')} on {mkt_date(company_cache, row)}")
+        elif row.get("molecule_track_record") == "repeat_failure" and \
+                (row.get("prior_controlled_failures") or 0) >= TR.FAIL_MIN_FOR_WATCHLIST:
+            row["output_file"] = "watchlist_repeat_failure.csv"
+            row["note"] = (f"{row['prior_controlled_failures']} prior controlled trials of {row.get('molecule_keys')} "
+                           f"missed their primary endpoint ({', '.join(json.loads(row['prior_failure_indications']))}; "
+                           f"{', '.join(json.loads(row['prior_failure_ncts']))}); evidence: "
+                           f"{row.get('track_record_evidence_url')}. Candidate trial {row['nct_id']} is "
+                           f"{row.get('candidate_evidence_grade')}.")
+        else:
+            row["output_file"] = "candidates.csv"
+    for name, cols in (("candidates.csv", CSV_COLS), ("watchlist_repeat_failure.csv", WATCHLIST_COLS),
+                       ("excluded_delisted.csv", CSV_COLS), ("excluded_dilution_risk.csv", KILL_COLS)):
+        with open(os.path.join(a.out, name), "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
+            w.writeheader()
+            for row in rows:
+                if row["output_file"] == name:
+                    w.writerow(row)
     with open(os.path.join(a.out, "integrity_report.md"), "w") as f:
         f.write(Q.report(rows, CSV_COLS, today))
     with open(os.path.join(a.out, "dropped.csv"), "w", newline="") as f:
@@ -254,7 +372,11 @@ def screen(a) -> int:
         w.writeheader()
         for row in dropped:
             w.writerow(row)
-    log(f"wrote {len(rows)} candidates, {len(rows)} dossiers -> {a.out} "
+    from collections import Counter as _C
+    per = _C(r["output_file"] for r in rows)
+    log(f"wrote {per['candidates.csv']} candidates, {per['watchlist_repeat_failure.csv']} watchlist, "
+        f"{per['excluded_dilution_risk.csv']} dilution kills, "
+        f"{per['excluded_delisted.csv']} delisted, {len(rows)} dossiers -> {a.out} "
         f"(network calls {http.calls['network']}, cache hits {http.calls['cache']})")
     return 0
 
@@ -288,6 +410,8 @@ def main(argv=None) -> int:
     s.add_argument("--limit-trials", type=int, default=0, help="debug: only the first N trials")
     s.add_argument("--today", default=None, help="YYYY-MM-DD, default today")
     s.add_argument("--cache-hours", type=float, default=24.0)
+    s.add_argument("--readout-lag-months", type=float, default=3.0,
+                   help="months from primary completion to topline readout, for the dilution margin (0 = PCD)")
     j = sub.add_parser("journal", help="thesis journal")
     j.add_argument("--journal", default="journal.jsonl")
     js = j.add_subparsers(dest="jcmd", required=True)

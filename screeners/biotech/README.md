@@ -33,6 +33,9 @@ Standard library only (Python 3.10+). Responses are cached under
 | `identity.csv` | every sponsor, its match status and why (audit trail) |
 | `dropped.csv` | trials dropped on a KNOWN out-of-range market cap, ADV or reverse split |
 | `integrity_report.md` | rows failing internal-consistency checks, null shares, boolean True shares (below) |
+| `watchlist_repeat_failure.csv` | demoted, not dropped: `repeat_failure` with >= 2 prior controlled failures, plus a `note` citing the evidence |
+| `excluded_dilution_risk.csv` | KILL: `must_raise_before_catalyst` AND `sub_dollar`, with `kill_dates` |
+| `excluded_delisted.csv` | `company_status = likely_delisted_or_acquired` (moved out of `candidates.csv`) |
 
 Dossier sections: **A** primary endpoint verbatim (+ multiplicity terms if >1
 primary), **B** bias controls (+ open-label / subjective-vocabulary
@@ -62,7 +65,53 @@ a dated timeline, **E** statistical-plan terms with the sentence they occur in,
 | `enrollment_stale` | enrollment type ESTIMATED and start date > 24 months ago |
 | `pcd_slip_months` | first to latest primary completion date; month precision when either date has no day, so 2027-07-14 to 2027-07 is 0, not -0.4 |
 
-Rows are never dropped by these columns; filtering on them is the reader's call.
+Rows are never dropped by these columns; filtering on them is the reader's call,
+except the three routing rules above (delisted, dilution kill, repeat-failure
+watchlist), which move a row to its own file.
+
+### Intervention track record (dossier section G)
+
+| Column | Rule |
+|---|---|
+| `molecule_keys` | candidate's experimental interventions (or every non-control intervention when the drug arms are mistyped) normalised: dose, route, frequency, salt and arm labels stripped, codes joined (`EVO-756 100 mg` -> `evo756`), plus parenthetical codes and code-like `otherNames`. A key with >= 200 registered trials is a backbone (pembrolizumab) and is not tracked |
+| `prior_trials_total` | trials of that molecule, any sponsor, status COMPLETED / TERMINATED / WITHDRAWN / SUSPENDED, started before the candidate |
+| `prior_controlled_*` | prior trials with a comparator arm, and the outcome of each AS STATED BY A SOURCE: whyStopped futility; a posted CT.gov primary analysis (p < 0.05 met, else missed); or the sponsor's own 8-K press release sentence naming the molecule, where the indication named closest before "did / did not meet the primary endpoint" is that trial's. One sentence is attributed to one trial: ties must be broken by the NCT ID, acronym or protocol number. Otherwise `unknown`, counted, never guessed |
+| `prior_trials_with_clinical_primary`, `prior_trials_safety_primary_only`, `largest_prior_clinical_primary_n` | from each prior trial's `primaryOutcomes[]` classes |
+| `molecule_track_record` | naive (no prior controlled trial) / validated / mixed / repeat_failure / controlled_outcomes_unknown / **untested** (>= 3 prior trials, none with a clinical primary; overrides naive, unknown and validated, with `track_record_warning`) |
+| `candidate_evidence_grade` | controlled_masked (comparator + >= double masking) / controlled_open / single_arm (no comparator arm, includes dose comparisons) / unknown |
+
+Validation (`tests/live_evmn.py`, `tests/live_cgtx.py`): EVO756 has 2 failures,
+CSU (8-K 2026-06-29) and AD (8-K 2026-09-09), so `repeat_failure` and the
+watchlist; EVO301 "met primary endpoint" in the same releases is a different
+molecule and is not counted. CT1812 has 11 prior trials, 0 clinical primaries,
+so `untested`.
+
+### Primary outcome class (candidate trial)
+
+`primary_outcome_classes` from `primaryOutcomes[]` ONLY: clinical (a named
+scale or patient outcome) / safety / pk_pd / biomarker / unclassified.
+`primary_outcome_is_clinical`, `primary_is_safety_only`, verbatim
+`primary_outcome_text`. Replaces `is_efficacy_scale` (True on 97% of rows).
+SHINE NCT03507790 and SHIMMER NCT05225415 are safety-only; START NCT05531656
+is clinical (CDR-SB).
+
+### Cash, runway and dilution
+
+| Column | Rule |
+|---|---|
+| `total_liquid_cash` | cash and equivalents + short-term + long-term investments, one tag per category (a holding tagged twice counts once); restricted cash reported, excluded. EVMN 2026-06-30: $288.0M (the old figure, $200.8M, omitted long-term investments) |
+| `cash_confidence` | partial: computed and company-stated runway differ by > 2 quarters; single_tag: only a cash tag; else verified |
+| `runway_q` | min(`runway_q_computed`, `runway_q_stated`). Stated = the company's own sentence in the latest 10-Q/10-K or earnings release; its end is the START of the stated period ("into the fourth quarter of 2027" -> 2027-10-01). "At least ..." statements are floors and never cap. `runway_source` stated / computed / agreed; `runway_gap_flag` when computed exceeds stated by > 2 quarters. The kill-screen (`funded_through`) uses `runway_q` |
+| `readout_est_date` | primary completion + `--readout-lag-months` (default 3: database lock and topline analysis follow last data collection). A stated convention; set 0 to use primary completion |
+| `months_runway_minus_months_to_catalyst`, `must_raise_before_catalyst` | runway left from today minus months to the estimated readout; must raise when <= 2 |
+| `dilution_at_current_price_pct` | shortfall to readout + 6 months at the implied burn (total cash / runway months) as % of market cap |
+| `share_price`, `sub_dollar`, `nasdaq_tier`, `prior_bid_price_deficiency`, `reverse_split_last_36mo` | price feed; 8-K Item 3.01 notices naming the bid price (36 months); SEC split events |
+| `press_releases`, `headline_price_divergence`, `divergence_events` | last 8 exhibit-99 releases with the 1-day return of the first session that could react (after 16:00 ET -> next day); flagged when a headline with positive / aligns / achieves / successfully / advances / granted is followed by < -15% |
+
+CGTX: runway computed 7.91 q, stated 5.02 q (into Q4 2027), used 5.02; START
+primary completion 2027-05-31 + 3 months, margin 1.0 month at $0.877, so it
+is a dilution KILL. With `--readout-lag-months 0` the margin is 4.0 months and
+it is not. 2026-06-24 "Aligns on Key Aspects of Pivotal Study" -38.18%.
 
 ### integrity_report.md
 

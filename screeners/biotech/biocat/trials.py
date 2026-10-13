@@ -10,6 +10,7 @@ STATUSES = "RECRUITING|ACTIVE_NOT_RECRUITING|ENROLLING_BY_INVITATION"
 STAGE1_FIELDS = ",".join([
     "NCTId", "BriefTitle", "LeadSponsorName", "Phase", "OverallStatus",
     "PrimaryCompletionDate", "PrimaryCompletionDateType", "InterventionName",
+    "EnrollmentCount", "Condition",
 ])
 
 
@@ -23,6 +24,8 @@ class Trial:
     pcd: str | None            # primary completion date, as registered (YYYY-MM or YYYY-MM-DD)
     pcd_type: str | None       # ESTIMATED / ACTUAL
     interventions: list[str] = field(default_factory=list)
+    enrollment: int | None = None
+    conditions: list[str] = field(default_factory=list)
 
     @property
     def phase(self) -> str:
@@ -78,6 +81,8 @@ def _to_trial(s: dict) -> Trial:
         pcd_type=pcd.get("type"),
         interventions=[i.get("name", "") for i in
                        ps.get("armsInterventionsModule", {}).get("interventions", []) or []],
+        enrollment=(ps.get("designModule", {}).get("enrollmentInfo") or {}).get("count"),
+        conditions=(ps.get("conditionsModule", {}) or {}).get("conditions") or [],
     )
 
 

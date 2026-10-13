@@ -41,17 +41,17 @@ def checks(rows: list[dict]) -> list[tuple[str, list[tuple[str, str]]]]:
         lambda r: f"types={r.get('control_arm_types')} basis: {r.get('control_arm_basis')}")
     add("runway_q > 200, or burn_q_usd < $250k with cash > $10M, or burn withheld as burn_implausible",
         lambda r: ((r.get("runway_q") or 0) > 200
-                   or (r.get("burn_q_usd") is not None and r["burn_q_usd"] < 250_000 and (r.get("cash_usd") or 0) > 10e6)
+                   or (r.get("burn_q_usd") is not None and r["burn_q_usd"] < 250_000 and (r.get("total_liquid_cash") or 0) > 10e6)
                    or r.get("burn_status") == "burn_implausible"),
         lambda r: f"burn_status={r.get('burn_status')} runway_q={r.get('runway_q')} burn_q_usd={r.get('burn_q_usd')} "
-                  f"cash_usd={r.get('cash_usd')} quarters: {r.get('burn_quarters')}")
+                  f"total_liquid_cash={r.get('total_liquid_cash')} quarters: {r.get('burn_quarters')}")
     add("enrollment < 20 on a P2, P3 or P2/P3 trial",
         lambda r: r.get("phase") in EFFICACY_PHASES and r.get("enrollment") is not None and r["enrollment"] < 20,
         lambda r: f"phase={r.get('phase')} enrollment={r.get('enrollment')} ({r.get('enrollment_type')}) "
                   f"n_sites={r.get('n_sites')}")
     add("days_since_cash_asof > 150",
         lambda r: (r.get("days_since_cash_asof") or 0) > 150,
-        lambda r: f"cash_asof={r.get('cash_asof')} days={r.get('days_since_cash_asof')} "
+        lambda r: f"cash_as_of_date={r.get('cash_as_of_date')} days={r.get('days_since_cash_asof')} "
                   f"burn_status={r.get('burn_status')}")
     add("company_status == likely_delisted_or_acquired",
         lambda r: r.get("company_status") == "likely_delisted_or_acquired",
@@ -117,7 +117,7 @@ def report(rows: list[dict], cols: list[str], today: dt.date) -> str:
           "`reported_market_cap`.", "",
           "**Independent of share count and price** (safe): `runway_q`, `runway_needed_q`, `funded_through`, "
           "`burn_q_usd`, `cash_today_est`, every trial-design field (`control_arm`, `masking`, `allocation`, "
-          "`enrollment`, `is_efficacy_scale`, ...), `pcd_slip_months`, `n_versions`, `endpoint_changes`.", "",
+          "`enrollment`, `primary_outcome_is_clinical`, ...), `pcd_slip_months`, `n_versions`, `endpoint_changes`.", "",
           f"`runway_q` uses only cash and operating cash flow from XBRL; no market cap enters it. It is the "
           f"most trustworthy filter in the tool. In this run `funded_through` is False on {short} of "
           f"{len(with_run)} rows that have a runway ({short / max(len(with_run), 1):.0%}).", ""]
@@ -137,6 +137,79 @@ def report(rows: list[dict], cols: list[str], today: dt.date) -> str:
         for r in rows:
             counts[r.get(c)] = counts.get(r.get(c), 0) + 1
         md += ["", f"Distribution of `{c}`: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items(), key=str))]
+    md += ["", "## Output files", ""]
+    files: dict = {}
+    for r in rows:
+        files[r.get("output_file")] = files.get(r.get("output_file"), 0) + 1
+    md += [f"- `{k}`: {v} rows" for k, v in sorted(files.items(), key=str)]
+    md += ["", "## Molecule track record across the file", "",
+           "Outcomes of prior controlled trials come only from a stated source: whyStopped, a posted CT.gov "
+           "primary analysis, or the sponsor's own 8-K press release. `controlled_outcomes_unknown` means prior "
+           "controlled trials exist and no source states how they ended.", "",
+           "| molecule_track_record | all rows | candidates.csv |", "|---|---|---|"]
+    tr_all: dict = {}
+    for r in rows:
+        k = r.get("molecule_track_record")
+        tr_all.setdefault(k, [0, 0])
+        tr_all[k][0] += 1
+        tr_all[k][1] += r.get("output_file") == "candidates.csv"
+    md += [f"| {k} | {v[0]} | {v[1]} |" for k, v in sorted(tr_all.items(), key=str)]
+    with_tr = [r for r in rows if (r.get("prior_controlled_failures") or 0) or (r.get("prior_controlled_successes") or 0)]
+    md += [""] + [f"- **{_id(r)}** ({r.get('output_file')}): {r.get('molecule_track_record')}; failures "
+                  f"{r.get('prior_controlled_failures')} {r.get('prior_failure_indications')}, successes "
+                  f"{r.get('prior_controlled_successes')}; evidence {r.get('track_record_evidence_url')}"
+                  for r in with_tr]
+    grades: dict = {}
+    for r in rows:
+        grades[r.get("candidate_evidence_grade")] = grades.get(r.get("candidate_evidence_grade"), 0) + 1
+    md += ["", "Distribution of `candidate_evidence_grade`: "
+           + ", ".join(f"{k}={v}" for k, v in sorted(grades.items(), key=str))]
+    md += ["", "## Kill-screen verdict changed by the cash fix", "",
+           "`funded_through` (runway_q >= runway_needed_q) recomputed on `total_liquid_cash` "
+           "(cash + short-term + long-term investments) instead of cash + short-term investments.", ""]
+    changed = [r for r in rows if r.get("_funded_through_pre_cash_fix") != r.get("_funded_through_computed")]
+    md += [f"- **{_id(r)}**: {r.get('_funded_through_pre_cash_fix')} -> {r.get('_funded_through_computed')} "
+           f"(liquid ex long-term {r.get('_liquid_ex_lti')}, total {r.get('total_liquid_cash')}, long-term "
+           f"{r.get('long_term_investments')}; computed runway {r.get('runway_q_computed')} q vs needed "
+           f"{r.get('runway_needed_q')})"
+           for r in changed] or ["None."]
+    md += ["", "## Company-stated runway vs computed (runway_q = the lower; flagged when computed exceeds stated by "
+           "> 2 quarters)", ""]
+    md += [f"- **{_id(r)}**: computed {r.get('runway_q_computed')} q, stated {r.get('runway_q_stated')} q (to "
+           f"{r.get('runway_stated_end_date')}), gap {r.get('runway_disagreement_q')} q, used {r.get('runway_q')} "
+           f"({r.get('runway_source')}); cash_confidence {r.get('cash_confidence')}"
+           for r in rows if r.get("runway_disagreement_q") is not None and abs(r["runway_disagreement_q"]) > 2.0] \
+        or ["None."]
+    md += ["", "## Kill-screen verdict changed by the stated-runway ceiling", ""]
+    md += [f"- **{_id(r)}**: funded_through {r.get('_funded_through_computed')} -> {r.get('funded_through')} "
+           f"(computed {r.get('runway_q_computed')} q, stated {r.get('runway_q_stated')} q, needed "
+           f"{r.get('runway_needed_q')} q)" for r in rows
+           if r.get("_funded_through_computed") is not None and r.get("_funded_through_computed") != r.get("funded_through")] \
+        or ["None."]
+    md += ["", "## Pre-readout dilution: must_raise_before_catalyst (<= 2 months of runway margin at the catalyst)",
+           ""]
+    md += [f"- **{_id(r)}** ({r.get('output_file')}): margin {r.get('months_runway_minus_months_to_catalyst')} "
+           f"months, price {r.get('share_price')} (sub_dollar {r.get('sub_dollar')}, {r.get('nasdaq_tier')}), "
+           f"shortfall to catalyst + 6 months = {r.get('dilution_at_current_price_pct')}% of market cap; bid-price "
+           f"notices {r.get('bid_price_notice_dates')}"
+           for r in rows if r.get("must_raise_before_catalyst")] or ["None."]
+    md += ["", "## Headline vs price divergence (positive-language headline, 1-day return < -15%)", ""]
+    md += [f"- **{_id(r)}**: {r.get('divergence_events')}" for r in rows if r.get("headline_price_divergence")] \
+        or ["None."]
+    md += ["", "## Primary outcome classes (candidate trials)", ""]
+    pcl: dict = {}
+    for r in rows:
+        for c in (r.get("_primary_classes") or ["(none)"]):
+            pcl[c] = pcl.get(c, 0) + 1
+    md += ["Outcome-level counts: " + ", ".join(f"{k}={v}" for k, v in sorted(pcl.items()))]
+    md += [f"- **{_id(r)}**: safety/PK-only primary: {r.get('primary_outcome_text')}"
+           for r in rows if r.get("primary_is_safety_only")]
+    md += ["", "## candidate_is_lead_program = False", "",
+           "Lead guess = the sponsor's highest-phase, then largest-enrollment trial in the screening window. "
+           "The candidate is not switched.", ""]
+    md += [f"- **{_id(r)}** ({r.get('phase')}, n={r.get('enrollment')}): lead guess {r.get('lead_program_guess')}; "
+           f"{r.get('sponsor_trial_count_in_window')} sponsor trials in window"
+           for r in rows if r.get("candidate_is_lead_program") is False] or ["None."]
     md += ["", "## Counts", "", "| check | rows caught |", "|---|---|"]
     md += [f"| {name} | {len(hits)} |" for name, hits in res]
     md += [f"| fields null on > {NULL_SHARE_LIMIT:.0%} of rows | {len(nulls)} fields |",

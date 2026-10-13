@@ -23,15 +23,22 @@ from __future__ import annotations
 import datetime as dt
 import re
 import html
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 FTS_URL = "https://efts.sec.gov/LATEST/search-index"
 
 CASH_TAGS = ["CashAndCashEquivalentsAtCarryingValue", "Cash",
              "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"]
+# ONE tag per category, first present wins: the same securities are often
+# tagged twice (EVMN 2026-06-30: ShortTermInvestments 140,759k and
+# HeldToMaturitySecuritiesCurrent 140,759k are one holding).
 STI_TAGS = ["ShortTermInvestments", "MarketableSecuritiesCurrent",
-            "AvailableForSaleSecuritiesDebtSecuritiesCurrent"]
+            "AvailableForSaleSecuritiesDebtSecuritiesCurrent", "HeldToMaturitySecuritiesCurrent"]
+LTI_TAGS = ["LongTermInvestments", "MarketableSecuritiesNoncurrent",
+            "AvailableForSaleSecuritiesDebtSecuritiesNoncurrent", "HeldToMaturitySecuritiesNoncurrent"]
+RESTRICTED_TAGS = ["RestrictedCashCurrent", "RestrictedCashNoncurrent", "RestrictedCash",
+                   "RestrictedCashAndCashEquivalentsAtCarryingValue"]
 OCF_TAG = "NetCashProvidedByUsedInOperatingActivities"
 MIN_PLAUSIBLE_BURN = 250_000      # $/quarter; below this with >$10M cash the burn is an artifact
 MIN_CASH_FOR_FLOOR = 10_000_000
@@ -152,18 +159,59 @@ class Runway:
     runway_q: float | None
     runway_needed_q: float | None
     funded_through: bool | None
+    components: dict = field(default_factory=dict)
 
 
 def compute_runway(facts: dict, months_out: float | None, today: dt.date,
                    n_quarters: int = 2, stale_days: int = 270) -> Runway:
+    r = _compute_runway(facts, months_out, today, n_quarters, stale_days)
+    r.components = cash_components(facts)
+    return r
+
+
+def cash_components(facts: dict) -> dict:
+    """Liquid cash as a SUM of categories at one balance-sheet date (the date of
+    the cash figure): cash and equivalents + short-term investments + long-term
+    investments (included, flagged illiquid). Restricted cash is reported and
+    excluded; when the only cash tag already includes restricted cash it is
+    subtracted. One tag per category (first present) so a holding tagged twice
+    is counted once. EVMN 2026-06-30: 60,034k + 140,759k + 87,214k = 287,999k."""
     cash_f, cash_tag = cash_instant(facts)
-    cash = cash_asof = None
-    tags_used = []
-    if cash_f:
-        cash_asof = cash_f["end"]
-        sti, sti_tag = instant_at(facts, STI_TAGS, cash_asof)   # SAME date as the cash figure
-        cash = cash_f["val"] + (sti or 0.0)
-        tags_used = [cash_tag] + ([sti_tag] if sti_tag else ["(no short-term investments at this date)"])
+    empty = {"cash_and_equivalents": None, "short_term_investments": None, "long_term_investments": None,
+             "restricted_cash": None, "total_liquid_cash": None, "cash_tags_found": [], "cash_as_of_date": None,
+             "liquid_cash_ex_long_term": None}
+    if not cash_f:
+        return empty
+    d = cash_f["end"]
+    sti, sti_tag = instant_at(facts, STI_TAGS, d)
+    lti, lti_tag = instant_at(facts, LTI_TAGS, d)
+    restricted = 0.0
+    r_tags = []
+    for t in RESTRICTED_TAGS[:2]:
+        v, tg = instant_at(facts, [t], d)
+        if v:
+            restricted += v
+            r_tags.append(tg)
+    if not r_tags:
+        v, tg = instant_at(facts, RESTRICTED_TAGS[2:], d)
+        if v:
+            restricted, r_tags = v, [tg]
+    ce = cash_f["val"]
+    if cash_tag and "RestrictedCash" in cash_tag and restricted:
+        ce -= restricted                      # the total tag includes restricted cash; take it out
+    total = ce + (sti or 0.0) + (lti or 0.0)
+    tags = [cash_tag] + [t for t in (sti_tag, lti_tag) if t]
+    return {"cash_and_equivalents": ce, "short_term_investments": sti, "long_term_investments": lti,
+            "restricted_cash": restricted or None, "total_liquid_cash": total, "cash_tags_found": tags,
+            "cash_as_of_date": d, "liquid_cash_ex_long_term": ce + (sti or 0.0),
+            "restricted_tags": r_tags}
+
+
+def _compute_runway(facts: dict, months_out: float | None, today: dt.date,
+                    n_quarters: int = 2, stale_days: int = 270) -> Runway:
+    comp = cash_components(facts)
+    cash, cash_asof = comp["total_liquid_cash"], comp["cash_as_of_date"]
+    tags_used = comp["cash_tags_found"] or []
 
     qs = ytd_to_quarterly(_units(facts, OCF_TAG))
     recent = qs[-n_quarters:]
@@ -643,3 +691,120 @@ def share_count(http, cik: int, submissions: dict | None, xbrl: "Prefunded") -> 
     why = (f"{tx['mentions']} mentions of pre-funded warrants in {tx['filing']} but no stated balance"
            if tx["mentions"] else f"XBRL {xbrl.status}; filing text not readable")
     return ShareCount(None, why, "unverified", f"{xbrl.status}: {xbrl.detail}")
+
+
+# ------------------------------------------------- stated runway cross-check --
+_Q = {"first": 1, "second": 2, "third": 3, "fourth": 4, "1": 1, "2": 2, "3": 3, "4": 4}
+_RUNWAY_RX = re.compile(
+    r"[^.]{0,260}?\b(?:fund|finance|support|meet)\b[^.]{0,160}?\b(?:operations?|operating|expenses|plan|"
+    r"requirements|needs|runway)\b[^.]{0,160}?\b(at least\s+)?(into|through|until|to|beyond)\s+(?:at least\s+)?"
+    r"(?:the\s+)?(?P<period>(?:(?:first|second|third|fourth)\s+(?:quarter|half)\s+of\s+(?:calendar\s+|fiscal\s+)?)?"
+    r"(?:Q[1-4]\s+|[12]H\s+|mid-?\s?|early\s+|late\s+|the\s+end\s+of\s+|end\s+of\s+|"
+    r"(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+)?20[2-4]\d)",
+    re.I)
+_TWELVE = re.compile(r"(?:sufficient|enough|adequate)[^.]{0,200}?(?:at least\s+)?(?:the\s+)?next\s+(?:twelve|12)\s+"
+                     r"months", re.I)
+
+
+def _period_window(period: str, prep: str, at_least: bool) -> tuple[dt.date, dt.date | None]:
+    p = period.lower()
+    y = int(re.search(r"(20\d\d)", p).group(1))
+    m = re.search(r"(first|second|third|fourth)\s+quarter|q([1-4])", p)
+    h_ = re.search(r"(first|second)\s+half|([12])h\b", p)
+    mon = re.search(r"(january|february|march|april|may|june|july|august|september|october|november|december)", p)
+    if m:
+        q = _Q[(m.group(1) or m.group(2))]
+        lo, hi = dt.date(y, 3 * q - 2, 1), dt.date(y, 3 * q, 28)
+    elif h_:
+        half = _Q[(h_.group(1) or h_.group(2))]
+        lo, hi = (dt.date(y, 1, 1), dt.date(y, 6, 30)) if half == 1 else (dt.date(y, 7, 1), dt.date(y, 12, 31))
+    elif "mid" in p:
+        lo, hi = dt.date(y, 4, 1), dt.date(y, 9, 30)
+    elif "early" in p:
+        lo, hi = dt.date(y, 1, 1), dt.date(y, 4, 30)
+    elif "late" in p:
+        lo, hi = dt.date(y, 9, 1), dt.date(y, 12, 31)
+    elif "end of" in p:
+        lo, hi = dt.date(y, 10, 1), dt.date(y, 12, 31)
+    elif mon:
+        mm = _MONTHS[mon.group(1)]
+        lo, hi = dt.date(y, mm, 1), dt.date(y, mm, 28)
+    else:
+        lo, hi = dt.date(y, 1, 1), dt.date(y, 12, 31)
+    if prep.lower() in ("through", "until", "to"):
+        lo, hi = hi, hi + dt.timedelta(days=90)     # funded to the END of the period
+    if at_least or prep.lower() == "beyond":
+        hi = None                                    # a floor only
+    return lo, hi
+
+
+def stated_runway(text: str, filed: dt.date | None = None) -> dict | None:
+    """The company's own runway statement: {sentence, lo, hi} where [lo, hi] is
+    the date window it implies ('into the third quarter of 2027' -> Jul 1 to
+    Sep 28 2027; 'through November 2027' -> end of November + 90 days; 'at least'
+    -> no upper bound). A dated statement wins over 'the next twelve months'."""
+    t = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", text or "")))
+    for m in _RUNWAY_RX.finditer(t):
+        s = m.group(0)
+        if re.search(r"remediat|material weakness|internal control", s, re.I):
+            continue
+        lo, hi = _period_window(m.group("period"), m.group(2), bool(m.group(1)))
+        return {"sentence": s.strip()[-300:], "lo": lo, "hi": hi}
+    m = _TWELVE.search(t)
+    if m and filed:
+        return {"sentence": m.group(0).strip()[-300:], "lo": filed + dt.timedelta(days=365), "hi": None}
+    return None
+
+
+def runway_statement(http, cik: int, submissions: dict | None) -> dict | None:
+    """From the latest 10-Q/10-K and the latest earnings release (8-K Item 2.02,
+    exhibit 99.x): the most specific dated statement, with its source URL."""
+    if not submissions:
+        return None
+    r = submissions.get("filings", {}).get("recent", {})
+    rows = list(zip(r.get("accessionNumber", []), r.get("form", []), r.get("filingDate", []),
+                    r.get("items", []), r.get("primaryDocument", [])))
+    found = []
+    q = next((x for x in rows if x[1] in FINANCIAL_PRIMARY and x[4]), None)
+    if q:
+        url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{q[0].replace('-', '')}/{q[4]}"
+        s = stated_runway(http.get_text(url), dt.date.fromisoformat(q[2]))
+        if s:
+            found.append({**s, "source": f"{q[1]} {q[2]}", "url": url})
+    e = next((x for x in rows if x[1] == "8-K" and "2.02" in (x[3] or "")), None)
+    if e:
+        base = f"https://www.sec.gov/Archives/edgar/data/{cik}/{e[0].replace('-', '')}"
+        try:
+            ex = next((i["name"] for i in http.get_json(f"{base}/index.json")["directory"]["item"]
+                       if re.search(r"ex-?99|dex99", i["name"], re.I) and i["name"].endswith(".htm")), None)
+            if ex:
+                s = stated_runway(http.get_text(f"{base}/{ex}"), dt.date.fromisoformat(e[2]))
+                if s:
+                    found.append({**s, "source": f"8-K 2.02 press release {e[2]}", "url": f"{base}/{ex}"})
+        except Exception:  # noqa: BLE001
+            pass
+    dated = [f for f in found if f["hi"] is not None or "twelve" not in f["sentence"].lower()]
+    return (dated or found or [None])[0]
+
+
+def runway_crosscheck(runway_q: float | None, cash_asof: str | None, stmt: dict | None) -> dict:
+    """computed runway end = cash_asof + runway_q x 91.25 days, against the
+    statement's window. discrepancy in months: 0 inside the window, negative
+    if the computed end falls before it, positive after it."""
+    out = {"stated_runway": stmt["sentence"] if stmt else None,
+           "stated_runway_window": None, "stated_runway_source": stmt.get("url") if stmt else None,
+           "computed_runway_end": None, "runway_discrepancy_months": None}
+    if not stmt:
+        return out
+    out["stated_runway_window"] = f"{stmt['lo']} to {stmt['hi'] or 'open'}"
+    if runway_q is None or not cash_asof:
+        return out
+    end = dt.date.fromisoformat(cash_asof) + dt.timedelta(days=runway_q * 91.25)
+    out["computed_runway_end"] = end.isoformat()
+    if end < stmt["lo"]:
+        out["runway_discrepancy_months"] = round((end - stmt["lo"]).days / 30.4375, 1)
+    elif stmt["hi"] and end > stmt["hi"]:
+        out["runway_discrepancy_months"] = round((end - stmt["hi"]).days / 30.4375, 1)
+    else:
+        out["runway_discrepancy_months"] = 0.0
+    return out

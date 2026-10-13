@@ -197,12 +197,17 @@ def build(row: dict, record: dict, history_md: list[str], related: dict, today: 
             ("company", "cik", "sec_sic", "sponsor", "phase", "catalyst_date", "date_type", "months_out", "true_market_cap",
              "reported_market_cap", "pre_funded_warrants", "share_count_source", "market_cap_confidence",
              "prefunded_detail", "reverse_split_date", "reverse_split_ratio", "months_since_reverse_split",
-             "reverse_split_source", "reverse_split_cover_check", "avg_dollar_vol", "cash_usd", "cash_asof", "cash_tags", "burn_q_usd",
+             "reverse_split_source", "reverse_split_cover_check", "avg_dollar_vol", "total_liquid_cash", "cash_and_equivalents", "short_term_investments",
+             "long_term_investments", "restricted_cash", "cash_tags_found", "cash_confidence", "cash_as_of_date",
+             "stated_runway", "stated_runway_window", "stated_runway_source", "computed_runway_end",
+             "runway_discrepancy_months", "burn_q_usd",
              "burn_quarters", "burn_status", "runway_q",
              "runway_needed_q", "funded_through", "days_since_cash_asof", "cash_today_est", "cash_to_mcap_est",
              "total_debt_usd", "debt_asof", "debt_components", "has_convertible", "ev_est", "company_status",
              "latest_filing_date", "latest_filing_form", "deregistration_filing", "shelf_count", "atm_count",
-             "days_since_latest_atm_filing", "data_notes")] + \
+             "days_since_latest_atm_filing", "candidate_evidence_grade", "molecule_track_record",
+             "sponsor_trial_count_in_window", "candidate_is_lead_program", "lead_program_guess",
+             "lead_program_warning", "data_notes")] + \
            ["", f"Generated {today.isoformat()} from ClinicalTrials.gov API v2 and SEC EDGAR. "
                 "Fields are reported as registered; nothing here is an assessment.", ""]
     md = "\n".join(head + a + b + c + history_md + e + f) + "\n"

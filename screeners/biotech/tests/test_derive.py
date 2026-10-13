@@ -155,10 +155,8 @@ def test_design_and_site_flags():
     assert design_flags("NA", "NONE", "no", "ESTIMATED", 30)["enrollment_stale"] is True
     assert design_flags("NA", "NONE", "no", "ACTUAL", 30)["enrollment_stale"] is False
     s = site_facts(800, 4, 1)          # SGMT NCT07863193
-    assert s == {"patients_per_site": 200.0, "site_list_maturity": "new", "is_efficacy_scale": True}
-    assert site_facts(1, 1, 5)["is_efficacy_scale"] is False           # VNDA NCT07223632
-    assert site_facts(None, 0, None) == {"patients_per_site": None, "site_list_maturity": None,
-                                         "is_efficacy_scale": None}
+    assert s == {"patients_per_site": 200.0, "site_list_maturity": "new"}
+    assert site_facts(None, 0, None) == {"patients_per_site": None, "site_list_maturity": None}
 
 
 # -------------------------------------------------------- company status --

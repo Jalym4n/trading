@@ -424,7 +424,14 @@ filing's XBRL class breakdown, else a stated balance in the filing text);
 that moved ZURA and IRD above $400M. Every row carries `market_cap_confidence`;
 31 of 61 are unverified and their cash/market-cap fields are withheld.
 Reverse splits come from 8-Ks with effective date and ratio (ELOX 2026-05-29,
-1-for-11, excluded). 61 candidates; 14 rows / 7 tickers deregistered (Form 15). See `screeners/biotech/README.md`.
+1-for-11, excluded). Run of 2026-10-13 (fixes 1-8) routes rows to four files:
+`candidates.csv`, `watchlist_repeat_failure.csv` (>= 2 prior controlled trials
+of the molecule missed their primary endpoint, per a stated source: EVMN,
+AKBA), `excluded_dilution_risk.csv` (must raise before the readout AND sub-$1:
+CGTX, HUMA, ONCY, RNTX) and `excluded_delisted.csv`. Runway is the lower of
+computed and company-stated; primary outcomes are classified (clinical /
+safety / pk_pd / biomarker); `untested` marks molecules with >= 3 prior trials
+and no clinical primary (CGTX). Validations: `tests/live_*.py`. See `screeners/biotech/README.md`.
 
 The reasoning: technical analysis on SPY intraday is the lowest-prior corner of
 the market. Domain expertise in healthcare is a real structural advantage. This

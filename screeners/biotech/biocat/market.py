@@ -28,6 +28,8 @@ class Market:
     source: str | None = None
     errors: list[str] = field(default_factory=list)
     history_start: str | None = None
+    exchange: str | None = None
+    closes: list = field(default_factory=list)      # [(YYYY-MM-DD, close)] daily, oldest first
 
 
 def _from_yahoo(http, ticker: str, today: dt.date, days: int) -> Market:
@@ -55,7 +57,10 @@ def _from_yahoo(http, ticker: str, today: dt.date, days: int) -> Market:
                   price_date=dt.datetime.fromtimestamp(rows[-1][0], dt.timezone.utc).date().isoformat(),
                   avg_dollar_vol=sum(c * v for _, c, v in last) / len(last),
                   reverse_splits_24m=sorted(rev) if (rev or covered) else None, source="yahoo",
-                  history_start=first.isoformat())
+                  history_start=first.isoformat(),
+                  exchange=(res.get("meta") or {}).get("fullExchangeName") or (res.get("meta") or {}).get("exchangeName"),
+                  closes=[(dt.datetime.fromtimestamp(t_, dt.timezone.utc).date().isoformat(), float(c))
+                          for t_, c, _v in rows])
 
 
 def _num(s: str) -> float:
@@ -156,3 +161,17 @@ def size_filter(market_cap: float | None, adv: float | None, rev_splits: list | 
     elif rev_splits:
         reasons.append(f"reverse split in 24m: {rev_splits}")
     return (not reasons), reasons + [f"unknown:{u}" for u in unknown]
+
+
+_TIERS = {"nasdaqgs": "Global Select", "nms": "Global Select", "nasdaqgm": "Global Market", "ngm": "Global Market",
+          "nasdaqcm": "Capital Market", "ncm": "Capital Market", "nyse": "NYSE", "nyq": "NYSE",
+          "nyse american": "NYSE American", "ase": "NYSE American", "nysearca": "NYSE Arca",
+          "other otc": "OTC", "pnk": "OTC", "otc markets": "OTC"}
+
+
+def nasdaq_tier(exchange: str | None) -> str | None:
+    """Price-feed exchange label -> listing tier (Nasdaq Global Select / Global Market / Capital Market,
+    or the non-Nasdaq venue)."""
+    if not exchange:
+        return None
+    return _TIERS.get(exchange.strip().lower(), exchange)
