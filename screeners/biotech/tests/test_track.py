@@ -8,8 +8,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from biocat.derive import lead_program  # noqa: E402
 from biocat.financials import cash_components, runway_crosscheck, stated_runway  # noqa: E402
-from biocat.track import (attribute_press, evidence_grade, molecule_key, molecule_keys,  # noqa: E402
-                          why_stopped_outcome)
+from biocat.track import (NON_OUTCOME, attribute_press, effect_direction, evidence_grade,  # noqa: E402
+                          molecule_key, molecule_keys, track_record_for_key, why_stopped_outcome)
 from biocat.trials import Trial  # noqa: E402
 
 
@@ -221,6 +221,123 @@ def test_reaction_day_and_divergence():
             "headline": "Cognition Therapeutics to Present at Conference"}]
     dv = divergence(prs, closes)
     assert dv["headline_price_divergence"] and [e["date"] for e in dv["divergence_events"]] == ["2026-06-24"]
+
+
+# ------------------------------------------- outcome rules (bugs 1 and 2) --
+def test_non_outcome_release_never_establishes_an_outcome():
+    # CGTX 2025-02-26: "Successfully Passes Pre-defined Futility Analysis"; blocked in press_release_sentences
+    pr = {**AD_PR, "outcome": "met_primary", "blocked": "'futility analysis' in release opening"}
+    assert attribute_press([pr], "evo756", AD, [CSU, AD]) is None
+    assert NON_OUTCOME.search("Cognition Therapeutics' Successfully Passes Pre-defined Futility Analysis")
+    assert NON_OUTCOME.search("Company receives Fast Track designation") and not NON_OUTCOME.search("met its primary")
+
+
+def test_a_sentence_naming_a_trial_binds_to_it():
+    # UPB 2025-11-05: "VIBRANT met its primary endpoint ..." is not a VALIANT (asthma) statement
+    valiant = {**_trial("NCT06196879", "Severe Asthma", "2024-01-01", "2025-12-01"), "acronym": "VALIANT"}
+    vibrant = {**_trial("NCT06164704", "Chronic Rhinosinusitis With Nasal Polyps", "2023-12-01", "2025-06-01"),
+               "acronym": "VIBRANT"}
+    pr = {"date": "2025-11-05", "url": "u", "outcome": "met_primary", "doc_head": "Upstream Bio Q3 2025 results",
+          "sentence": "In this 24-week study, VIBRANT met its primary endpoint, with verekitug dosed every 12 weeks",
+          "before": "Severe asthma: VALIANT enrolling. In this 24-week study, VIBRANT "}
+    assert attribute_press([pr], "verekitug", valiant, [valiant, vibrant]) is None
+    assert attribute_press([pr], "verekitug", vibrant, [valiant, vibrant])["outcome"] == "met_primary"
+
+
+class _FakeHttp:
+    def __init__(self, studies):
+        self.studies = studies
+
+    def get_json(self, url, params=None):
+        if "query.intr" in (params or {}) and params.get("countTotal"):
+            return {"totalCount": 3}
+        if "query.intr" in (params or {}):
+            return {"studies": self.studies}
+        if "query.spons" in (params or {}):
+            return {"studies": []}
+        raise RuntimeError("no network in tests")
+
+
+def _study(nct, status, primary, why=None, acronym=None):
+    return {"hasResults": False, "protocolSection": {
+        "identificationModule": {"nctId": nct, "briefTitle": nct, "acronym": acronym},
+        "statusModule": {"overallStatus": status, "whyStopped": why, "startDateStruct": {"date": "2022-01"},
+                         "primaryCompletionDateStruct": {"date": "2024-01"}},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Cognition Therapeutics, Inc."}},
+        "designModule": {"phases": ["PHASE2"], "enrollmentInfo": {"count": 100},
+                         "designInfo": {"maskingInfo": {"masking": "QUADRUPLE"}}},
+        "conditionsModule": {"conditions": ["Dementia With Lewy Bodies" if acronym == "SHIMMER" else "Macular Degeneration"]},
+        "armsInterventionsModule": {"armGroups": [{"label": "CT1812", "type": "EXPERIMENTAL"},
+                                                  {"label": "Placebo", "type": "PLACEBO_COMPARATOR"}],
+                                    "interventions": [{"name": "CT1812", "type": "DRUG"},
+                                                      {"name": "Placebo", "type": "DRUG"}]},
+        "outcomesModule": {"primaryOutcomes": [{"measure": primary}]}}}
+
+
+def test_success_needs_an_efficacy_primary_and_termination_supersedes():
+    shimmer = _study("NCT05225415", "COMPLETED", "Number of participants with treatment-emergent adverse events",
+                     acronym="SHIMMER")
+    magnify = _study("NCT05893537", "TERMINATED", "Change from baseline in GA lesion area",
+                     why="strategic business decision", acronym="MAGNIFY")
+    sents = [{"date": "2025-02-26", "url": "u1", "outcome": "met_primary", "doc_head": "CT1812 update",
+              "headline": "CT1812 update", "blocked": None, "accepted": None,
+              "sentence": "The Phase 2 SHIMMER study of CT1812 met its primary endpoint of safety and tolerability.",
+              "before": "The Phase 2 SHIMMER study of CT1812 "},
+             {"date": "2025-02-27", "url": "u2", "outcome": "met_primary", "doc_head": "CT1812 update",
+              "headline": "CT1812 update", "blocked": None, "accepted": None,
+              "sentence": "The MAGNIFY study of CT1812 met its primary endpoint at the interim.",
+              "before": "The MAGNIFY study of CT1812 "}]
+    tr = track_record_for_key(_FakeHttp([shimmer, magnify]), "ct1812", [], ["Cognition Therapeutics, Inc."], 1,
+                              {"filings": {"recent": {}}}, [], dt.date(2026, 10, 13), {1: sents}, set())
+    assert (tr["prior_controlled_trials"], tr["prior_controlled_successes"], tr["prior_controlled_outcome_unknown"]) \
+        == (2, 0, 2)
+    notes = {t["nct_id"]: t["outcome"]["note"] for t in tr["_prior_trials"]}
+    assert "not clinical or biomarker" in notes["NCT05225415"] and "supersedes" in notes["NCT05893537"]
+
+
+def test_posted_significance_needs_a_direction():
+    # ONCY NCT01622543: both arms typed ACTIVE_COMPARATOR; the add-on arm is experimental;
+    # PFS 7.33 vs 9.13 months, HR 1.59, p 0.046: a significant HARM, not a success
+    ps = {"armsInterventionsModule": {"armGroups": [
+        {"label": "Folfox plus Bevacizumab and Reolysin", "type": "ACTIVE_COMPARATOR"},
+        {"label": "Folfox plus Bevacizumab", "type": "ACTIVE_COMPARATOR"}]}}
+    om = {"title": "Progression Free Survival", "groups": [{"id": "OG000", "title": "Folfox Plus Bevacizumab and Reolysin"},
+                                                           {"id": "OG001", "title": "Folfox Plus Bevacizumab"}],
+          "classes": [{"categories": [{"measurements": [{"groupId": "OG000", "value": "7.33"},
+                                                        {"groupId": "OG001", "value": "9.13"}]}]}]}
+    an = {"groupIds": ["OG000", "OG001"], "pValue": "0.046", "paramType": "Hazard Ratio (HR)", "paramValue": "1.59"}
+    assert effect_direction(ps, om, an) == "control"
+    om2 = {**om, "classes": [{"categories": [{"measurements": [{"groupId": "OG000", "value": "11.0"},
+                                                               {"groupId": "OG001", "value": "9.13"}]}]}]}
+    assert effect_direction(ps, om2, an) == "experimental"
+    # a change-from-baseline score has no polarity: the sponsor's statement decides
+    assert effect_direction(ps, {**om, "title": "Change From Baseline in Nasal Polyp Score"}, an) is None
+
+
+def test_gates_and_routing():
+    from biocat.cli import gates, route
+    base = {"company_status": "active", "funded_through": True, "runway_q": 6.0, "runway_needed_q": 4.0,
+            "dilution_at_current_price_pct": 10.0, "must_raise_before_catalyst": False,
+            "candidate_evidence_grade": "controlled_masked", "primary_is_safety_only": False}
+    def run(**kw):
+        r = {**base, **kw}
+        r.update(gates(r, {}))
+        return route(r), r
+    assert run()[0] == "candidates.csv"
+    assert run(company_status="delisted")[0] == "excluded_delisted.csv"
+    f, r = run(funded_through=False, runway_q=1.5, runway_needed_q=4.0)
+    assert f == "excluded_underfunded.csv" and r["runway_shortfall_months"] == 7.5
+    assert r["fails_gates"] == "underfunded|dilution"          # runway_q < 2 also trips dilution
+    assert run(dilution_at_current_price_pct=214.4)[0] == "excluded_dilution_risk.csv"           # CHRS
+    assert run(dilution_at_current_price_pct=40.0, must_raise_before_catalyst=True)[0] == "excluded_dilution_risk.csv"
+    f, r = run(dilution_at_current_price_pct=40.0)
+    assert f == "candidates.csv" and r["dilution_warning"] is None
+    f, r = run(dilution_at_current_price_pct=25.0)
+    assert f == "candidates.csv" and "25.0%" in r["dilution_warning"]
+    assert run(candidate_evidence_grade="single_arm")[0] == "excluded_not_evidence.csv"
+    assert run(primary_is_safety_only=True)[0] == "excluded_not_evidence.csv"
+    f, r = run(company_status="check_manually")
+    assert f == "candidates.csv" and "CHECK MANUALLY" in r["row_warnings"]
 
 
 if __name__ == "__main__":

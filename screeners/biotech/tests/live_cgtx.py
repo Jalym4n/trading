@@ -2,11 +2,14 @@
 Run AFTER the screen:  BIOCAT_UA="Name email" python3 tests/live_cgtx.py
 
 Expected (fix request, checked against the sources 2026-10-13):
-  track record      >= 8 prior trials, 0 with a clinical primary -> "untested"
+  track record      >= 8 prior trials, 0 with a clinical primary -> "untested"; 0 successes and 8
+                    controlled trials of unknown outcome (the SHIMMER "met its primary endpoint of safety and
+                    tolerability" sentence sits in a "Passes Pre-defined Futility Analysis" release: blocked,
+                    and a safety primary never counts)
   runway            company guidance caps the computed runway (believe the company)
-  dilution          must_raise_before_catalyst and sub_dollar -> excluded_dilution_risk.csv
-                    (readout = primary completion 2027-05-31 + the default 3-month readout lag; with
-                    lag 0 the margin is ~4 months and the kill does not fire)
+  dilution          must_raise_before_catalyst (readout = primary completion 2027-05-31 + the default
+                    3-month readout lag). Under the shortfall gate (round 3) a ~14% shortfall with
+                    runway >= 2 q is NOT a kill: share price is no longer the test.
   divergence        2026-06-24 "Aligns on Key Aspects of Pivotal Study", about -38%
 """
 import csv
@@ -36,6 +39,8 @@ if __name__ == "__main__":
     print({k: tr[k] for k in ("prior_trials_total", "prior_trials_with_clinical_primary", "molecule_track_record")})
     assert tr["prior_trials_total"] >= 8 and tr["prior_trials_with_clinical_primary"] == 0
     assert tr["molecule_track_record"] == "untested"
+    assert (tr["prior_controlled_successes"], tr["prior_controlled_outcome_unknown"]) == (0, 8), tr
+    assert tr["track_record_warning"].startswith("11 prior trials of ct1812, none with a clinical primary")
 
     pcd = T.parse_date(rec["protocolSection"]["statusModule"]["primaryCompletionDateStruct"]["date"])
     months = T.months_between(today, pcd)
@@ -56,14 +61,19 @@ if __name__ == "__main__":
     print("with readout = primary completion (lag 0): margin", pcd_only["months_runway_minus_months_to_catalyst"],
           "must_raise", pcd_only["must_raise_before_catalyst"])
     print("divergence:", info["pr"]["divergence_events"])
-    assert dil["must_raise_before_catalyst"] and dil["sub_dollar"], dil
+    assert dil["must_raise_before_catalyst"], dil
     ev = [e for e in info["pr"]["divergence_events"] if e["date"] == "2026-06-24"]
     assert ev and abs(ev[0]["return"] - (-0.3818)) < 0.01 and "Align" in ev[0]["headline"], info["pr"]
 
-    kill = os.path.join(OUT, "excluded_dilution_risk.csv")
-    if os.path.exists(kill):
-        rows = [r for r in csv.DictReader(open(kill)) if r["ticker"] == "CGTX"]
-        assert rows and rows[0]["kill_dates"], "CGTX not in excluded_dilution_risk.csv"
-        assert not [r for r in csv.DictReader(open(os.path.join(OUT, "candidates.csv"))) if r["ticker"] == "CGTX"]
-        print("outputs: CGTX in excluded_dilution_risk.csv:", rows[0]["kill_dates"])
+    import glob
+    rows = [(os.path.basename(f), r) for f in glob.glob(os.path.join(OUT, "*.csv"))
+            if os.path.basename(f) not in ("identity.csv", "dropped.csv")
+            for r in csv.DictReader(open(f)) if r["ticker"] == "CGTX"]
+    if rows:
+        assert len(rows) == 1, rows
+        f, r = rows[0]
+        assert (r["prior_controlled_successes"], r["prior_controlled_outcome_unknown"]) == ("0", "8"), r
+        assert r["molecule_track_record"] == "untested"
+        print(f"outputs: CGTX in {f}; fails_gates={r['fails_gates']} dilution={r['dilution_at_current_price_pct']}% "
+              f"runway_q={r['runway_q']} funded_through={r['funded_through']}")
     print("ok live CGTX")

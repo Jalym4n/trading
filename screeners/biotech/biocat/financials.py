@@ -472,6 +472,26 @@ def _instance_url(http, cik: int, submissions: dict) -> tuple[str | None, str | 
     return None, None
 
 
+# method 1b: other warrant-count tags at the balance date on a pre-funded member (CRBP:
+# ClassOfWarrantOrRightNumberOfSecuritiesCalledByWarrantsOrRights / Pre-FundedWarrantsMember), or a
+# company tag named for pre-funded warrants outstanding (EYPT: PreFundedWarrantsOutstandings)
+PF_CLASS_TAGS = {"ClassOfWarrantOrRightNumberOfSecuritiesCalledByWarrantsOrRights", "WarrantsAndRightsOutstanding",
+                 "ClassOfWarrantOrRightOutstanding"}
+PF_OWN_TAG = re.compile(r"Pre-?Funded\w*Outstanding|Outstanding\w*Pre-?Funded", re.I)
+
+
+def _tagged_at(tagged: list, period_end: str | None) -> "Prefunded | None":
+    at = [(t, m, v) for t, m, w, v in tagged if period_end and w == period_end and t != "ClassOfWarrantOrRightOutstanding"]
+    if not at:
+        return None
+    per: dict = {}
+    for t, m, v in at:
+        per.setdefault((m[0][1] if m else t), v)      # one value per member (CRBP tags the same fact twice)
+    n = float(sum(per.values()))
+    return Prefunded(n, period_end, "prefunded_tag", f"pre-funded at {period_end}: "
+                     + "; ".join(f"{k.split(':')[-1]}={v:,.0f}" for k, v in per.items()), None)
+
+
 def prefunded_from_instance(xml_text: str) -> Prefunded:
     """Pre-funded warrant shares at the filing's balance-sheet date
     (dei:DocumentPeriodEndDate), from one XBRL instance.
@@ -506,12 +526,20 @@ def prefunded_from_instance(xml_text: str) -> Prefunded:
             ctx[c.get("id")] = (mem, when[-1].strip() if when else None)
         elif local(c.tag) == "DocumentPeriodEndDate" and c.text:
             period_end = c.text.strip()
-    outst, strike = [], {}
+    outst, strike, tagged = [], {}, []
     for e in root:
         t = local(e.tag)
+        mem, when = ctx.get(e.get("contextRef"), ((), None))
+        if (t in PF_CLASS_TAGS and any(PREFUNDED_NAME.search(x) for _, x in mem)) or \
+                (PF_OWN_TAG.search(t) and not mem):
+            unit = (e.get("unitRef") or "").lower()
+            try:
+                if not unit or ("share" in unit and "usd" not in unit):
+                    tagged.append((t, mem, when, float(e.text)))
+            except (TypeError, ValueError):
+                pass
         if t not in ("ClassOfWarrantOrRightOutstanding", "ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights1"):
             continue
-        mem, when = ctx.get(e.get("contextRef"), ((), None))
         try:
             v = float(e.text)
         except (TypeError, ValueError):
@@ -520,8 +548,9 @@ def prefunded_from_instance(xml_text: str) -> Prefunded:
             outst.append((mem, when, v))
         elif len(mem) == 1:
             strike.setdefault(mem[0], v)
+    tag_pf = _tagged_at(tagged, period_end)
     if not outst:
-        return Prefunded(0.0, period_end, "none", "no ClassOfWarrantOrRightOutstanding in the filing", None)
+        return tag_pf or Prefunded(0.0, period_end, "none", "no ClassOfWarrantOrRightOutstanding in the filing", None)
     d = period_end or max(w for _, w, _ in outst if w)
     named_any = [(m, w, v) for m, w, v in outst if any(PREFUNDED_NAME.search(x) for _, x in m)]
     total = next((v for m, w, v in outst if not m and w == d), None)
@@ -565,6 +594,8 @@ def prefunded_from_instance(xml_text: str) -> Prefunded:
         det = f"{detail_tot} at {d}; pre-funded: " + "; ".join(
             f"{short(m)}={v:,.0f}@{next((s_ for (a, mm), s_ in strike.items() if mm == m), 'n/a')}" for m, v in parts)
         return Prefunded(n, d, status, det, None)
+    if tag_pf:
+        return tag_pf
     if named_any:
         dates = sorted({w for _, w, _ in named_any if w})
         return Prefunded(None, d, "not_determinable",
@@ -593,41 +624,131 @@ _MONTH = r"(?:January|February|March|April|May|June|July|August|September|Octobe
 _DATE = rf"{_MONTH}\s+\d{{1,2}},\s*\d{{4}}"
 _NUM = r"\d{1,3}(?:,\d{3})+|\d{4,}"
 _PF = r"pre-?\s?funded"
-# (kind, regex, verified?)  every pattern states a CURRENT BALANCE, not an issuance
+_ISSUANCE = re.compile(r"\b(?:issued|issuance|issue|sold|sale|offering|proceeds|purchase agreement|agreed to purchase|"
+                       r"exercise of|exercised|upon exercise|granted)\b", re.I)
+# (method, kind, regex, verified?)  every pattern states a CURRENT BALANCE, not an issuance
 _TEXT_PATTERNS = [
-    # cover page: "This number does not include 37,814,754 shares of common stock issuable upon the
-    # exercise of pre-funded warrants outstanding as of August 6, 2026" (PALI 10-Q)
-    ("cover_note", re.compile(rf"does not include\s+({_NUM})\s+shares[^.]{{0,160}}?{_PF}\s+(?:common stock\s+)?"
-                              rf"warrants?\s+outstanding\s+as of\s+({_DATE})", re.I), True),
+    # method 2: balance-sheet parenthetical on the common-stock line
+    # "... 52,113,004 shares issued and outstanding, excluding 4,250,000 pre-funded warrants"
+    ("balance_sheet_parenthetical", "parenthetical",
+     re.compile(rf"(?:excluding|exclusive of|excludes|not including)\s+({_NUM})\s+(?:shares\s+)?(?:of common stock\s+)?"
+                rf"(?:issuable\s+upon\s+(?:the\s+)?exercise\s+of\s+)?(?:outstanding\s+)?{_PF}\s+(?:common stock\s+)?"
+                rf"warrants?", re.I), True),
+    # method 4: the cover-page note and "as of" balance sentences
+    # "This number does not include 37,814,754 shares of common stock issuable upon the exercise of
+    # pre-funded warrants outstanding as of August 6, 2026" (PALI 10-Q)
+    ("as_of_statement", "cover_note",
+     re.compile(rf"does not include\s+({_NUM})\s+shares[^.]{{0,160}}?{_PF}\s+(?:common stock\s+)?"
+                rf"warrants?\s+outstanding\s+as of\s+({_DATE})", re.I), True),
     # "As of June 30, 2026, 37,814,754 of the October 2025 Offering Pre-funded Common Stock Warrants
     # remained unexercised" (PALI 10-Q)
-    ("as_of_balance", re.compile(rf"As of\s+({_DATE})\s*,?\s*(?:there were\s+)?({_NUM})\b[^.]{{0,120}}?{_PF}"
-                                 rf"[^.]{{0,60}}?warrants?[^.]{{0,40}}?\b(?:remained|were|are|was)\s+"
-                                 rf"(?:issued and\s+)?(?:outstanding|unexercised)", re.I), True),
+    ("as_of_statement", "as_of_balance",
+     re.compile(rf"As of\s+({_DATE})\s*,?\s*(?:there were\s+)?({_NUM})\b[^.]{{0,120}}?{_PF}"
+                rf"[^.]{{0,60}}?warrants?[^.]{{0,40}}?\b(?:remained|were|are|was)\s+"
+                rf"(?:issued and\s+)?(?:outstanding|unexercised)", re.I), True),
     # "pre-funded warrants to purchase 3,000,031 shares ... remained outstanding as of June 30, 2026"
-    ("balance_as_of", re.compile(rf"{_PF}\s+warrants?\s+(?:to purchase\s+)?(?:an aggregate of\s+)?(?:up to\s+)?"
-                                 rf"({_NUM})\s+shares[^.]{{0,80}}?\b(?:remained|were|are)\s+(?:outstanding|unexercised)"
-                                 rf"\s+as of\s+({_DATE})", re.I), True),
-    # reserved-shares / outstanding-securities table row, current column first:
+    ("as_of_statement", "balance_as_of",
+     re.compile(rf"{_PF}\s+warrants?\s+(?:to purchase\s+)?(?:an aggregate of\s+)?(?:up to\s+)?"
+                rf"({_NUM})\s+shares[^.]{{0,80}}?\b(?:remained|were|are)\s+(?:outstanding|unexercised)"
+                rf"\s+as of\s+({_DATE})", re.I), True),
+    # method 3 (flattened): reserved-shares / outstanding-securities table row, current column first:
     # "Pre-funded warrants to purchase common stock — 7,060,000" (ACRV 10-Q: 0 now, 7,060,000 prior)
-    ("table_row", re.compile(rf"{_PF}\s+warrants?(?:\s+to purchase(?: shares of)? common stock)?(?:\s+outstanding)?"
-                             rf"\s+(—|-|{_NUM})\s+(?:—|-|{_NUM})(?!\s*\$)", re.I), True),
+    ("footnote_table", "table_row",
+     re.compile(rf"{_PF}\s+warrants?(?:\s+to purchase(?: shares of)? common stock)?(?:\s+outstanding)?"
+                rf"\s+(—|-|{_NUM})\s+(?:—|-|{_NUM})(?!\s*\$)", re.I), True),
     # EPS denominator: "weighted average of common stock to be issued upon exercise of pre-funded
     # warrants 3,000,031" (NKTX 10-Q). An AVERAGE for the period, not a balance -> unverified
-    ("eps_weighted", re.compile(rf"weighted[- ]average[^.]{{0,90}}?{_PF}\s+warrants?\s+({_NUM})", re.I), False),
+    ("eps_weighted_average", "eps_weighted",
+     re.compile(rf"weighted[- ]average[^.]{{0,90}}?{_PF}\s+warrants?\s+({_NUM})", re.I), False),
 ]
+MENTION_CONTEXT_CHARS = 300
+
+
+def visible_text(raw: str) -> str:
+    """Filing text a reader sees: the inline-XBRL header (hidden contexts whose member names
+    say 'PreFundedWarrantsMember' dozens of times: RNTX '22 mentions') is removed first."""
+    raw = re.sub(r"(?is)<ix:header>.*?</ix:header>", " ", raw or "")
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", raw)))
+
+
+def _cells(tr_html: str) -> list[str]:
+    out = []
+    for c in re.findall(r"(?is)<t[dh][^>]*>(.*?)</t[dh]>", tr_html):
+        t = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", c))).strip()
+        if t and t not in ("$", ")", "(", "%"):
+            out.append(t)
+    return out
+
+
+def _num(cell: str) -> float | None:
+    c = cell.replace("$", "").replace("(", "").replace(")", "").strip()
+    if c in ("—", "-", "–"):
+        return 0.0
+    return float(c.replace(",", "")) if re.fullmatch(r"\d{1,3}(?:,\d{3})+|\d+", c) else None
+
+
+def prefunded_from_tables(raw: str) -> dict | None:
+    """Method 3: the stockholders'-equity / warrant footnote TABLES, parsed as HTML.
+      A. a row labelled pre-funded warrant(s) in a balance table (header says outstanding /
+         anti-dilutive / excluded / reserved, not weighted): the first number is the current column;
+      B. a roll-forward with a pre-funded COLUMN: the value on the last 'Outstanding / Balance'
+         row, used only when that row has exactly one number per column label."""
+    for tm in re.finditer(r"(?is)<table.*?</table>", raw or ""):
+        tb = tm.group(0)
+        if not re.search(r"pre-?\s?funded", tb, re.I):
+            continue
+        rows = [_cells(r) for r in re.findall(r"(?is)<tr.*?</tr>", tb)]
+        rows = [r for r in rows if r]
+        flat = " ".join(" ".join(r) for r in rows)
+        rollforward = any(re.match(r"(?:issued|granted|exercised|expired|forfeited|cancel)", r[0], re.I) for r in rows)
+        balance_table = re.search(r"outstanding|anti-?dilutive|excluded from|reserved", flat, re.I) and \
+            not re.search(r"weighted", flat, re.I) and not rollforward
+        for r in rows:
+            if re.search(r"pre-?\s?funded", r[0], re.I) and not _ISSUANCE.search(r[0]) and balance_table:
+                nums = [v for v in (_num(c) for c in r[1:]) if v is not None]
+                if nums:
+                    return {"count": nums[0], "kind": "table_row_html", "verified": True,
+                            "evidence": " | ".join(r)[:300]}
+        for i, h in enumerate(rows):
+            # a column-header row: every cell a label (no numbers, prices or dashes)
+            if len(h) < 2 or any(re.search(r"\d|\$|^[—–-]$", c) for c in h):
+                continue
+            labels = h
+            idx = next((j for j, c in enumerate(labels) if re.search(r"pre-?\s?funded", c, re.I)), None)
+            if idx is None or not rollforward:
+                continue
+            ends = [r for r in rows[i + 1:] if re.match(r"(?:outstanding|balance)", r[0], re.I)]
+            if ends:
+                nums = [v for v in (_num(c) for c in ends[-1][1:]) if v is not None]
+                if len(nums) == len(labels):
+                    return {"count": nums[idx], "kind": "rollforward_column", "verified": True,
+                            "evidence": f"{labels[idx]} | " + " | ".join(ends[-1])[:300]}
+            break
+    return None
 
 
 def prefunded_from_text(text: str) -> dict:
-    """Outstanding pre-funded warrants stated in a 10-Q/10-K's own words.
+    """Outstanding pre-funded warrants stated in a 10-Q/10-K's own words, methods 2-4
+    in priority order (balance-sheet parenthetical, footnote tables, "as of"
+    statements), then the EPS weighted average (unverified).
 
-    Only sentences that state a CURRENT balance count; issuance and exercise
-    sentences are ignored (ACRV issued 7,060,000 and its table shows 0 today).
-    Returns {count, kind, verified, evidence, mentions}; count None when the
-    filing mentions pre-funded warrants but states no balance."""
-    t = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", text or "")))
-    mentions = len(re.findall(rf"{_PF}\s+(?:common stock\s+)?warrants?", t, re.I))
-    for kind, rx, verified in _TEXT_PATTERNS:
+    Only statements of a CURRENT balance count; issuance and exercise sentences are
+    ignored (ACRV issued 7,060,000 and its table shows 0 today). Returns {count,
+    kind, method, verified, evidence, mentions, contexts}; count None when the filing
+    mentions pre-funded warrants but states no balance. `contexts` holds the
+    surrounding 300 characters of each visible mention, for a human read."""
+    t = visible_text(text)
+    hits = list(re.finditer(rf"{_PF}\s+(?:common stock\s+)?warrants?", t, re.I))
+    contexts = [t[max(0, m.start() - MENTION_CONTEXT_CHARS // 2):m.end() + MENTION_CONTEXT_CHARS // 2]
+                for m in hits[:25]]
+    base = {"mentions": len(hits), "contexts": contexts}
+    ordered = _TEXT_PATTERNS[:1] + [("footnote_table", None, None, True)] + _TEXT_PATTERNS[1:]
+    for method, kind, rx, verified in ordered:
+        if rx is None:
+            tab = prefunded_from_tables(text) if "<t" in (text or "") else None
+            if tab:
+                return {**base, **tab, "method": method}
+            continue
         m = next((m for m in rx.finditer(t)
                   # a "table row" inside an EPS denominator is a period average, not a balance
                   if not (kind == "table_row" and re.search(r"weighted[- ]average", t[max(0, m.start() - 160):m.start()],
@@ -636,29 +757,32 @@ def prefunded_from_text(text: str) -> dict:
             continue
         raw = m.group(2) if kind == "as_of_balance" else m.group(1)
         count = 0.0 if raw in ("—", "-") else float(raw.replace(",", ""))
-        return {"count": count, "kind": kind, "verified": verified, "mentions": mentions,
+        return {**base, "count": count, "kind": kind, "method": method, "verified": verified,
                 "evidence": t[max(0, m.start() - 40):m.end() + 40].strip()[:400]}
-    return {"count": None, "kind": None, "verified": False, "mentions": mentions, "evidence": None}
+    return {**base, "count": None, "kind": None, "method": None, "verified": False, "evidence": None}
 
 
 @dataclass
 class ShareCount:
     pre_funded: float | None
-    source: str                # human-readable: where each number came from
+    source: str                # human-readable: where each number came from, method first
     confidence: str            # verified / unverified
     detail: str
+    method: str | None = None  # xbrl / balance_sheet_parenthetical / footnote_table / as_of_statement /
+                               # eps_weighted_average / no_prefunded / not_found
+    contexts: list = field(default_factory=list)   # 300 characters around each mention when not_found
 
 
 def share_count(http, cik: int, submissions: dict | None, xbrl: "Prefunded") -> ShareCount:
-    """Combine the XBRL class breakdown with the filing text.
-
-    verified   XBRL pre-funded classes at the balance date; or a text sentence
-               stating the current balance; or no pre-funded class in XBRL AND
-               no mention of pre-funded warrants anywhere in the filing text.
-    unverified everything else: the text mentions pre-funded warrants but states
-               no balance (VTVT 10-Q: "included in the weighted average number of
-               shares outstanding", no count), an EPS weighted average, or no
-               instance/text could be read. Count None unless a number was stated."""
+    """Pre-funded warrants outstanding at the balance date, in priority order:
+      1. XBRL: warrant classes on a pre-funded member at the balance date, or a company tag
+         for pre-funded warrants outstanding (prefunded_from_instance);
+      2. the balance-sheet parenthetical on the common-stock line;
+      3. the stockholders'-equity / warrant footnote tables (HTML);
+      4. the cover-page note or an "as of" statement of the balance.
+    verified   any of 1-4; or no pre-funded class in XBRL AND no visible mention in the filing.
+    unverified an EPS weighted average (a period average, not a balance), or mentions with no
+               stated balance after all four methods (count None; contexts kept for a human read)."""
     txt = None
     if submissions:
         r = submissions.get("filings", {}).get("recent", {})
@@ -669,28 +793,31 @@ def share_count(http, cik: int, submissions: dict | None, xbrl: "Prefunded") -> 
                         f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{doc}"))
                     txt["filing"] = f"{form} {acc}"
                 except Exception as e:  # noqa: BLE001
-                    txt = {"count": None, "kind": None, "verified": False, "mentions": None,
+                    txt = {"count": None, "kind": None, "verified": False, "mentions": None, "contexts": [],
                            "evidence": f"text fetch failed: {e}", "filing": f"{form} {acc}"}
                 break
-    tx = txt or {"count": None, "kind": None, "verified": False, "mentions": None, "evidence": None, "filing": None}
-    if xbrl.status in ("reconciled", "named", "reconciled_plus_named"):
+    tx = txt or {"count": None, "kind": None, "verified": False, "mentions": None, "evidence": None, "filing": None,
+                 "contexts": []}
+    if xbrl.status in ("reconciled", "named", "reconciled_plus_named", "prefunded_tag"):
         note = ""
         if tx["count"] is not None and tx["verified"] and xbrl.shares and \
                 abs(tx["count"] - xbrl.shares) > 0.01 * xbrl.shares:
             note = f"; TEXT DISAGREES: {tx['kind']} states {tx['count']:,.0f}"
-        return ShareCount(xbrl.shares, f"XBRL warrant classes at {xbrl.asof} ({xbrl.status})", "verified",
-                          xbrl.detail + note)
+        return ShareCount(xbrl.shares, f"method=xbrl: warrant classes at {xbrl.asof} ({xbrl.status})", "verified",
+                          xbrl.detail + note, "xbrl")
     if tx["count"] is not None and tx["verified"]:
-        return ShareCount(tx["count"], f"filing text ({tx['kind']}, {tx['filing']})", "verified", tx["evidence"])
+        return ShareCount(tx["count"], f"method={tx['method']}: filing text ({tx['kind']}, {tx['filing']})",
+                          "verified", tx["evidence"], tx["method"])
     if tx["count"] is not None:
-        return ShareCount(tx["count"], f"filing text ({tx['kind']}: a period average, not a balance; {tx['filing']})",
-                          "unverified", tx["evidence"])
+        return ShareCount(tx["count"], f"method={tx['method']}: filing text ({tx['kind']}: a period average, not a "
+                          f"balance; {tx['filing']})", "unverified", tx["evidence"], tx["method"])
     if xbrl.status == "none" and tx["mentions"] == 0:
-        return ShareCount(0.0, f"no pre-funded class in XBRL and no mention in {tx['filing']}", "verified",
-                          xbrl.detail)
-    why = (f"{tx['mentions']} mentions of pre-funded warrants in {tx['filing']} but no stated balance"
-           if tx["mentions"] else f"XBRL {xbrl.status}; filing text not readable")
-    return ShareCount(None, why, "unverified", f"{xbrl.status}: {xbrl.detail}")
+        return ShareCount(0.0, f"method=no_prefunded: no pre-funded class in XBRL and no mention in {tx['filing']}",
+                          "verified", xbrl.detail, "no_prefunded")
+    why = (f"method=not_found: {tx['mentions']} mentions of pre-funded warrants in {tx['filing']}; no balance from "
+           f"XBRL, parenthetical, footnote tables or as-of statements" if tx["mentions"]
+           else f"method=not_found: XBRL {xbrl.status}; filing text not readable")
+    return ShareCount(None, why, "unverified", f"{xbrl.status}: {xbrl.detail}", "not_found", tx.get("contexts") or [])
 
 
 # ------------------------------------------------- stated runway cross-check --

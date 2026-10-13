@@ -204,6 +204,7 @@ def build(row: dict, record: dict, history_md: list[str], related: dict, today: 
              "burn_quarters", "burn_status", "runway_q",
              "runway_needed_q", "funded_through", "days_since_cash_asof", "cash_today_est", "cash_to_mcap_est",
              "total_debt_usd", "debt_asof", "debt_components", "has_convertible", "ev_est", "company_status",
+             "delisting_signal", "form_25_date", "form_25_accession", "form_15_date",
              "latest_filing_date", "latest_filing_form", "deregistration_filing", "shelf_count", "atm_count",
              "days_since_latest_atm_filing", "candidate_evidence_grade", "molecule_track_record",
              "sponsor_trial_count_in_window", "candidate_is_lead_program", "lead_program_guess",

@@ -104,40 +104,64 @@ def ev_est(market_cap: float | None, total_debt_usd: float | None, cash_today_es
     return round(market_cap + total_debt_usd - cash_today_est)
 
 
-FINANCIAL_FORMS = {"10-K", "10-Q", "10-K/A", "10-Q/A", "20-F", "20-F/A", "40-F", "10-KT"}
-DEREG_FORMS = {"15-12B", "15-12G", "15-15D", "25-NSE", "25", "15F-12B", "15F-12G", "15F-15D"}
+FINANCIAL_FORMS = {"10-K", "10-Q", "10-K/A", "10-Q/A", "20-F", "20-F/A", "40-F", "40-F/A", "10-KT"}
+ANNUAL_ONLY_FORMS = {"20-F", "20-F/A", "40-F", "40-F/A"}
+FORM_25 = {"25", "25-NSE", "25/A", "25-NSE/A"}
+FORM_15 = {"15-12B", "15-12G", "15-15D", "15F-12B", "15F-12G", "15F-15D", "15-12B/A", "15-12G/A", "15-15D/A"}
+STALE_DAYS = 270
+STALE_DAYS_ANNUAL_FILER = 455   # a 20-F / 40-F filer reports once a year (12 months + 3-month filing window)
 
 
-def company_status(submissions: dict | None, market_cap: float | None, today: dt.date,
-                   stale_days: int = 270) -> dict:
-    """likely_delisted_or_acquired when market_cap is null AND either
-      - the newest financial filing (10-K/10-Q/20-F/40-F) AND the newest filing
-        of ANY type are both older than stale_days (a live company keeps filing
-        8-Ks when its financials lag), or
-      - a deregistration / delisting form (15-*, 25) was filed on or after the
-        newest financial filing.
-    Otherwise active. unknown if the submissions record could not be read."""
+def company_status(submissions: dict | None, today: dt.date, stale_days: int = STALE_DAYS) -> dict:
+    """Delisting facts from the SEC submissions record.
+
+    form_25_filed  a Form 25 / 25-NSE (Notification of Removal from Listing) filed ON OR AFTER the
+                   newest periodic financial report. An older Form 25 sits before current financials
+                   (a warrant class or note series delisted; the common still reports) and is shown in
+                   form_25_older, not counted.
+    form_15_filed  a Form 15 deregistration, same timing rule. Demoted: a 15-12G alone is often routine.
+    delisting_signal  form_25 > no_recent_financial_filing > form_15_only > none
+    company_status    delisted on form_25 or no_recent_financial_filing (no 10-K/10-Q/20-F for more
+                      than 270 days; 455 for an annual-only 20-F/40-F filer); check_manually on
+                      form_15_only; active otherwise; unknown when the record could not be read."""
+    empty = {"company_status": "unknown", "delisting_signal": None, "form_25_filed": None, "form_25_date": None,
+             "form_25_accession": None, "form_25_older": None, "form_15_filed": None, "form_15_date": None,
+             "latest_filing_date": None, "latest_filing_form": None, "latest_financial_filing": None,
+             "latest_financial_form": None, "days_since_financial_filing": None, "deregistration_filing": None}
     if not submissions:
-        return {"company_status": "unknown", "latest_filing_date": None, "latest_filing_form": None,
-                "latest_financial_filing": None, "deregistration_filing": None}
+        return empty
     r = submissions.get("filings", {}).get("recent", {})
-    rows = list(zip(r.get("filingDate", []), r.get("form", [])))
-    latest = max(rows, default=(None, None))
-    fin = max((d for d, f in rows if f in FINANCIAL_FORMS), default=None)
-    dereg = max(((d, f) for d, f in rows if f in DEREG_FORMS), default=None)
-
-    def age(d):
-        return (today - dt.date.fromisoformat(d)).days if d else None
-    fin_stale = fin is None or age(fin) > stale_days
-    any_stale = latest[0] is None or age(latest[0]) > stale_days
-    # a deregistration filed AFTER the last financial report is direct evidence on
-    # its own (an old Form 25 for a warrant class is not)
-    dereg_after = dereg is not None and (fin is None or dereg[0] >= fin)
-    likely = market_cap is None and ((fin_stale and any_stale) or dereg_after)
-    return {"company_status": "likely_delisted_or_acquired" if likely else "active",
+    accs = r.get("accessionNumber") or [None] * len(r.get("form", []))
+    rows = list(zip(r.get("filingDate", []), r.get("form", []), accs))
+    latest = max(rows, default=(None, None, None))
+    fin = max(((d, f) for d, f, _ in rows if f in FINANCIAL_FORMS), default=(None, None))
+    f25 = sorted(((d, f, a) for d, f, a in rows if f in FORM_25), reverse=True)
+    f15 = sorted(((d, f, a) for d, f, a in rows if f in FORM_15), reverse=True)
+    after = [x for x in f25 if fin[0] is None or x[0] >= fin[0]]
+    older = [x for x in f25 if x not in after]
+    f15_after = [x for x in f15 if fin[0] is None or x[0] >= fin[0]]
+    days_fin = (today - dt.date.fromisoformat(fin[0])).days if fin[0] else None
+    limit = STALE_DAYS_ANNUAL_FILER if fin[1] in ANNUAL_ONLY_FORMS else stale_days
+    stale = days_fin is None or days_fin > limit
+    if after:
+        signal = "form_25"
+    elif stale:
+        signal = "no_recent_financial_filing"
+    elif f15_after:
+        signal = "form_15_only"
+    else:
+        signal = "none"
+    status = {"form_25": "delisted", "no_recent_financial_filing": "delisted",
+              "form_15_only": "check_manually", "none": "active"}[signal]
+    return {**empty, "company_status": status, "delisting_signal": signal,
+            "form_25_filed": bool(after), "form_25_date": after[-1][0] if after else None,
+            "form_25_accession": after[-1][2] if after else None,
+            "form_25_older": "|".join(f"{f} {d}" for d, f, _ in older) or None,
+            "form_15_filed": bool(f15_after), "form_15_date": f15_after[-1][0] if f15_after else None,
             "latest_filing_date": latest[0], "latest_filing_form": latest[1],
-            "latest_financial_filing": fin,
-            "deregistration_filing": f"{dereg[1]} {dereg[0]}" if dereg else None}
+            "latest_financial_filing": fin[0], "latest_financial_form": fin[1],
+            "days_since_financial_filing": days_fin,
+            "deregistration_filing": "; ".join(f"{f} {d}" for d, f, _ in (after + f15_after)) or None}
 
 
 def lead_program(candidate, sponsor_trials: list) -> dict:

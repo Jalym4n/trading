@@ -165,20 +165,26 @@ def _subs(rows):
 
 
 def test_company_status():
-    acquired = _subs([("2025-04-02", "15-12B"), ("2025-04-01", "S-8 POS"), ("2025-02-20", "10-K")])   # ITCI shape
-    assert company_status(acquired, None, TODAY)["company_status"] == "likely_delisted_or_acquired"
-    # FOLD shape: acquired 2026-04, last 10-K only 7 months old, then a Form 25
-    recent_close = _subs([("2026-05-07", "25-NSE"), ("2026-04-27", "8-K"), ("2026-02-26", "10-K")])
-    assert company_status(recent_close, None, TODAY)["company_status"] == "likely_delisted_or_acquired"
-    # financials lag but the company keeps filing 8-Ks: active
-    lagging = _subs([("2026-09-30", "8-K"), ("2025-11-10", "10-Q")])
-    assert company_status(lagging, None, TODAY)["company_status"] == "active"
-    # a price exists: active whatever the filings say
-    assert company_status(acquired, 1e8, TODAY)["company_status"] == "active"
-    # an old Form 25 for a warrant class, before current financials: not evidence
-    old25 = _subs([("2026-08-10", "10-Q"), ("2024-01-05", "25-NSE")])
-    assert company_status(old25, None, TODAY)["company_status"] == "active"
-    assert company_status(None, None, TODAY)["company_status"] == "unknown"
+    st = lambda rows: company_status(_subs(rows), TODAY)  # noqa: E731
+    # APLS shape: 10-Q, then the exchange's 25-NSE, then a 15-12G. The 15 is later; the 25 decides.
+    apls = st([("2026-05-26", "15-12G"), ("2026-05-14", "25-NSE"), ("2026-05-07", "10-Q")])
+    assert (apls["company_status"], apls["delisting_signal"], apls["form_25_filed"], apls["form_25_date"]) == \
+        ("delisted", "form_25", True, "2026-05-14")
+    assert apls["form_15_filed"] and apls["form_15_date"] == "2026-05-26"
+    # a 15-12G alone is often routine deregistration by a company that still trades
+    only15 = st([("2026-09-01", "15-12G"), ("2026-08-10", "10-Q")])
+    assert (only15["company_status"], only15["delisting_signal"]) == ("check_manually", "form_15_only")
+    # no periodic financial filing for > 270 days, whatever else is filed
+    lagging = st([("2026-09-30", "8-K"), ("2025-11-10", "10-Q")])
+    assert (lagging["company_status"], lagging["delisting_signal"]) == ("delisted", "no_recent_financial_filing")
+    # an annual-only 20-F filer is not stale at 10 months
+    annual = st([("2026-09-30", "6-K"), ("2025-12-15", "20-F")])
+    assert annual["company_status"] == "active"
+    # an old Form 25 for a warrant class, before current financials: not counted, shown
+    old25 = st([("2026-08-10", "10-Q"), ("2024-01-05", "25-NSE")])
+    assert (old25["company_status"], old25["form_25_filed"], old25["form_25_older"]) == \
+        ("active", False, "25-NSE 2024-01-05")
+    assert company_status(None, TODAY)["company_status"] == "unknown"
 
 
 # ------------------------------------------------------------- integrity --
@@ -190,7 +196,7 @@ def test_integrity_checks_catch_the_run_one_defects():
         {"ticker": "OLD", "nct_id": "N3", "runway_q": 10302.03, "burn_q_usd": 19_912, "cash_usd": 205e6},
         {"ticker": "VNDA", "nct_id": "NCT07223632", "phase": "P2", "enrollment": 1},
         {"ticker": "UPB", "nct_id": "NCT06981078", "pcd_slip_months": -18.0, "days_since_cash_asof": 151},
-        {"ticker": "ITCI", "nct_id": "N6", "company_status": "likely_delisted_or_acquired"},
+        {"ticker": "ITCI", "nct_id": "N6", "company_status": "delisted"},
     ]
     caught = [[rid.split()[0] for rid, _ in hits] for _name, hits in checks(rows)]
     assert caught == [["TTRX"],            # masked but control_arm != yes
@@ -198,7 +204,8 @@ def test_integrity_checks_catch_the_run_one_defects():
                       ["ZURA", "OLD"],     # runway > 200 / burn floor / burn_implausible
                       ["VNDA"],            # enrollment < 20 on P2/P3
                       ["UPB"],             # cash older than 150 days
-                      ["ITCI"],            # likely delisted or acquired
+                      ["ITCI"],            # delisted
+                      [],                  # check_manually (Form 15 only)
                       ["UPB"],             # pcd moved earlier
                       ["TTRX"],            # <= 1 site with >= 50 patients
                       [],                  # market_cap_confidence unverified
@@ -325,8 +332,56 @@ def test_prefunded_text_average_or_issuance_is_not_a_verified_balance():
             "average number of shares outstanding.")
     r = prefunded_from_text(vtvt)
     assert r["count"] is None and r["mentions"] == 2
-    assert prefunded_from_text("No warrants here.") == {"count": None, "kind": None, "verified": False,
-                                                       "mentions": 0, "evidence": None}
+    r = prefunded_from_text("No warrants here.")
+    assert (r["count"], r["kind"], r["verified"], r["mentions"], r["contexts"]) == (None, None, False, 0, [])
+
+
+def test_prefunded_xbrl_other_class_tags():
+    # CRBP 10-Q: ClassOfWarrantOrRightNumberOfSecuritiesCalledByWarrantsOrRights on Pre-FundedWarrantsMember,
+    # tagged twice at the balance date; EYPT-style issuance date facts are ignored
+    called = "ClassOfWarrantOrRightNumberOfSecuritiesCalledByWarrantsOrRights"
+    xml = _instance(D, [(called, 1025000, D, [(SAX, "crbp:Pre-FundedWarrantsMember")]),
+                        (called, 1025000, D, [(SAX, "crbp:Pre-FundedWarrantsMember")]),
+                        (called, 550000, "2025-06-30", [(SAX, "bmea:PreFundedWarrantsMember")])])
+    p = prefunded_from_instance(xml)
+    assert (p.shares, p.status) == (1025000.0, "prefunded_tag")
+
+
+def test_prefunded_mentions_ignore_the_inline_xbrl_header():
+    # RNTX: "22 mentions" were member names in the hidden ix:header
+    raw = ("<ix:header><xbrli:context>rntx:PreFundedWarrantsMember rntx:BiosPre-FundedWarrantsMember</xbrli:context>"
+           "</ix:header><p>The Pre-Funded Warrants are classified as equity.</p>")
+    r = prefunded_from_text(raw)
+    assert r["mentions"] == 1 and r["count"] is None and len(r["contexts"]) == 1
+
+
+def test_prefunded_footnote_tables():
+    # A: outstanding-securities table, row labelled pre-funded, current column first
+    a = ("<table><tr><td></td><td>June 30, 2026</td><td>December 31, 2025</td></tr>"
+         "<tr><td>Common stock warrants outstanding</td><td>1,200,000</td><td>1,200,000</td></tr>"
+         "<tr><td>Pre-funded warrants</td><td>4,250,000</td><td>5,000,000</td></tr></table>")
+    r = prefunded_from_text(a)
+    assert (r["count"], r["method"], r["verified"]) == (4250000.0, "footnote_table", True)
+    # B: roll-forward with a pre-funded COLUMN; the last Outstanding row
+    b = ("<table><tr><td></td><td>Pre-funded warrants</td><td>Common warrants</td></tr>"
+         "<tr><td>Outstanding at December 31, 2025</td><td>3,000,000</td><td>900,000</td></tr>"
+         "<tr><td>Exercised</td><td>(1,000,000)</td><td>—</td></tr>"
+         "<tr><td>Outstanding at June 30, 2026</td><td>2,000,000</td><td>900,000</td></tr></table>")
+    assert prefunded_from_text(b)["count"] == 2000000.0
+    # RNXT: a pre-funded ISSUANCE row inside a roll-forward is not a balance
+    c = ("<table><tr><td></td><td>Warrants</td><td>Weighted average exercise price</td></tr>"
+         "<tr><td>Outstanding as of December 31, 2025</td><td>24,991,784</td><td>$ 2.39</td></tr>"
+         "<tr><td>Issued in March 2026 to:</td></tr><tr><td>Pre-funded warrants</td><td>2,200,000</td>"
+         "<td>$ 0.0001</td></tr><tr><td>Outstanding as of June 30, 2026</td><td>28,554,994</td><td>$ 2.25</td></tr>"
+         "</table>")
+    assert prefunded_from_text(c)["count"] is None
+
+
+def test_prefunded_balance_sheet_parenthetical():
+    t = ("Common stock, $0.0001 par value; 52,113,004 shares issued and outstanding, excluding 4,250,000 "
+         "pre-funded warrants")
+    r = prefunded_from_text(t)
+    assert (r["count"], r["method"]) == (4250000.0, "balance_sheet_parenthetical")
 
 
 # ------------------------------------------------------------ reverse splits --

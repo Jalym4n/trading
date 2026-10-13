@@ -133,7 +133,8 @@ def evidence_grade(control: str, masking: str | None) -> str:
     return "unknown"
 
 
-def find_trials(http, key: str, sponsor: str | None, cap: int = 200) -> tuple[list[dict], bool]:
+def find_trials(http, key: str, sponsor: str | None, cap: int = 200,
+                keys: set | None = None) -> tuple[list[dict], bool]:
     """All trials naming this molecule (every spelling, any sponsor), unioned
     with the sponsor's trials whose interventions normalise to the same key.
     Returns (trials, truncated)."""
@@ -152,7 +153,7 @@ def find_trials(http, key: str, sponsor: str | None, cap: int = 200) -> tuple[li
             f = trial_facts(s)
             if f["nct_id"] in seen:
                 continue
-            if "query.spons" in q and key not in f["intervention_keys"]:
+            if "query.spons" in q and not ((keys or {key}) & set(f["intervention_keys"])):
                 continue
             seen.add(f["nct_id"])
             out.append(f)
@@ -179,12 +180,102 @@ def why_stopped_outcome(t: dict) -> dict | None:
     return None
 
 
+HIGHER_BETTER = re.compile(r"surviv|response|responder|remission|success|\bclear|cure|healing|free\b|-free|"
+                           r"time to (?:progression|relapse|recurrence|death|event|first)", re.I)
+LOWER_BETTER = re.compile(r"\brate of|annuali[sz]ed|number of (?:\w+ ){0,3}(?:events?|exacerbations?|seizures?|relapses?|"
+                          r"attacks?|days)|incidence|mortality|death|hospitali[sz]", re.I)
+
+
+def _norm_label(x: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (x or "").lower()).strip()
+
+
+def _arm_roles(ps: dict) -> dict:
+    """{normalised arm label: 'experimental' | 'control'} from armGroups types and control vocabulary."""
+    from .derive import COMPARATOR_TYPES, CONTROL_WORDS
+    arms = ((ps.get("armsInterventionsModule") or {}).get("armGroups") or [])
+    out = {}
+    for a in arms:
+        lbl = _norm_label(a.get("label"))
+        if a.get("type") in COMPARATOR_TYPES or CONTROL_WORDS.fullmatch((a.get("label") or "").strip()):
+            out[lbl] = "control"
+        elif a.get("type") == "EXPERIMENTAL":
+            out[lbl] = "experimental"
+    if "experimental" not in out.values() and len(arms) == 2:
+        # every arm typed comparator (ONCY NCT01622543: "Folfox plus Bevacizumab and Reolysin" and
+        # "Folfox plus Bevacizumab", both ACTIVE_COMPARATOR): an add-on arm, whose label or
+        # interventions strictly contain the other arm's, is the experimental one
+        (a, b) = arms
+        la, lb = _norm_label(a.get("label")), _norm_label(b.get("label"))
+        ia, ib = set(a.get("interventionNames") or []), set(b.get("interventionNames") or [])
+        for x, y, lx, ly, ix, iy in ((a, b, la, lb, ia, ib), (b, a, lb, la, ib, ia)):
+            if (ly and ly in lx and lx != ly) or (iy and ix > iy):
+                out[lx], out[ly] = "experimental", "control"
+                break
+    return out
+
+
+def _group_role(title: str, roles: dict) -> str | None:
+    t = _norm_label(title)
+    if t in roles:
+        return roles[t]
+    # containment, longest label first: "folfox plus bevacizumab and reolysin" is not the control
+    # arm "folfox plus bevacizumab" just because it contains it
+    hits = sorted(((len(lbl), r) for lbl, r in roles.items() if lbl and (lbl in t or t in lbl)), reverse=True)
+    return hits[0][1] if hits and (len(hits) == 1 or hits[0][0] > hits[1][0]) else None
+
+
+def effect_direction(ps: dict, om: dict, an: dict) -> str | None:
+    """Which arm a posted primary analysis favours: 'experimental', 'control' or None
+    (not determinable). Arms come from armGroups types; polarity from the outcome
+    title (survival / response / remission: higher is better; event rates,
+    incidence, mortality: lower is better). Group values are compared first; a
+    hazard ratio on a survival / time-to outcome is read as experimental vs control
+    (< 1 favours experimental) only if the values are absent. A change-from-baseline
+    score has no polarity here: None, and the sponsor's own statement decides."""
+    title = f"{om.get('title') or ''} {om.get('description') or ''}"
+    pol = "higher" if HIGHER_BETTER.search(om.get("title") or "") else \
+        ("lower" if LOWER_BETTER.search(om.get("title") or "") else None)
+    roles = _arm_roles(ps)
+    gtitle = {g.get("id"): g.get("title") for g in om.get("groups") or []}
+    ids = an.get("groupIds") or []
+    role = {g: _group_role(gtitle.get(g, ""), roles) for g in ids}
+    exp = [g for g in ids if role[g] == "experimental"]
+    ctl = [g for g in ids if role[g] == "control"]
+    if len(exp) != 1 or len(ctl) != 1 or pol is None:
+        return None
+    vals = {}
+    for c in om.get("classes") or []:
+        for cat in c.get("categories") or []:
+            for m in cat.get("measurements") or []:
+                try:
+                    vals.setdefault(m.get("groupId"), float(m.get("value")))
+                except (TypeError, ValueError):
+                    pass
+        break
+    if exp[0] in vals and ctl[0] in vals and vals[exp[0]] != vals[ctl[0]]:
+        better_exp = vals[exp[0]] > vals[ctl[0]] if pol == "higher" else vals[exp[0]] < vals[ctl[0]]
+        return "experimental" if better_exp else "control"
+    if "hazard" in (an.get("paramType") or "").lower() and pol == "higher" and re.search(r"surviv|time to|free", title, re.I):
+        try:
+            hr = float(an.get("paramValue"))
+        except (TypeError, ValueError):
+            return None
+        return "experimental" if hr < 1 else ("control" if hr > 1 else None)
+    return None
+
+
 def posted_results_outcome(http, t: dict) -> dict | None:
-    """Primary-outcome statistical analyses posted on CT.gov: any p < 0.05 ->
-    met_primary; analyses present and all p >= 0.05 -> missed_primary."""
+    """Primary-outcome statistical analyses posted on CT.gov.
+      p < 0.05 favouring the experimental arm  -> met_primary
+      p < 0.05 favouring the control arm       -> missed_primary (a significant harm is a failure:
+                                                   ONCY NCT01622543, PFS 7.33 vs 9.13 months, HR 1.59, p 0.046)
+      p < 0.05, direction not determinable     -> None (the sponsor's statement decides)
+      analyses present and all p >= 0.05       -> missed_primary"""
     if not t["has_results"]:
         return None
     rec = http.get_json(f"{CTGOV}/{t['nct_id']}", {"format": "json"})
+    ps_ = rec.get("protocolSection", {}) or {}
     ps = []
     for om in ((rec.get("resultsSection") or {}).get("outcomeMeasuresModule") or {}).get("outcomeMeasures") or []:
         if om.get("type") != "PRIMARY":
@@ -192,16 +283,24 @@ def posted_results_outcome(http, t: dict) -> dict | None:
         for an in om.get("analyses") or []:
             m = re.search(r"([<>]?=?)\s*(\d*\.?\d+)", str(an.get("pValue") or ""))
             if m:
-                ps.append((m.group(1), float(m.group(2)), om.get("title")))
+                ps.append((m.group(1), float(m.group(2)), om.get("title"), om, an))
     if not ps:
         return None
     sig = [p for p in ps if p[1] < 0.05 or (p[0].startswith("<") and p[1] <= 0.05)]
     url = f"https://clinicaltrials.gov/study/{t['nct_id']}?tab=results"
     if sig:
-        return {"outcome": "met_primary", "source": "CT.gov posted primary analysis", "url": url,
-                "evidence": f"p {sig[0][0]}{sig[0][1]} on '{sig[0][2]}'"}
+        a, b, c, om, an = sig[0]
+        d = effect_direction(ps_, om, an)
+        ev = f"p {a}{b} on '{c}'" + (f", {an.get('paramType')} {an.get('paramValue')}" if an.get("paramValue") else "")
+        if d == "experimental":
+            return {"outcome": "met_primary", "source": "CT.gov posted primary analysis", "url": url,
+                    "evidence": ev + ", favours the experimental arm", "p_value": f"p {a}{b}"}
+        if d == "control":
+            return {"outcome": "missed_primary", "source": "CT.gov posted primary analysis", "url": url,
+                    "evidence": ev + ", favours the CONTROL arm (significant harm)", "p_value": f"p {a}{b}"}
+        return None
     return {"outcome": "missed_primary", "source": "CT.gov posted primary analysis", "url": url,
-            "evidence": "; ".join(f"p {a}{b} on '{c}'" for a, b, c in ps[:3])}
+            "evidence": "; ".join(f"p {a}{b} on '{c}'" for a, b, c, _o, _a in ps[:3])}
 
 
 def _abbrev(condition: str) -> list[str]:
@@ -218,14 +317,36 @@ def _abbrev(condition: str) -> list[str]:
     return out
 
 
+# A release whose headline or opening says one of these is about a process step, a designation or
+# a presentation, never an outcome; it establishes nothing about any trial, whatever else it says
+# (CGTX 2025-02-26 "Successfully Passes Pre-defined Futility Analysis", which also repeats that SHIMMER
+# "met its primary endpoint of safety and tolerability").
+NON_OUTCOME = re.compile(
+    r"passe[sd] futility|passed the futility|passes pre-?defined futility|futility analysis|interim analysis|"
+    r"continue without modification|DSMB recommends|enrollment (?:is )?complete|completes? enrollment|last patient|"
+    r"dosing initiated|first patient|alignment with (?:the )?FDA|end-of-phase|meeting minutes|\bType [BC]\b|"
+    r"breakthrough|fast track|orphan (?:drug )?designation|\bpatent|Notice of Allowance|presented at", re.I)
+HEAD_BODY_CHARS = 500
+_PVAL = re.compile(r"\bp\s*(?:[<=≤]|value of)\s*0?\.\d+", re.I)
+
+
+def _strip_wrapper(t: str) -> str:
+    lead = list(re.finditer(r"(?:EX-99\.?\d*|Exhibit\s+99\.?\d*)", t[:200], re.I))
+    return t[lead[-1].end():].strip() if lead else t
+
+
 def press_release_sentences(http, cik: int, submissions: dict, today: dt.date, days: int = 1095) -> list[dict]:
     """Outcome sentences from the sponsor's 8-K press releases (exhibit 99.x),
-    last `days`. Each: {date, url, sentence, outcome, doc_head}."""
+    last `days`. Each: {date, accepted, url, headline, sentence, outcome, doc_head,
+    before, blocked}. `blocked` names the NON_OUTCOME phrase found in the
+    headline + first 500 characters of the body, or in the sentence itself."""
+    from .dilution import _headline
     since = (today - dt.timedelta(days=days)).isoformat()
     r = submissions.get("filings", {}).get("recent", {})
     out = []
-    for acc, form, d, items in zip(r.get("accessionNumber", []), r.get("form", []), r.get("filingDate", []),
-                                   r.get("items", [])):
+    accepted_all = r.get("acceptanceDateTime") or [None] * len(r.get("form", []))
+    for acc, form, d, items, accepted in zip(r.get("accessionNumber", []), r.get("form", []), r.get("filingDate", []),
+                                             r.get("items", []), accepted_all):
         if form not in ("8-K", "8-K/A") or d < since or not re.search(r"7\.01|8\.01|2\.02", items or ""):
             continue
         base = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}"
@@ -239,17 +360,26 @@ def press_release_sentences(http, cik: int, submissions: dict, today: dt.date, d
             except Exception:  # noqa: BLE001
                 continue
             head = t[:600]
+            headline = _headline(t)
+            body = _strip_wrapper(t)
+            opening = headline + " " + body[len(headline):len(headline) + HEAD_BODY_CHARS]
+            blocked_doc = NON_OUTCOME.search(opening)
             for m in re.finditer(r"[^.]*?(?:primary (?:efficacy )?end ?points?)[^.]*\.", t, re.I):
-                s = m.group(0).strip()
-                if DESIGN_ONLY.search(s) and not (MISSED.search(s) or MET.search(s)):
+                s_ = m.group(0).strip()
+                if DESIGN_ONLY.search(s_) and not (MISSED.search(s_) or MET.search(s_)):
                     continue
-                om = MISSED.search(s) or MET.search(s)
+                om = MISSED.search(s_) or MET.search(s_)
                 if om:
-                    out.append({"date": d, "url": f"{base}/{ex}", "sentence": s[:400],
-                                "outcome": "missed_primary" if MISSED.search(s) else "met_primary",
+                    blocked = blocked_doc or NON_OUTCOME.search(s_)
+                    pv = _PVAL.search(s_)
+                    out.append({"date": d, "accepted": accepted, "url": f"{base}/{ex}", "headline": headline,
+                                "sentence": s_[:400], "p_value": pv.group(0) if pv else None,
+                                "outcome": "missed_primary" if MISSED.search(s_) else "met_primary",
                                 "doc_head": head,
+                                "blocked": (f"'{blocked.group(0)}' in "
+                                            f"{'release opening' if blocked_doc else 'sentence'}") if blocked else None,
                                 # text BEFORE the outcome phrase: the indication it refers to is named here
-                                "before": t[max(0, m.start() - 600):m.start()] + s[:om.start()]})
+                                "before": t[max(0, m.start() - 600):m.start()] + s_[:om.start()]})
     return out
 
 
@@ -276,18 +406,26 @@ def _names_trial(text: str, t: dict) -> bool:
     return False
 
 
-def attribute_press(sentences: list[dict], key: str, trial: dict, all_controlled: list[dict]) -> dict | None:
+def attribute_press(sentences: list[dict], key: str, trial: dict, all_controlled: list[dict],
+                    want: str | None = None) -> dict | None:
     """The sponsor-statement outcome for one prior trial, if a sentence can be
     attributed to it:
+      - the release is not blocked (NON_OUTCOME in its opening or the sentence);
       - the sentence names the molecule, or the release headline does and the
         sentence names no other molecule code (EVO301 results share releases
         with EVO756);
-      - of all prior controlled trials of the molecule, this trial's condition
-        is the one named CLOSEST BEFORE the outcome phrase ("...Phase 2b Trial in
-        Chronic Spontaneous Urticaria - Trial did not meet the primary endpoint
-        ... continue development in Atopic Dermatitis" is a CSU statement);
-      - the release is dated after the trial started."""
+      - if the sentence (or the 200 characters before it) names a prior controlled
+        trial by NCT, acronym or protocol number, it belongs to that trial only
+        (UPB 2025-11-05: "VIBRANT met its primary endpoint" is not a VALIANT statement);
+      - otherwise, of all prior controlled trials of the molecule, this trial's
+        condition is the one named CLOSEST BEFORE the outcome phrase ("...Phase 2b
+        Trial in Chronic Spontaneous Urticaria - Trial did not meet the primary
+        endpoint ... continue development in Atopic Dermatitis" is a CSU statement);
+      - the release is dated after the trial started.
+    want = "met_primary" / "missed_primary" restricts to one outcome."""
     for p in sorted(sentences, key=lambda x: x["date"]):
+        if p.get("blocked") or (want and p["outcome"] != want):
+            continue
         if trial["start"] and p["date"] < trial["start"]:
             continue
         other_codes = {c.lower().replace("-", "").replace(" ", "") for c in _OTHER_CODE.findall(p["sentence"])}
@@ -295,19 +433,22 @@ def attribute_press(sentences: list[dict], key: str, trial: dict, all_controlled
             (text_mentions_key(p["doc_head"], key) and not (other_codes - {key}))
         if not names_key:
             continue
-        pos = {o["nct_id"]: _last_pos(p["before"], _abbrev(o["condition"])) for o in all_controlled}
-        mine = pos.get(trial["nct_id"], -1)
-        if mine < 0 or any(v > mine for k, v in pos.items() if k != trial["nct_id"]):
-            continue
-        tied = [o for o in all_controlled if pos.get(o["nct_id"]) == mine]
-        if len(tied) > 1:
-            # one sentence, one trial: a tie must be broken by the sentence naming the trial
-            # (HUMA: "our V006 Phase 3 trial ... did not meet" vs two trials with identical conditions)
-            named = [o for o in tied if _names_trial(p["sentence"] + " " + p["before"][-200:], o)]
+        # the sentence's own naming first, then the 200 characters before it
+        named = [o for o in all_controlled if _names_trial(p["sentence"], o)] or \
+            [o for o in all_controlled if _names_trial(p["sentence"] + " " + p["before"][-200:], o)]
+        if named:
             if len(named) != 1 or named[0]["nct_id"] != trial["nct_id"]:
                 continue
+        else:
+            pos = {o["nct_id"]: _last_pos(p["before"], _abbrev(o["condition"])) for o in all_controlled}
+            mine = pos.get(trial["nct_id"], -1)
+            if mine < 0 or any(v > mine for k, v in pos.items() if k != trial["nct_id"]):
+                continue
+            if sum(v == mine for v in pos.values()) > 1:
+                continue        # one sentence, one trial: an unbroken tie attributes to nobody
         return {"outcome": p["outcome"], "source": f"sponsor 8-K press release {p['date']}", "url": p["url"],
-                "evidence": p["sentence"]}
+                "evidence": p["sentence"], "date": p["date"], "accepted": p.get("accepted"),
+                "headline": p.get("headline"), "p_value": p.get("p_value")}
     return None
 
 
@@ -339,65 +480,196 @@ GENERIC = re.compile(r"\b(study drug|active|matching|investigational product|ip|
 
 FAIL_MIN_FOR_WATCHLIST = 2
 UNTESTED_MIN_PRIOR = 3
+WIDELY_USED_TRIALS = 150          # an intervention named in more registered trials than this is not the asset
+EFFICACY_CLASSES = {"clinical", "biomarker"}
+STOPPED = {"TERMINATED", "WITHDRAWN"}
+SUCCESS_REACTION_FLAG = -0.15
+FDA_URL = "https://api.fda.gov/drug/drugsfda.json"
+_CODE_KEY = re.compile(r"[a-z]{1,6}\d{2,6}[a-z]?")
+ASSET_TYPES = {"DRUG", "BIOLOGICAL", "GENETIC", "COMBINATION_PRODUCT"}
 
 
-def track_record(http, record: dict, sponsor: str, cik: int | None, submissions: dict | None,
-                 experimental_names: list[str], today: dt.date, press_cache: dict | None = None) -> dict:
-    """Prior-trial facts for the candidate's molecule(s). See module docstring."""
-    ps = record.get("protocolSection", {}) or {}
-    me = trial_facts(record)
-    cand_start = me["start"] or today.isoformat()
-    aim = ps.get("armsInterventionsModule", {}) or {}
-    other = {iv.get("name"): iv.get("otherNames") for iv in aim.get("interventions") or []}
-    keys, widely_used = [], []
-    if not experimental_names:
-        # drug arms mistyped (CGTX NCT05531656: CT1812 dose arms typed ACTIVE_COMPARATOR): use every
-        # intervention that is not control vocabulary
-        experimental_names = [iv.get("name") for iv in aim.get("interventions") or []
-                              if iv.get("name") and molecule_key(iv.get("name"))]
-    trials, seen = [], set()
-    for n in experimental_names:
-        group = molecule_keys(n, other.get(n))
-        # one intervention is one unit: if any of its names is an established backbone (>= 200 trials),
-        # every alias is excluded (bevacizumab's biosimilar names each fall under the cap: NTHI)
-        found_by_key, backbone = {}, False
-        for k in group:
-            if k in keys or k in widely_used:
-                continue
-            found, truncated = find_trials(http, k, sponsor)
-            if truncated:
-                backbone = True
-                break
-            found_by_key[k] = found
-        if backbone:
-            widely_used.extend(k for k in group if k not in widely_used)
+# ------------------------------------------------------ widely-used names --
+def registered_trial_count(http, name: str) -> int | None:
+    try:
+        d = http.get_json(CTGOV, {"query.intr": name, "countTotal": "true", "pageSize": "1", "fields": "NCTId",
+                                  "format": "json"})
+    except Exception:  # noqa: BLE001
+        return None
+    return d.get("totalCount")
+
+
+def fda_approval(http, name: str) -> dict | None:
+    """Earliest original approval on Drugs@FDA (openFDA) whose generic or brand
+    name contains every word of `name`: {application, holder, date}. None if not
+    found (a 404 is openFDA's "no match")."""
+    words = [w for w in re.findall(r"[a-z0-9]+", name.lower()) if len(w) > 2 and w not in ("and", "with")]
+    if not words or _CODE_KEY.fullmatch(name):
+        return None
+    best = None
+    for field in ("openfda.generic_name", "openfda.brand_name"):
+        q = " AND ".join(f'{field}:"{w}"' for w in words)
+        try:
+            d = http.get_json(FDA_URL, {"search": q, "limit": "20"})
+        except Exception:  # noqa: BLE001
             continue
-        for k, found in found_by_key.items():
-            keys.append(k)
+        for r in d.get("results") or []:
+            for sub in r.get("submissions") or []:
+                if sub.get("submission_type") == "ORIG" and sub.get("submission_status") == "AP" \
+                        and sub.get("submission_status_date"):
+                    dd = sub["submission_status_date"]
+                    dd = f"{dd[:4]}-{dd[4:6]}-{dd[6:8]}"
+                    if best is None or dd < best["date"]:
+                        best = {"application": r.get("application_number"), "holder": r.get("sponsor_name"),
+                                "date": dd}
+    return best
+
+
+def _same_company(holder: str | None, sponsor: str | None) -> bool:
+    w = lambda x: [t for t in re.findall(r"[a-z]+", (x or "").lower())  # noqa: E731
+                   if t not in ("inc", "the", "corp", "ltd", "llc", "plc", "pharmaceuticals", "pharma", "therapeutics",
+                                "biotherapeutics", "bio", "biosciences", "co")]
+    a, b = w(holder), w(sponsor)
+    return bool(a and b and a[0] == b[0])
+
+
+def widely_used_reason(http, name: str, sponsor: str | None, before: str | None) -> str | None:
+    """Why `name` is not an investigational asset, or None:
+       - named in more than WIDELY_USED_TRIALS registered trials, or
+       - FDA-approved before the candidate trial started, by a holder other than the sponsor."""
+    n = registered_trial_count(http, name)
+    if n is not None and n > WIDELY_USED_TRIALS:
+        return f"{name}: {n} registered trials"
+    a = fda_approval(http, name)
+    if a and (before is None or a["date"] < before) and not _same_company(a["holder"], sponsor):
+        return f"{name}: FDA {a['application']} approved {a['date']} ({a['holder']})"
+    return None
+
+
+# ------------------------------------------------- primary molecule key --
+def filing_text(http, cik: int | None, submissions: dict | None, cache: dict | None = None) -> str:
+    """Plain text of the sponsor's latest 10-Q / 10-K / 20-F (product-candidate names live here)."""
+    if cache is not None and cik in cache:
+        return cache[cik]
+    txt = ""
+    if cik and submissions:
+        r = submissions.get("filings", {}).get("recent", {})
+        for acc, form, doc in zip(r.get("accessionNumber", []), r.get("form", []), r.get("primaryDocument", [])):
+            if form in ("10-Q", "10-K", "20-F", "10-Q/A", "10-K/A") and doc:
+                try:
+                    raw = http.get_text(f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}/{doc}")
+                    txt = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", raw)))
+                except Exception:  # noqa: BLE001
+                    txt = ""
+                break
+    if cache is not None:
+        cache[cik] = txt
+    return txt
+
+
+def _count_mentions(text: str, key: str) -> int:
+    """'ct1812' matches CT1812 / CT-1812 / CT 1812; 'trifluridine tipiracil' matches either spacing."""
+    parts = [re.escape(x) for x in re.findall(r"[a-z]+|\d+[a-z]?", key)]
+    return len(re.findall(r"\b" + "[ -]?".join(parts) + r"\b", text, re.I)) if parts else 0
+
+
+def identify_molecule(http, record: dict, sponsor: str | None, filing: str = "") -> dict:
+    """The sponsor's own investigational molecule on this trial: ONE primary key.
+
+    Every non-control intervention is a candidate. An intervention any of whose
+    names is widely used (> 150 registered trials, or FDA-approved before this trial
+    started by another holder) is excluded as a unit. The rest rank by
+      1. a sponsor code (letters + digits: EVO756, CT1812, UPB101) or a mention in
+         the sponsor's latest 10-Q/10-K,
+      2. intervention type DRUG / BIOLOGICAL / GENETIC / COMBINATION_PRODUCT,
+      3. mentions in that filing, then registration order.
+    The top one is the primary key; its other names are synonyms; every other
+    intervention is a combination partner."""
+    ps = record.get("protocolSection", {}) or {}
+    start = _date(((ps.get("statusModule") or {}).get("startDateStruct") or {}).get("date"))
+    ivs = ((ps.get("armsInterventionsModule") or {}).get("interventions") or [])
+    ranked, excluded, partners = [], [], []
+    for i, iv in enumerate(ivs):
+        keys = molecule_keys(iv.get("name"), iv.get("otherNames"))
+        if not keys:
+            continue
+        why = next((w for w in (widely_used_reason(http, k, sponsor, start) for k in keys) if w), None)
+        if why:
+            excluded.append(why)
+            partners.append(keys[0])
+            continue
+        mentions = sum(_count_mentions(filing, k) for k in keys) if filing else 0
+        code = any(_CODE_KEY.fullmatch(k) for k in keys)
+        ranked.append(((code or mentions > 0), iv.get("type") in ASSET_TYPES, mentions, -i, keys))
+    ranked.sort(reverse=True)
+    if not ranked:
+        return {"primary_molecule_key": None, "molecule_synonyms": [], "combination_partners": partners,
+                "widely_used_excluded": excluded, "_ranking": []}
+    top = ranked[0][4]
+    return {"primary_molecule_key": top[0], "molecule_synonyms": top[1:],
+            "combination_partners": [r[4][0] for r in ranked[1:]] + partners,
+            "widely_used_excluded": excluded,
+            "_ranking": [f"{r[4][0]} (code/filing={r[0]}, drug/bio={r[1]}, filing mentions={r[2]})" for r in ranked]}
+
+
+# ------------------------------------------------------------ track record --
+def _not_outcome(reason: str) -> dict:
+    return {"outcome": "unknown", "source": None, "url": None, "evidence": None, "note": reason}
+
+
+def track_record_for_key(http, key: str | None, synonyms: list[str], sponsors: list[str], cik: int | None,
+                         submissions: dict | None, closes: list, today: dt.date, press_cache: dict | None = None,
+                         exclude_ncts: set | None = None) -> dict:
+    """Molecule-level facts: identical for every row with the same primary key.
+    Prior = COMPLETED / TERMINATED / WITHDRAWN / SUSPENDED trials of the key or a
+    synonym (any sponsor), excluding the screen's own candidate trials.
+
+    A prior controlled trial's outcome counts (success or failure) only if
+      - the trial has a comparator arm AND a clinical or biomarker primary outcome, and
+      - a source states it: whyStopped futility (failures only), a CT.gov posted
+        primary analysis, or an unblocked sponsor 8-K sentence saying the primary
+        endpoint was met / not met.
+    A TERMINATED or WITHDRAWN trial is never a success: termination supersedes any
+    earlier interim communication."""
+    from .dilution import one_day_return
+    if not key:
+        return {**_EMPTY_TR, "molecule_track_record": "no_primary_molecule", "_prior_trials": []}
+    exclude_ncts = exclude_ncts or set()
+    keys = [key] + [k for k in synonyms if k != key]
+    trials, seen = [], set()
+    for k in keys:
+        for sp in sponsors or [None]:
+            found, _trunc = find_trials(http, k, sp, keys=set(keys))
             for t in found:
                 if t["nct_id"] not in seen:
                     seen.add(t["nct_id"])
                     trials.append(t)
-    asset_keys = [k for k in keys if k not in widely_used]
-    prior = [t for t in trials if t["nct_id"] != me["nct_id"] and t["status"] in PRIOR_STATUSES
-             and t["start"] and t["start"] < cand_start]
+    trials.sort(key=lambda t: (t["start"] or "", t["nct_id"]))
+    prior = [t for t in trials if t["status"] in PRIOR_STATUSES and t["nct_id"] not in exclude_ncts]
     controlled = [t for t in prior if t["control_arm"] == "yes"]
     sentences = None
+    if cik and submissions:
+        if press_cache is not None and cik in press_cache:
+            sentences = press_cache[cik]
+        else:
+            sentences = press_release_sentences(http, cik, submissions, today)
+            if press_cache is not None:
+                press_cache[cik] = sentences
     for t in controlled:
+        efficacy_primary = bool(set(t.get("primary_outcome_classes") or []) & EFFICACY_CLASSES)
         o = why_stopped_outcome(t) or posted_results_outcome(http, t)
-        if o is None and cik and submissions:
-            if sentences is None:
-                if press_cache is not None and cik in press_cache:
-                    sentences = press_cache[cik]
-                else:
-                    sentences = press_release_sentences(http, cik, submissions, today)
-                    if press_cache is not None:
-                        press_cache[cik] = sentences
-            for k in asset_keys:
+        if o is None and sentences:
+            for k in keys:
                 o = attribute_press(sentences, k, t, controlled)
                 if o:
                     break
-        t["outcome"] = o or {"outcome": "unknown", "source": None, "url": None, "evidence": None}
+        if o and not efficacy_primary:
+            o = _not_outcome(f"{o['outcome']} stated ({o['source']}) but the registered primary is "
+                             f"{'/'.join(t.get('primary_outcome_classes') or ['none'])}, not clinical or biomarker")
+        elif o and o["outcome"] == "met_primary" and t["status"] in STOPPED:
+            o = _not_outcome(f"met_primary stated ({o['source']}) but the trial is {t['status']}: termination "
+                             f"supersedes")
+        t["outcome"] = o or _not_outcome("no source states the outcome")
     fails = [t for t in controlled if t["outcome"]["outcome"] == "missed_primary"]
     wins = [t for t in controlled if t["outcome"]["outcome"] == "met_primary"]
     unknown = [t for t in controlled if t["outcome"]["outcome"] == "unknown"]
@@ -413,20 +685,31 @@ def track_record(http, record: dict, sponsor: str, cik: int | None, submissions:
         verdict = "repeat_failure"
     else:
         verdict = "controlled_outcomes_unknown"
-    # never tested on an efficacy endpoint: overrides naive / unknown / validated (a "met" on a
-    # safety primary validates nothing); mixed and repeat_failure keep their stated failures
     untested = not clinical_prior and len(prior) >= UNTESTED_MIN_PRIOR
     if untested and verdict in ("naive", "controlled_outcomes_unknown", "validated"):
         verdict = "untested"
+    # market reaction to each stated success: the announcing release (for a posted-results
+    # success, the first unblocked sponsor release attributable to the trial with "met")
+    reactions = []
+    for t in wins:
+        o = t["outcome"]
+        ann = o if o.get("date") else next((a for a in (attribute_press(sentences or [], k, t, controlled,
+                                                                          want="met_primary") for k in keys) if a), None)
+        if not ann:
+            reactions.append({"nct": t["nct_id"], "date": None, "return": None, "headline": None,
+                              "note": "no attributable announcement found"})
+            continue
+        session, ret = one_day_return(closes or [], ann.get("accepted"), ann["date"])
+        reactions.append({"nct": t["nct_id"], "date": ann["date"], "session": session, "return": ret,
+                          "headline": ann.get("headline"), "url": ann.get("url")})
+    rets = [r["return"] for r in reactions if r["return"] is not None]
     return {
         "prior_trials_with_clinical_primary": len(clinical_prior),
         "prior_trials_safety_primary_only": len(safety_only_prior),
         "largest_prior_clinical_primary_n": max((t["enrollment"] or 0 for t in clinical_prior), default=0),
-        "track_record_warning": (f"{len(prior)} prior trials of {'|'.join(asset_keys)}, none with a clinical primary "
+        "track_record_warning": (f"{len(prior)} prior trials of {'|'.join(keys)}, none with a clinical primary "
                                  f"endpoint ({len(safety_only_prior)} safety/PK-only): efficacy claims from them are "
                                  f"exploratory") if untested else None,
-        "molecule_keys": "|".join(asset_keys) + (f" (excluded as widely used: {'|'.join(widely_used)})"
-                                                 if widely_used else ""),
         "prior_trials_total": len(prior),
         "prior_controlled_trials": len(controlled),
         "prior_controlled_failures": len(fails),
@@ -434,29 +717,62 @@ def track_record(http, record: dict, sponsor: str, cik: int | None, submissions:
         "prior_controlled_outcome_unknown": len(unknown),
         "prior_failure_indications": sorted({t["condition"] for t in fails}),
         "prior_failure_ncts": [t["nct_id"] for t in fails],
+        "prior_success_ncts": [t["nct_id"] for t in wins],
         "prior_terminated_for_futility": any(why_stopped_outcome(t) for t in prior),
         "molecule_track_record": verdict,
         "track_record_evidence_url": " | ".join(t["outcome"]["url"] for t in fails + wins if t["outcome"]["url"]),
-        "candidate_evidence_grade": evidence_grade(me["control_arm"], me["masking"]),
+        "prior_success_reactions": reactions,
+        "worst_prior_success_1d": min(rets) if rets else None,
+        "success_reaction_flag": any(r < SUCCESS_REACTION_FLAG for r in rets) if wins else None,
         "_prior_trials": prior,
     }
+
+
+_EMPTY_TR = {"prior_trials_with_clinical_primary": 0, "prior_trials_safety_primary_only": 0,
+             "largest_prior_clinical_primary_n": 0, "track_record_warning": None, "prior_trials_total": 0,
+             "prior_controlled_trials": 0, "prior_controlled_failures": 0, "prior_controlled_successes": 0,
+             "prior_controlled_outcome_unknown": 0, "prior_failure_indications": [], "prior_failure_ncts": [],
+             "prior_success_ncts": [], "prior_terminated_for_futility": False, "track_record_evidence_url": "",
+             "prior_success_reactions": [], "worst_prior_success_1d": None, "success_reaction_flag": None}
+TRACK_FIELDS = list(_EMPTY_TR) + ["molecule_track_record"]
+
+
+def track_record(http, record: dict, sponsor: str, cik: int | None, submissions: dict | None,
+                 experimental_names: list[str] | None, today: dt.date, press_cache: dict | None = None,
+                 closes: list | None = None) -> dict:
+    """One trial end to end (live tests): identify the primary molecule, then its
+    molecule-level track record, plus this trial's evidence grade."""
+    ident = identify_molecule(http, record, sponsor, filing_text(http, cik, submissions))
+    me = trial_facts(record)
+    tr = track_record_for_key(http, ident["primary_molecule_key"], ident["molecule_synonyms"], [sponsor], cik,
+                              submissions, closes or [], today, press_cache, {me["nct_id"]})
+    return {**ident, **tr, "candidate_evidence_grade": evidence_grade(me["control_arm"], me["masking"])}
 
 
 def track_section(tr: dict) -> list[str]:
     """Dossier section G: every prior trial and the stated outcome of each controlled one."""
     out = ["## G. Intervention track record", "",
-           f"Molecule keys searched (every spelling, any sponsor, plus the sponsor's own trials): "
-           f"`{tr['molecule_keys'] or '(none)'}`. Prior = status COMPLETED / TERMINATED / WITHDRAWN / SUSPENDED "
-           "and started before this trial.", "",
+           f"Primary molecule key: `{tr.get('primary_molecule_key') or '(none)'}`; synonyms "
+           f"`{'|'.join(tr.get('molecule_synonyms') or []) or '-'}`; combination partners "
+           f"`{'|'.join(tr.get('combination_partners') or []) or '-'}`.", "",
+           f"Excluded as widely used (> {WIDELY_USED_TRIALS} registered trials, or FDA-approved before this trial by "
+           f"another holder): {'; '.join(tr.get('widely_used_excluded') or []) or 'none'}.", "",
+           "Prior = status COMPLETED / TERMINATED / WITHDRAWN / SUSPENDED, any sponsor, the key or a synonym; "
+           "identical for every row with this key. An outcome counts only on a comparator-arm trial with a clinical "
+           "or biomarker primary, stated by whyStopped, a posted CT.gov primary analysis or an unblocked sponsor 8-K "
+           "sentence; a terminated or withdrawn trial is never a success.", "",
            f"- prior trials: **{tr['prior_trials_total']}**; with a comparator arm: **{tr['prior_controlled_trials']}**"
            f" (missed primary: {tr['prior_controlled_failures']}, met primary: {tr['prior_controlled_successes']}, "
-           f"outcome not stated by any source: {tr['prior_controlled_outcome_unknown']})",
+           f"outcome not established: {tr['prior_controlled_outcome_unknown']})",
            f"- prior trials with a clinical primary endpoint: **{tr['prior_trials_with_clinical_primary']}** "
            f"(largest n {tr['largest_prior_clinical_primary_n']}); safety/PK-only primaries: "
            f"{tr['prior_trials_safety_primary_only']}",
            f"- molecule_track_record (mechanical): **{tr['molecule_track_record']}**"
            + (f"  \n  WARNING: {tr['track_record_warning']}" if tr.get("track_record_warning") else ""),
-           f"- this trial's design (candidate_evidence_grade): **{tr['candidate_evidence_grade']}**", ""]
+           f"- market reaction to prior successes: {tr.get('prior_success_reactions') or 'none'}"
+           + ("  \n  **success_reaction_flag**: a stated success fell more than 15% on its announcement day"
+              if tr.get("success_reaction_flag") else ""),
+           f"- this trial's design (candidate_evidence_grade): **{tr.get('candidate_evidence_grade')}**", ""]
     if tr["_prior_trials"]:
         out += ["| NCT | phase | condition | n | status | comparator | masking | primary outcome | primary class | "
                 "outcome (source) |", "|---|---|---|---|---|---|---|---|---|---|"]
@@ -472,4 +788,6 @@ def track_section(tr: dict) -> list[str]:
             o = t.get("outcome")
             if o and o.get("evidence"):
                 out += [f"{t['nct_id']} evidence ({o['source']}, {o['url']}):", f"> {o['evidence']}", ""]
+            elif o and o.get("note") and o["note"] != "no source states the outcome":
+                out += [f"{t['nct_id']}: not counted: {o['note']}", ""]
     return out

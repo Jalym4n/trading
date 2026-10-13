@@ -53,11 +53,15 @@ def checks(rows: list[dict]) -> list[tuple[str, list[tuple[str, str]]]]:
         lambda r: (r.get("days_since_cash_asof") or 0) > 150,
         lambda r: f"cash_as_of_date={r.get('cash_as_of_date')} days={r.get('days_since_cash_asof')} "
                   f"burn_status={r.get('burn_status')}")
-    add("company_status == likely_delisted_or_acquired",
-        lambda r: r.get("company_status") == "likely_delisted_or_acquired",
-        lambda r: f"true_market_cap={r.get('true_market_cap')} latest_financial_filing={r.get('latest_financial_filing')} "
-                  f"latest_filing={r.get('latest_filing_form')} {r.get('latest_filing_date')} "
-                  f"deregistration={r.get('deregistration_filing')}")
+    add("company_status == delisted (Form 25 after the last periodic report, or no periodic report in 270 days)",
+        lambda r: r.get("company_status") == "delisted",
+        lambda r: f"signal={r.get('delisting_signal')} form_25={r.get('form_25_date')} ({r.get('form_25_accession')}) "
+                  f"form_15={r.get('form_15_date')} latest_financial={r.get('latest_financial_form')} "
+                  f"{r.get('latest_financial_filing')} ({r.get('days_since_financial_filing')} days)")
+    add("company_status == check_manually (Form 15 deregistration without a Form 25; row stays in candidates.csv)",
+        lambda r: r.get("company_status") == "check_manually",
+        lambda r: f"form_15={r.get('form_15_date')} latest_financial={r.get('latest_financial_form')} "
+                  f"{r.get('latest_financial_filing')}; true_market_cap={r.get('true_market_cap')}")
     add("pcd_slip_months < 0 (primary completion date moved EARLIER: real or parse error?)",
         lambda r: r.get("pcd_slip_months") is not None and r["pcd_slip_months"] < 0,
         lambda r: f"pcd_slip_months={r.get('pcd_slip_months')} values held: "
@@ -97,7 +101,39 @@ def boolean_shares(rows: list[dict], cols: list[str]) -> list[tuple[str, int, in
     return out
 
 
-def report(rows: list[dict], cols: list[str], today: dt.date) -> str:
+FUNNEL = [("excluded_delisted.csv", "delisted: Form 25 after the last periodic report, or no 10-K/10-Q/20-F in 270 days"),
+          ("excluded_underfunded.csv", "underfunded: funded_through False (runway_q < runway_needed_q)"),
+          ("excluded_dilution_risk.csv", "dilution: shortfall >= 50% of market cap, or runway_q < 2.0, or must raise "
+                                         "before the readout with shortfall >= 35%"),
+          ("excluded_not_evidence.csv", "not evidence: candidate_evidence_grade single_arm, or primary_is_safety_only"),
+          ("watchlist_repeat_failure.csv", "watchlist: >= 2 prior controlled trials of the molecule missed their "
+                                           "primary endpoint (stated source)")]
+
+
+def funnel(rows: list[dict]) -> list[str]:
+    md = ["## Funnel", "",
+          "Gates apply in this order; a row leaves at the FIRST gate it fails. `fails_gates` on each row lists "
+          "every gate it fails, so the independent counts are shown too.", "",
+          "| step | rows leaving | rows remaining | rows failing this gate (any order) |", "|---|---|---|---|",
+          f"| trial rows after size filters | | {len(rows)} | |"]
+    left = len(rows)
+    gate_of = {"excluded_delisted.csv": "delisted", "excluded_underfunded.csv": "underfunded",
+               "excluded_dilution_risk.csv": "dilution", "excluded_not_evidence.csv": "not_evidence"}
+    for f, label in FUNNEL:
+        k = sum(r.get("output_file") == f for r in rows)
+        left -= k
+        g = gate_of.get(f)
+        indep = sum(g in (r.get("fails_gates") or "").split("|") for r in rows) if g else k
+        md.append(f"| {label} (`{f}`) | {k} | {left} | {indep} |")
+    surv = [r for r in rows if r.get("output_file") == "candidates.csv"]
+    md += [f"| **survivors** (`candidates.csv`) | | **{len(surv)}** | |", "",
+           f"Survivors: {len(surv)} rows, {len({r.get('ticker') for r in surv})} tickers: "
+           + (", ".join(f"{r.get('ticker')} {r.get('nct_id')}" for r in surv) or "none"), ""]
+    return md
+
+
+def report(rows: list[dict], cols: list[str], today: dt.date, violations: list | None = None,
+           n_screened: int | None = None) -> str:
     res = checks(rows)
     nulls = null_shares(rows, cols)
     bools = boolean_shares(rows, cols)
@@ -121,6 +157,11 @@ def report(rows: list[dict], cols: list[str], today: dt.date) -> str:
           f"`runway_q` uses only cash and operating cash flow from XBRL; no market cap enters it. It is the "
           f"most trustworthy filter in the tool. In this run `funded_through` is False on {short} of "
           f"{len(with_run)} rows that have a runway ({short / max(len(with_run), 1):.0%}).", ""]
+    md += ["## Hard invariants", ""]
+    for name, bad in (violations or []):
+        md += [f"- {name}: **{'HELD' if not bad else f'VIOLATED on {len(bad)} rows (run failed)'}**"]
+        md += [f"  - {b}" for b in bad]
+    md += [""] + funnel(rows)
     for name, hits in res:
         md += [f"## {name}", ""]
         md += [f"- **{rid}**: {why}" for rid, why in hits] or ["None."]
@@ -186,8 +227,8 @@ def report(rows: list[dict], cols: list[str], today: dt.date) -> str:
            f"{r.get('runway_needed_q')} q)" for r in rows
            if r.get("_funded_through_computed") is not None and r.get("_funded_through_computed") != r.get("funded_through")] \
         or ["None."]
-    md += ["", "## Pre-readout dilution: must_raise_before_catalyst (<= 2 months of runway margin at the catalyst)",
-           ""]
+    md += ["", "## Pre-readout dilution: must_raise_before_catalyst (<= 2 months of runway margin at the readout); "
+           "the gate is the shortfall, not the share price", ""]
     md += [f"- **{_id(r)}** ({r.get('output_file')}): margin {r.get('months_runway_minus_months_to_catalyst')} "
            f"months, price {r.get('share_price')} (sub_dollar {r.get('sub_dollar')}, {r.get('nasdaq_tier')}), "
            f"shortfall to catalyst + 6 months = {r.get('dilution_at_current_price_pct')}% of market cap; bid-price "
@@ -210,6 +251,37 @@ def report(rows: list[dict], cols: list[str], today: dt.date) -> str:
     md += [f"- **{_id(r)}** ({r.get('phase')}, n={r.get('enrollment')}): lead guess {r.get('lead_program_guess')}; "
            f"{r.get('sponsor_trial_count_in_window')} sponsor trials in window"
            for r in rows if r.get("candidate_is_lead_program") is False] or ["None."]
+    md += ["", "## Primary outcomes needing a human read (no vocabulary matched)", ""]
+    unread = [(r, t) for r in rows for t in (r.get("_unclassified_text") or [])]
+    n_out = sum(len(r.get("_primary_classes") or []) for r in rows)
+    md += [f"{len(unread)} of {n_out} candidate primary outcomes "
+           f"({len(unread) / max(n_out, 1):.1%}) are unclassified.", ""]
+    md += [f"- **{_id(r)}**: {t}" for r, t in unread] or ["None."]
+    md += ["", "## Pre-funded warrants mentioned but no balance found (all four methods failed)", "",
+           "Methods tried, in order: XBRL warrant tags on a pre-funded member at the balance date; the balance-sheet "
+           "parenthetical; the equity / warrant footnote tables; the cover note and 'as of' statements. "
+           "Each mention below is shown with its surrounding 300 characters.", ""]
+    seen_t = set()
+    for r in rows:
+        if r.get("pre_funded_method") != "not_found" or r.get("ticker") in seen_t:
+            continue
+        seen_t.add(r.get("ticker"))
+        md += [f"### {r.get('ticker')} ({r.get('share_count_source')})", ""]
+        md += [f"{i}. ...{c}..." for i, c in enumerate(r.get("_pf_contexts") or [], 1)] or ["(no visible mention text)"]
+        md.append("")
+    if not seen_t:
+        md += ["None.", ""]
+    md += ["## success_reaction_flag: a prior stated success fell more than 15% on its announcement day", "",
+           "Met primary is a statistical fact; the 1-day return is the market's reading of it. Not excluded.", ""]
+    flagged = [r for r in rows if r.get("success_reaction_flag")]
+    for r in flagged:
+        for e in r.get("prior_success_reactions") or []:
+            if e.get("return") is not None:
+                md.append(f"- **{_id(r)}** ({r.get('output_file')}): {e.get('nct')} announced {e.get('date')} "
+                          f"(session {e.get('session')}): **{e.get('return'):+.2%}**, \"{e.get('headline')}\" "
+                          f"{e.get('url')}")
+    if not flagged:
+        md.append("None.")
     md += ["", "## Counts", "", "| check | rows caught |", "|---|---|"]
     md += [f"| {name} | {len(hits)} |" for name, hits in res]
     md += [f"| fields null on > {NULL_SHARE_LIMIT:.0%} of rows | {len(nulls)} fields |",

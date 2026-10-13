@@ -18,9 +18,12 @@ import sys
 from collections import Counter
 
 from . import journal as J
+from .track import FAIL_MIN_FOR_WATCHLIST
 
 CSV_COLS = ["ticker", "company", "cik", "nct_id", "phase", "catalyst_date", "date_type", "months_out",
-            "company_status", "true_market_cap", "reported_market_cap", "pre_funded_warrants",
+            "fails_gates", "row_warnings", "dilution_warning",
+            "company_status", "delisting_signal", "form_25_filed", "form_25_date", "form_25_accession",
+            "form_15_filed", "form_15_date", "true_market_cap", "reported_market_cap", "pre_funded_warrants", "pre_funded_method",
             "share_count_source", "market_cap_confidence", "avg_dollar_vol",
             "reverse_split_date", "reverse_split_ratio", "months_since_reverse_split", "reverse_split_source",
             "reverse_split_cover_check",
@@ -32,7 +35,8 @@ CSV_COLS = ["ticker", "company", "cik", "nct_id", "phase", "catalyst_date", "dat
             "runway_source", "runway_gap_flag", "runway_stated_text", "runway_needed_q", "funded_through",
             "share_price", "sub_dollar", "nasdaq_tier", "prior_bid_price_deficiency", "reverse_split_last_36mo",
             "readout_lag_months", "readout_est_date", "months_runway_minus_months_to_catalyst",
-            "must_raise_before_catalyst", "dilution_at_current_price_pct",
+            "must_raise_before_catalyst", "dilution_at_current_price_pct", "dilution_gate_reason",
+            "runway_shortfall_months",
             "shelf_count", "atm_count", "days_since_latest_atm_filing",
             "n_primary_endpoints", "masking", "allocation", "control_arm", "control_arm_types",
             "enrollment", "enrollment_type", "enrollment_stale", "is_single_arm_open_label",
@@ -40,16 +44,24 @@ CSV_COLS = ["ticker", "company", "cik", "nct_id", "phase", "catalyst_date", "dat
             "primary_outcome_text",
             "n_sites", "patients_per_site", "site_list_maturity",
             "n_versions", "n_endpoint_changes", "endpoint_changes", "pcd_slips", "pcd_slip_months",
-            "candidate_evidence_grade", "molecule_keys", "prior_trials_total", "prior_controlled_trials",
+            "candidate_evidence_grade", "not_evidence_reason", "candidate_switched_to",
+            "primary_molecule_key", "molecule_synonyms", "combination_partners", "widely_used_excluded",
+            "prior_trials_total", "prior_controlled_trials",
             "prior_controlled_failures", "prior_controlled_successes", "prior_controlled_outcome_unknown",
             "prior_failure_indications", "prior_failure_ncts", "prior_terminated_for_futility",
             "prior_trials_with_clinical_primary", "prior_trials_safety_primary_only",
-            "largest_prior_clinical_primary_n", "molecule_track_record", "track_record_warning",
+            "largest_prior_clinical_primary_n", "molecule_track_record", "success_reaction_flag",
+            "worst_prior_success_1d", "prior_success_reactions", "prior_success_ncts", "track_record_warning",
             "track_record_evidence_url", "headline_price_divergence", "divergence_events", "press_releases",
             "sponsor_trial_count_in_window", "candidate_is_largest_trial", "candidate_is_latest_phase",
             "candidate_is_lead_program", "lead_program_guess", "sponsor_other_trials", "lead_program_warning"]
 WATCHLIST_COLS = ["note"] + CSV_COLS
 KILL_COLS = ["kill_dates"] + CSV_COLS
+UNDERFUNDED_COLS = ["runway_q", "runway_needed_q", "runway_source", "runway_shortfall_months"] + \
+    [c for c in CSV_COLS if c not in ("runway_q", "runway_needed_q", "runway_source", "runway_shortfall_months")]
+OUTPUTS = [("candidates.csv", CSV_COLS), ("excluded_delisted.csv", CSV_COLS),
+           ("excluded_underfunded.csv", UNDERFUNDED_COLS), ("excluded_dilution_risk.csv", KILL_COLS),
+           ("excluded_not_evidence.csv", CSV_COLS), ("watchlist_repeat_failure.csv", WATCHLIST_COLS)]
 
 
 def mkt_date(cache: dict, row: dict) -> str | None:
@@ -195,7 +207,7 @@ def screen(a) -> int:
             else F.Debt(None, None, {}, None)
         aged = X.cash_aging(run.cash_usd if run else None, run.cash_asof if run else None,
                             run.burn_q_usd if run else None, run.burn_status if run else None, mcap, today)
-        status = X.company_status(info.get("submissions"), mcap, today)
+        status = X.company_status(info.get("submissions"), today)
         ev = X.ev_est(mcap, debt.total_debt_usd, aged["cash_today_est"])
         if info["confidence"] != "verified":
             # an unverified share count never drives a cash-vs-market-cap conclusion
@@ -250,6 +262,7 @@ def screen(a) -> int:
             "pre_funded_warrants": info["sc"].pre_funded, "share_count_source": info["mcap_src"],
             "market_cap_confidence": info["confidence"],
             "prefunded_detail": f"{info['sc'].detail} (XBRL status {info['pf'].status}, filing {info['pf'].source})",
+            "pre_funded_method": info["sc"].method, "_pf_contexts": info["sc"].contexts,
             "avg_dollar_vol": round(mkt.avg_dollar_vol) if mkt.avg_dollar_vol else None,
             "burn_q_usd": run.burn_q_usd if run else None,
             "burn_status": run.burn_status if run else "no_data",
@@ -278,6 +291,8 @@ def screen(a) -> int:
     # ---- stage 5: dossiers ------------------------------------------------
     hist_client = H.HistoryClient(http)
     press_cache: dict = {}
+    filing_cache: dict = {}
+    built: dict = {}
     for row in rows:
         try:
             rec = T.fetch_full(http, row["nct_id"])
@@ -296,19 +311,19 @@ def screen(a) -> int:
                 related[name] = T.related_trials(http, row["sponsor"], name, limit=D.RELATED_CAP)
             except Exception:  # noqa: BLE001
                 related[name] = []
-        exp_names = D.experimental_interventions(rec.get("protocolSection", {}))
         try:
-            tr = TR.track_record(http, rec, row["sponsor"], row["cik"],
-                                 company_cache.get(row["cik"], {}).get("submissions"), exp_names, today, press_cache)
+            ident = TR.identify_molecule(http, rec, row["sponsor"],
+                                         TR.filing_text(http, row["cik"],
+                                                        company_cache.get(row["cik"], {}).get("submissions"),
+                                                        filing_cache))
         except Exception as e:  # noqa: BLE001
-            tr = None
-            row["data_notes"] = f"{row.get('data_notes')}; track record: {e}"
-        if tr:
-            row.update({k: (json.dumps(v) if isinstance(v, list) else v) for k, v in tr.items()
-                        if not k.startswith("_")})
+            ident = {"primary_molecule_key": None, "molecule_synonyms": [], "combination_partners": [],
+                     "widely_used_excluded": [], "_ranking": []}
+            row["data_notes"] = f"{row.get('data_notes')}; molecule identification: {e}"
+        row.update(ident)
+        me = TR.trial_facts(rec)
+        row["candidate_evidence_grade"] = TR.evidence_grade(me["control_arm"], me["masking"])
         md, facts = D.build(row, rec, hist_md, related, today)
-        if tr:
-            md += "\n".join(TR.track_section(tr)) + "\n"
         row.update({"n_primary_endpoints": facts["n_primary"], "masking": facts["masking"],
                     "allocation": facts["allocation"], "control_arm": facts["control_arm"],
                     "control_arm_types": facts["control_arm_types"],
@@ -319,7 +334,7 @@ def screen(a) -> int:
                                   facts["enrollment_type"], facts["months_since_start"]))
         pc = classify_primary(rec.get("protocolSection", {}))
         row["_primary_classes"] = pc["primary_outcome_classes"]
-        row.update({k: (json.dumps(v) if isinstance(v, list) else v) for k, v in pc.items()})
+        row.update({k: (json.dumps(v) if isinstance(v, list) and not k.startswith("_") else v) for k, v in pc.items()})
         if hist:
             row.update({"n_versions": hist["n_versions"], "n_endpoint_changes": len(hist["endpoint_changes"]),
                         "endpoint_changes": json.dumps([{k: c[k] for k in ("version", "date", "from", "to", "kind",
@@ -328,41 +343,72 @@ def screen(a) -> int:
                         "pcd_slips": hist["pcd_slips"], "pcd_slip_months": hist["pcd_slip_months"],
                         "_pcd_values": hist["pcd_values"]})
         row.update(X.site_facts(facts["enrollment"], facts["n_sites"], row.get("n_versions")))
+        built[id(row)] = (rec, hist_md, related)
+
+    # ---- track record: once per PRIMARY molecule key, identical on every row that shares it
+    by_key: dict = {}
+    for row in rows:
+        if id(row) in built:
+            by_key.setdefault(row.get("primary_molecule_key"), []).append(row)
+    screen_ncts = {r["nct_id"] for r in rows}
+    for key, group in by_key.items():
+        syn = sorted({x for r in group for x in r.get("molecule_synonyms") or []} - {key})
+        first = group[0]
+        info = company_cache.get(first["cik"], {})
+        try:
+            tr = TR.track_record_for_key(http, key, syn, sorted({r["sponsor"] for r in group}), first["cik"],
+                                         info.get("submissions"), info["mkt"].closes if info.get("mkt") else [],
+                                         today, press_cache, screen_ncts)
+        except Exception as e:  # noqa: BLE001
+            tr = {**TR._EMPTY_TR, "molecule_track_record": "error", "_prior_trials": []}
+            for r in group:
+                r["data_notes"] = f"{r.get('data_notes')}; track record: {e}"
+        for row in group:
+            row["molecule_synonyms"] = syn
+            row.update({k: v for k, v in tr.items() if not k.startswith("_")})
+            row["_tr"] = tr
+    for row in rows:
+        if id(row) not in built:
+            continue
+        rec, hist_md, related = built[id(row)]
+        md, _facts = D.build(_csv_view(row), rec, hist_md, related, today)
+        if row.get("_tr"):
+            md += "\n".join(TR.track_section({**row, **row["_tr"]})) + "\n"
         with open(os.path.join(a.out, "dossiers", f"{row['ticker']}-{row['nct_id']}.md"), "w") as f:
             f.write(md)
 
-    # ---- outputs: delisted and repeat-failure rows leave the main ranking, never the record
+    # ---- hard invariants: a violation fails the run --------------------------
+    violations = invariants(rows)
+
+    # ---- gates: every row lands in exactly one file; every gate it fails is listed
+    by_nct = {r["nct_id"]: r for r in rows}
     for row in rows:
-        if row.get("company_status") == "likely_delisted_or_acquired":
-            row["output_file"] = "excluded_delisted.csv"
-        elif row.get("must_raise_before_catalyst") and row.get("sub_dollar"):
-            row["output_file"] = "excluded_dilution_risk.csv"
+        row.update(gates(row, by_nct))
+    for row in rows:
+        row["output_file"] = route(row)
+        if row["output_file"] == "excluded_dilution_risk.csv":
             row["kill_dates"] = (f"cash {row.get('total_liquid_cash')} as of {row.get('cash_as_of_date')}; runway "
                                  f"{row.get('runway_q')} q ({row.get('runway_source')}) ends {row.get('runway_end_date')}; "
                                  f"primary completion {row.get('catalyst_date')}, readout est. {row.get('readout_est_date')} "
                                  f"(+{row.get('readout_lag_months')} months); margin "
-                                 f"{row.get('months_runway_minus_months_to_catalyst')} months; price "
+                                 f"{row.get('months_runway_minus_months_to_catalyst')} months; shortfall "
+                                 f"{row.get('dilution_at_current_price_pct')}% of market cap at "
                                  f"{row.get('share_price')} on {mkt_date(company_cache, row)}")
-        elif row.get("molecule_track_record") == "repeat_failure" and \
-                (row.get("prior_controlled_failures") or 0) >= TR.FAIL_MIN_FOR_WATCHLIST:
-            row["output_file"] = "watchlist_repeat_failure.csv"
-            row["note"] = (f"{row['prior_controlled_failures']} prior controlled trials of {row.get('molecule_keys')} "
-                           f"missed their primary endpoint ({', '.join(json.loads(row['prior_failure_indications']))}; "
-                           f"{', '.join(json.loads(row['prior_failure_ncts']))}); evidence: "
-                           f"{row.get('track_record_evidence_url')}. Candidate trial {row['nct_id']} is "
+        elif row["output_file"] == "watchlist_repeat_failure.csv":
+            row["note"] = (f"{row['prior_controlled_failures']} prior controlled trials of "
+                           f"{row.get('primary_molecule_key')} missed their primary endpoint "
+                           f"({', '.join(row['prior_failure_indications'])}; {', '.join(row['prior_failure_ncts'])}); "
+                           f"evidence: {row.get('track_record_evidence_url')}. Candidate trial {row['nct_id']} is "
                            f"{row.get('candidate_evidence_grade')}.")
-        else:
-            row["output_file"] = "candidates.csv"
-    for name, cols in (("candidates.csv", CSV_COLS), ("watchlist_repeat_failure.csv", WATCHLIST_COLS),
-                       ("excluded_delisted.csv", CSV_COLS), ("excluded_dilution_risk.csv", KILL_COLS)):
+    for name, cols in OUTPUTS:
         with open(os.path.join(a.out, name), "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
             w.writeheader()
             for row in rows:
                 if row["output_file"] == name:
-                    w.writerow(row)
+                    w.writerow(_csv_view(row))
     with open(os.path.join(a.out, "integrity_report.md"), "w") as f:
-        f.write(Q.report(rows, CSV_COLS, today))
+        f.write(Q.report(rows, CSV_COLS, today, violations=violations, n_screened=len(rows)))
     with open(os.path.join(a.out, "dropped.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["ticker", "nct_id", "true_market_cap", "reported_market_cap",
                                               "pre_funded_warrants", "market_cap_confidence", "avg_dollar_vol",
@@ -372,13 +418,114 @@ def screen(a) -> int:
         w.writeheader()
         for row in dropped:
             w.writerow(row)
-    from collections import Counter as _C
-    per = _C(r["output_file"] for r in rows)
-    log(f"wrote {per['candidates.csv']} candidates, {per['watchlist_repeat_failure.csv']} watchlist, "
-        f"{per['excluded_dilution_risk.csv']} dilution kills, "
-        f"{per['excluded_delisted.csv']} delisted, {len(rows)} dossiers -> {a.out} "
+    per = Counter(r["output_file"] for r in rows)
+    log("wrote " + ", ".join(f"{per[n]} {n}" for n, _c in OUTPUTS) + f"; {len(rows)} dossiers -> {a.out} "
         f"(network calls {http.calls['network']}, cache hits {http.calls['cache']})")
+    if violations:
+        for name, bad in violations:
+            for line in bad:
+                print(f"INVARIANT VIOLATED: {name}: {line}", file=sys.stderr)
+        return 4
     return 0
+
+
+# ------------------------------------------------------------------ gates --
+DILUTION_KILL_PCT = 50.0
+DILUTION_KILL_PCT_MUST_RAISE = 35.0
+DILUTION_WARN_PCT = 20.0
+RUNWAY_KILL_Q = 2.0
+
+
+def gates(row: dict, by_nct: dict) -> dict:
+    """Mechanical gate facts for one row. Each gate names the field values that trip it."""
+    out = {"delisted_gate": row.get("company_status") == "delisted", "underfunded_gate": False,
+           "dilution_gate": False, "not_evidence_gate": False, "dilution_warning": None,
+           "runway_shortfall_months": None, "candidate_switched_to": None, "fails_gates": None}
+    if row.get("funded_through") is False:
+        out["underfunded_gate"] = True
+        if row.get("runway_q") is not None and row.get("runway_needed_q") is not None:
+            out["runway_shortfall_months"] = round((row["runway_needed_q"] - row["runway_q"]) * 3, 1)
+    pct, rq = row.get("dilution_at_current_price_pct"), row.get("runway_q")
+    why = []
+    if pct is not None and pct >= DILUTION_KILL_PCT:
+        why.append(f"dilution_at_current_price_pct {pct} >= {DILUTION_KILL_PCT:g}")
+    if rq is not None and rq < RUNWAY_KILL_Q:
+        why.append(f"runway_q {rq} < {RUNWAY_KILL_Q:g}")
+    if row.get("must_raise_before_catalyst") and pct is not None and pct >= DILUTION_KILL_PCT_MUST_RAISE:
+        why.append(f"must_raise_before_catalyst and dilution {pct} >= {DILUTION_KILL_PCT_MUST_RAISE:g}")
+    out["dilution_gate"] = bool(why)
+    out["dilution_gate_reason"] = "; ".join(why) or None
+    if not why and pct is not None and DILUTION_WARN_PCT <= pct < DILUTION_KILL_PCT_MUST_RAISE:
+        out["dilution_warning"] = f"shortfall to readout + 6 months is {pct}% of market cap (warn band 20-35%)"
+    weak = row.get("candidate_evidence_grade") == "single_arm" or row.get("primary_is_safety_only") is True
+    if weak:
+        lead_nct = (row.get("lead_program_guess") or "").split(" ")[0] or None
+        lead = by_nct.get(lead_nct)
+        if row.get("candidate_is_lead_program") is False and lead is not None and \
+                lead.get("candidate_evidence_grade") == "controlled_masked":
+            # the company stays a candidate on its lead trial, which is its own row
+            out["candidate_switched_to"] = f"{lead_nct} (controlled_masked lead trial; its own row)"
+        out["not_evidence_gate"] = True
+        out["not_evidence_reason"] = "; ".join(
+            x for x in ("candidate_evidence_grade single_arm" if row.get("candidate_evidence_grade") == "single_arm"
+                        else "", "primary_is_safety_only" if row.get("primary_is_safety_only") is True else "") if x)
+    failed = [g for g in ("delisted", "underfunded", "dilution", "not_evidence") if out[f"{g}_gate"]]
+    out["fails_gates"] = "|".join(failed) or None
+    warn = []
+    if row.get("company_status") == "check_manually":
+        warn.append(f"CHECK MANUALLY: Form 15 deregistration filed {row.get('form_15_date')} with no Form 25; "
+                    f"often routine, confirm the listing")
+    if out["dilution_warning"]:
+        warn.append(out["dilution_warning"])
+    if row.get("success_reaction_flag"):
+        warn.append(f"a prior stated success fell {row.get('worst_prior_success_1d')} on its announcement day")
+    out["row_warnings"] = " | ".join(warn) or None
+    return out
+
+
+def route(row: dict) -> str:
+    """First failing gate decides the file (delisted, underfunded, dilution, not evidence),
+    then the unchanged repeat-failure watchlist, then candidates."""
+    if row["delisted_gate"]:
+        return "excluded_delisted.csv"
+    if row["underfunded_gate"]:
+        return "excluded_underfunded.csv"
+    if row["dilution_gate"]:
+        return "excluded_dilution_risk.csv"
+    if row["not_evidence_gate"]:
+        return "excluded_not_evidence.csv"
+    if row.get("molecule_track_record") == "repeat_failure" and \
+            (row.get("prior_controlled_failures") or 0) >= FAIL_MIN_FOR_WATCHLIST:
+        return "watchlist_repeat_failure.csv"
+    return "candidates.csv"
+
+
+def invariants(rows: list[dict]) -> list[tuple[str, list[str]]]:
+    """[(invariant, [violating rows])]; empty lists mean it held."""
+    bad1 = [f"{r['ticker']} {r['nct_id']} key={r.get('primary_molecule_key')}: successes "
+            f"{r.get('prior_controlled_successes')}, failures {r.get('prior_controlled_failures')}, trials with a "
+            f"clinical primary {r.get('prior_trials_with_clinical_primary')}"
+            for r in rows if ((r.get("prior_controlled_successes") or 0) > 0 or (r.get("prior_controlled_failures") or 0) > 0)
+            and not (r.get("prior_trials_with_clinical_primary") or 0) > 0]
+    from .track import TRACK_FIELDS
+    bad2, groups = [], {}
+    for r in rows:
+        if r.get("primary_molecule_key"):
+            groups.setdefault(r["primary_molecule_key"], []).append(r)
+    for k, g in groups.items():
+        base = g[0]
+        for r in g[1:]:
+            diff = {f: (base.get(f), r.get(f)) for f in TRACK_FIELDS if base.get(f) != r.get(f)}
+            if diff:
+                bad2.append(f"key {k}: {base['ticker']} {base['nct_id']} vs {r['ticker']} {r['nct_id']}: {diff}")
+    return [("prior_controlled_successes > 0 or prior_controlled_failures > 0 REQUIRES "
+             "prior_trials_with_clinical_primary > 0", bad1),
+            ("rows with the same primary_molecule_key have identical track-record fields", bad2)]
+
+
+def _csv_view(row: dict) -> dict:
+    """Lists and dicts as JSON for the CSV; everything else as is."""
+    return {k: (json.dumps(v) if isinstance(v, (list, dict)) and not k.startswith("_") else v) for k, v in row.items()}
 
 
 def journal_cmd(a) -> int:
