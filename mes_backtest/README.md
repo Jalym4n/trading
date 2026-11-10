@@ -140,6 +140,7 @@ no holdout was run for it, because nothing earned one.
 | 2 | `or_fib_confluence` (min_leg 10) | 3 | 0.03 | +1.67 | -1.24 | 0.85 | $25 | 1, 3 (not testable) |
 | 3 | `or_fib_base_2r` (target = 2x stop distance) | 160 | 1.58 | -5.06 | -8.70 | 0.48 | $1,461 | 1, 3 |
 | 4 | `late_day_momentum` (15:30 entry with the day's move, exit 15:55, 10-pt stop) | 481 | 4.76 | +1.04 | -2.70 | 0.87 | $2,263 | 2, 3 |
+| 5 | `noise_band_trend` (outside the 14-day noise band at half-hour checks, 30-pt stop) | 372 | 3.68 | +10.52 | +6.78 | 1.25 | $835 | none on training; walk-forward pending |
 
 Scored against the LucidFlex 100K gates (Gate 2: max drawdown < $1,800). The
 account was switched from the 25K on 2026-11-10 after these four trials; they
@@ -170,4 +171,4 @@ Trial 4 (late-day momentum) is the first to pass Gate 1, and it is disproved
 by its own pre-written condition: a gross edge of about $1 a trade that is not
 distinguishable from zero and is smaller than the ~$3.74 round-trip cost.
 
-Every run is in `results/trial_log.jsonl` (4 of the 10-trial budget used).
+Every run is in `results/trial_log.jsonl` (5 of the 10-trial budget used).
