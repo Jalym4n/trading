@@ -120,4 +120,33 @@ front door for everything from phase 5 on.
 
 ## Result
 
-Not yet run. This section will state, in one sentence, whether the edge survives.
+**No strategy has cleared the viability gates. The opening-range family is closed.**
+Training window only (2020-2021, MES, 1 contract); no walk-forward window and
+no holdout was run for it, because nothing earned one.
+
+| Trial | Strategy | Trades | /week | Gross $/trade | Net $/trade | PF net | Max DD | Gates failed |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `or_fib_base` (nearest-node target, min_leg 0) | 127 | 1.26 | -3.15 | -6.33 | 0.50 | $883 | 1, 2, 3 |
+| 2 | `or_fib_confluence` (min_leg 10) | 3 | 0.03 | +1.67 | -1.24 | 0.85 | $25 | 1 (not testable) |
+| 3 | `or_fib_base_2r` (target = 2x stop distance) | 160 | 1.58 | -5.06 | -8.70 | 0.48 | $1,461 | 1, 2, 3 |
+
+Conclusion: the opening-range family fails on GROSS expectancy. With the
+nearest-node target the payoff geometry is upside-down (median target 3.25 pts
+away, median stop 4.75; it needs ~62% winners and gets 52%). Trial 3 kept the
+entry and moved the target to 2x the stop distance: it loses more before costs
+(-$5.06/trade, t = -2.3), with 13 targets against 75 stops and 72 exits at the
+11:00 close. The entry carries no usable directional information; it is noise.
+
+Lessons:
+
+1. **"First opposite-colour bar" makes legs too short to be useful.** The
+   median leg is 5.9 points, one or two 5-minute bars. Fibs of a leg that size
+   sit within ~2 points of each other, so fib precision is an illusion, and a
+   10-point minimum leg leaves 1.5 confluence trades a year.
+2. **"Nearest volume node" is a losing target rule: it is too close.** The
+   target is typically nearer than the stop, so even a better-than-coin-flip
+   entry loses.
+3. A wider target does not rescue it inside a 09:30-11:00 window: most trades
+   time out before reaching 2R.
+
+Every run is in `results/trial_log.jsonl` (3 distinct trials so far).
