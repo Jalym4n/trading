@@ -103,6 +103,22 @@ def apply_costs(trade: dict, spec: dict, params: dict, slippage_mult: float = 1.
             "r_net": net_usd / risk_usd if risk_usd else float("nan")}
 
 
+def noise_sigma(m5: pd.DataFrame, lookback: int) -> pd.DataFrame:
+    """index = date, columns = bar label "HH:MM": the mean of |bar close / that day's first RTH
+    open - 1| over the `lookback` most recent EARLIER days that have that bar. Today's own bars
+    never enter today's row (shift after the rolling mean)."""
+    lab = m5.index.strftime("%H:%M")
+    day_open = m5.groupby("date")["open"].transform("first")
+    move = (m5["close"] / day_open - 1.0).abs()
+    wide = pd.DataFrame({"date": m5["date"].to_numpy(), "lab": lab, "move": move.to_numpy()}).pivot(
+        index="date", columns="lab", values="move").sort_index()
+    out = {}
+    for c in wide.columns:
+        r = wide[c].dropna().rolling(lookback).mean()
+        out[c] = r.reindex(wide.index, method="ffill").shift(1)
+    return pd.DataFrame(out, index=wide.index)
+
+
 # --------------------------------------------------------------------- run --
 def run(cfg: dict, strategy, instruments: list | None = None, start: str | None = None, end: str | None = None,
         params: dict | None = None, slippage_mult: float = 1.0, name: str = "strategy",
@@ -124,12 +140,14 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
         # prior session's last RTH bar close, same contract by construction on tradeable days
         # (the first session of a new contract is roll-skip); known before the day starts
         prior_close = m5.groupby("date")["close"].last().shift(1)
+        sigma = noise_sigma(m5, int(p.get("noise_lookback_days", 14)))
         sess = sess[(sess.index >= s_ts) & (sess.index <= e_ts)]
         for day, row in sess.iterrows():
             res: DayResult | None = None
             if not (row["roll_skip"] or row["data_skip"]):
                 levels = lv.loc[day, ["poc", "vah", "val"]].to_dict() if day in lv.index else dict(NAN_LEVELS)
                 levels["prior_close"] = float(prior_close.get(day, float("nan")))
+                levels["noise_sigma"] = sigma.loc[day].to_dict() if day in sigma.index else {}
                 res = strategy(m5[m5["date"] == day], levels, p)
             cat = day_category(bool(row["roll_skip"]), bool(row["data_skip"]), res)
             days.append({"instrument": inst, "date": day.date().isoformat(), "contract": row["contract"],
