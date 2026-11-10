@@ -1,0 +1,26 @@
+# Market data — never commit (licensed, large, not redistributable)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+*.csv
+*.csv.zst
+*.zst
+*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Results — regenerable, keep repo clean (comment out if you want them tracked)
+results/*
+!results/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,7 @@
+# Python 3.11+ (wheels verified for 3.13)
+pandas==2.2.3        # bars, resampling, tz conversion
+numpy==2.2.6         # array maths, profile binning
+pyarrow==19.0.1      # parquet read/write for data/processed/
+zstandard==0.23.0    # read .csv.zst (Databento's zstd compression)
+matplotlib==3.10.3   # validation plots (profile histograms, equity curves)
+pytest==8.3.5        # module tests
