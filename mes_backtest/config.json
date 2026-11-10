@@ -46,7 +46,9 @@
     "value_area_pct": 0.7,
     "profile_bin": 1.0,
     "confluence_tol": 3.0,
+    "min_leg_points": 10.0,
     "stop_pad": 3.0,
+    "max_risk_points": 10.0,
     "fib_levels": [
       0.382,
       0.5,
@@ -63,7 +65,10 @@
     "slippage_pts": 0.25,
     "point_value_usd": 5.0,
     "tick_size": 0.25,
-    "tick_value_usd": 1.25
+    "tick_value_usd": 1.25,
+    "instruments": [
+      "MES"
+    ]
   },
   "lucid_25k": {
     "account": "LucidFlex 25K",

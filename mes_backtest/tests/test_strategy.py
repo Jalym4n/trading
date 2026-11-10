@@ -54,12 +54,12 @@ def test_no_breakout_after_deadline():
     inside = [(102, 103, 101, 102)] * 9                              # 09:45..10:25 stay inside
     late = [(102, 106, 102, 105.5)]                                  # 10:30 bar closes outside: too late
     r = run_day(day(OR + inside + late, fill=(105, 105.5, 104.5, 105)), LV, P)
-    assert r.status == "no_breakout"
+    assert r.status == "no-breakout"
 
 
 def test_no_zone_without_confluence_but_zones_with_filter_off():
     far = {"poc": 150.0, "vah": 160.0, "val": 50.0}
-    assert run_day(day(OR + LEG + [TRIGGER]), far, P).status == "no_zone"
+    assert run_day(day(OR + LEG + [TRIGGER]), far, P).status == "no-zone"
     r = run_day(day(OR + LEG + [TRIGGER]), far, P, confluence=False)
     assert r.status == "traded" and r.trades[0].zone.startswith("FIB_")
 
@@ -97,7 +97,7 @@ def test_no_entry_on_the_last_bar():
     # 10:50 bar is the last allowed entry bar (index 16); 10:55 (index 17) never enters
     assert all(t.entry_bar <= "10:50" for t in r.trades)
     only_last = OR + LEG + waiting + [(109, 109.2, 108.8, 109)] * 2 + [(106.8, 108, 106.5, 107.9)]
-    assert run_day(day(only_last), LV, P).status == "no_trigger"
+    assert run_day(day(only_last), LV, P).status == "no-trigger"
 
 
 def test_short_mirror():
@@ -109,5 +109,27 @@ def test_short_mirror():
 
 
 def test_missing_levels_or_bars():
-    assert run_day(day(OR + LEG), {"poc": np.nan, "vah": 1.0, "val": 0.0}, P).status == "no_levels"
-    assert run_day(day(OR + LEG).iloc[:-1], LV, P).status == "short_day"
+    assert run_day(day(OR + LEG), {"poc": np.nan, "vah": 1.0, "val": 0.0}, P).status == "no-levels"
+    assert run_day(day(OR + LEG).iloc[:-1], LV, P).status == "short-day"
+
+
+def test_risk_over_the_cap_is_skipped_not_traded():
+    big = dict(P, max_risk_points=3.5)                                # entry 107.9 - stop 104 = 3.9 > 3.5
+    r = run_day(day(OR + LEG + [TRIGGER, (108, 121, 107.5, 120)]), LV, big)
+    assert r.status == "risk-too-large" and r.trades == []
+    assert r.detail["risk_skips"] == [{"bar": "10:00", "zone": "POC", "entry": 107.9, "stop": 104.0,
+                                       "risk_pts": 107.9 - 104.0, "max_risk_points": 3.5}]
+
+
+def test_risk_skip_keeps_the_zone_live_for_a_closer_trigger():
+    tight = dict(P, max_risk_points=3.5)
+    closer = (106.6, 107.2, 106.5, 107.1)                             # 10:05: risk 3.1 <= 3.5 -> taken
+    r = run_day(day(OR + LEG + [TRIGGER, closer, (108, 121, 107.5, 120)]), LV, tight)
+    assert [t.entry_bar for t in r.trades] == ["10:05"] and len(r.detail["risk_skips"]) == 1
+
+
+def test_day_category_precedence():
+    from src.strategy import DayResult, day_category
+    assert day_category(True, True, DayResult("traded")) == "roll-skip"
+    assert day_category(False, True, DayResult("traded")) == "missing-bars"
+    assert day_category(False, False, DayResult("no-zone")) == "no-zone"

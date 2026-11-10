@@ -32,6 +32,10 @@ Timing on the 5-min grid (bars labelled by OPEN time, all from config.json):
                   - low). Entry at that bar's close. Last entry bar opens at 10:50
                   (closes 10:55); nothing enters at or after session_end.
   stop            node - stop_pad (long) / node + stop_pad (short).
+  risk cap        a trigger whose entry-to-stop distance exceeds max_risk_points is
+                  NOT a trade: it is logged in detail["risk_skips"] and the zone
+                  stays live. A day whose only signals were too risky is
+                  "risk-too-large".
   target          the nearest volume node beyond the entry in the trade direction;
                   none -> the leg end; leg end not beyond entry -> no trade.
   exit            evaluated from the bar AFTER entry. Stop and target in the same
@@ -93,7 +97,7 @@ class Trade:
 
 @dataclass
 class DayResult:
-    status: str               # traded / no_levels / short_day / no_breakout / no_confirmation / no_zone / no_trigger
+    status: str               # one of DAY_CATEGORIES below (strategy-side ones)
     trades: list = field(default_factory=list)
     detail: dict = field(default_factory=dict)
 
@@ -148,13 +152,13 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
     """bars: one day's 5-min RTH bars (index = bar open time, market tz), columns open/high/low/close.
     levels: {"poc", "vah", "val"} from the prior session (NaN -> no trade)."""
     if any(levels.get(k) is None or not np.isfinite(levels.get(k)) for k in ("poc", "vah", "val")):
-        return DayResult("no_levels")
+        return DayResult("no-levels")
     s0, s1, or_end = _t(p["session_start"]), _t(p["session_end"]), _t(p["or_end"])
     bar_min = int(pd.Timedelta(p["bar_size_strategy"]).total_seconds() // 60)
     w = bars[(bars.index.time >= s0) & (bars.index.time < s1)]
     expected = (dt.datetime.combine(dt.date.min, s1) - dt.datetime.combine(dt.date.min, s0)).seconds // 60 // bar_min
     if len(w) != expected:
-        return DayResult("short_day", detail={"bars": len(w), "expected": expected})
+        return DayResult("short-day", detail={"bars": len(w), "expected": expected})
     t = w.index.time
     o, h, l, c = (w[k].to_numpy(float) for k in ("open", "high", "low", "close"))
     times = [x.strftime("%H:%M") for x in w.index]
@@ -170,7 +174,7 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
     b = next((i for i in range(n_or, len(w)) if t[i] <= last_breakout_open and (c[i] > or_high or c[i] < or_low)),
              None)
     if b is None:
-        return DayResult("no_breakout", detail=det)
+        return DayResult("no-breakout", detail=det)
     side = "long" if c[b] > or_high else "short"
     sgn = 1 if side == "long" else -1
     start = or_high if side == "long" else or_low
@@ -179,7 +183,7 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
     # ---- leg: confirmed by the first opposite-colour bar after the breakout bar
     k = next((i for i in range(b + 1, len(w)) if sgn * (c[i] - o[i]) < 0), None)
     if k is None:
-        return DayResult("no_confirmation", detail=det)
+        return DayResult("no-confirmation", detail=det)
     end = h[b:k + 1].max() if side == "long" else l[b:k + 1].min()
     det.update({"leg_end": end, "leg_confirm_time": times[k],
                 "fibs": {f: end - f * (end - start) for f in p["fib_levels"]}})
@@ -187,7 +191,7 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
     zones = build_zones(side, start, end, levels, p, confluence)
     det["zones"] = [asdict(z) for z in zones]
     if not zones:
-        return DayResult("no_zone", detail=det)
+        return DayResult("no-zone", detail=det)
 
     trades, losses, zi, touched, i, no_entry_through = [], 0, 0, False, k, k
     while i < len(w) and zi < len(zones) and len(trades) < p["max_trades_day"]:
@@ -208,6 +212,15 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
             target, tsrc = _target(side, entry, levels, end)
             if target is None or sgn * (entry - z.stop) <= 0:
                 zi, touched = zi + 1, False
+                i += 1
+                continue
+            risk = sgn * (entry - z.stop)
+            if risk > p["max_risk_points"] + 1e-9:
+                # not takeable at the per-trade cap: logged, never counted as a trade; the zone stays
+                # live, so a later trigger closer to the node can still qualify
+                det.setdefault("risk_skips", []).append(
+                    {"bar": times[i], "zone": z.node_name, "entry": entry, "stop": z.stop, "risk_pts": risk,
+                     "max_risk_points": p["max_risk_points"]})
                 i += 1
                 continue
             # ---- manage the position from the next bar
@@ -238,7 +251,23 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
             zi, touched, i, no_entry_through = zi + 1, False, exit_i, exit_i
             continue
         i += 1
-    return DayResult("traded" if trades else "no_trigger", trades, det)
+    if trades:
+        return DayResult("traded", trades, det)
+    return DayResult("risk-too-large" if det.get("risk_skips") else "no-trigger", trades, det)
+
+
+# one category per calendar day, in this precedence; every day lands in exactly one
+DAY_CATEGORIES = ["roll-skip", "missing-bars", "no-levels", "short-day", "no-breakout", "no-confirmation",
+                  "leg-too-small", "no-zone", "risk-too-large", "no-trigger", "traded"]
+
+
+def day_category(roll_skip: bool, data_skip: bool, result: "DayResult | None") -> str:
+    """Harness-side days (roll / missing bars) first, then the strategy's own status."""
+    if roll_skip:
+        return "roll-skip"
+    if data_skip:
+        return "missing-bars"
+    return result.status
 
 
 # --------------------------------------------------------------- hand check --
@@ -266,6 +295,9 @@ def trace(date: str, bars: pd.DataFrame, levels: dict, p: dict, confluence: bool
         pos = (b.close - b.low) / rng if rng else float("nan")
         col = "green" if b.close > b.open else "red" if b.close < b.open else "doji"
         out.append(f"{ts:%H:%M}  {b.open:8.2f} {b.high:8.2f} {b.low:8.2f} {b.close:8.2f}  {col:6}  {pos:5.2f}")
+    for rs in d.get("risk_skips", []):
+        out.append(f"RISK-TOO-LARGE (not a trade): {rs['zone']} trigger on {rs['bar']}, entry {rs['entry']:g}, stop "
+                   f"{rs['stop']:g}, risk {rs['risk_pts']:.2f} pts > {rs['max_risk_points']:g}")
     for t in r.trades:
         out.append(f"TRADE {t.side} {t.zone}: entry {t.entry:g} at close of {t.entry_bar}; stop {t.stop:g}; "
                    f"target {t.target:g} ({t.target_source}); exit {t.exit_reason} {t.exit:g} on {t.exit_bar}"
@@ -290,7 +322,7 @@ def main(argv=None) -> None:
     if a.pick:
         # development years only: nothing from a walk-forward test year or the holdout is looked at
         pool = sess[(sess["tradeable"]) & (sess.index.year <= 2021)].index
-        want = {"long": None, "short": None, "no_zone": None}
+        want = {"long": None, "short": None, "no-zone": None}
         for d in pool:
             day = m5[m5["date"] == d]
             r = run_day(day, lv.loc[d, ["poc", "vah", "val"]].to_dict() if d in lv.index else {}, p,
