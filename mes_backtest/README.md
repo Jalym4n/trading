@@ -41,8 +41,8 @@ project root. Modules read it; nothing is hardcoded in `src/`.
 4. `src/backtest.py`: loop days, apply commission and slippage, write the trade log.
 5. `src/stats.py`: expectancy, profit factor, drawdown ($ and R), streaks, R
    distribution, worst day.
-6. `src/guards.py` + `src/walkforward.py`: trial counter, 12-month OOS holdout
-   (run once), walk-forward windows, regime split, confluence on/off A/B.
+6. `src/guards.py` + `src/walkforward.py`: trial counter, OOS holdout (calendar 2026,
+   run once), walk-forward windows, regime split, confluence on/off A/B.
 
 ## How to run (once modules exist)
 
