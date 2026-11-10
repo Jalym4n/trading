@@ -48,6 +48,9 @@ project root. Modules read it; nothing is hardcoded in `src/`.
 
 `pip install -r requirements.txt && python -m src.backtest --config config.json`
 
+Built so far: `python -m src.load` (writes `data/processed/`, prints the validation
+report) and `python -m pytest -q tests`.
+
 ## Result
 
 Not yet run. This section will state, in one sentence, whether the edge survives.

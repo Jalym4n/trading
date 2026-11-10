@@ -3,33 +3,60 @@
     "provider": "Databento",
     "dataset": "GLBX.MDP3",
     "symbol": "MES",
-    "symbol_type": "continuous front-month",
+    "symbol_type": "parent symbology: every MES contract (outrights + calendar spreads); front month is built in load.py",
     "schema": "ohlcv-1m",
     "encoding": "csv",
-    "compression": "zstd",
+    "compression": "zip (load.py also reads .csv and .csv.zst)",
     "price_format": "decimal",
     "timestamp_format": "iso8601",
     "source_tz": "UTC",
     "start": "2020-01-01",
     "end": "2026-11-07",
     "raw_dir": "data/raw",
-    "expected_columns": ["ts_event", "rtype", "publisher_id", "instrument_id", "open", "high", "low", "close", "volume", "symbol"],
-    "notes": "Convert ts_event from UTC to America/New_York BEFORE any session logic. Volume profile is built from 1-min bars; strategy runs on 5-min RTH resample."
+    "expected_columns": [
+      "ts_event",
+      "rtype",
+      "publisher_id",
+      "instrument_id",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume",
+      "symbol"
+    ],
+    "notes": "Convert ts_event from UTC to America/New_York BEFORE any session logic. Volume profile is built from 1-min bars; strategy runs on 5-min RTH resample. The delivery is raw contracts, not a Databento continuous symbol: load.py drops spreads and selects the front month itself.",
+    "delivered_files": [
+      "glbx-mdp3-20200101-20261107.ohlcv-1m.zip (one CSV, 3,566,272 rows, 2020-01-01 to 2026-11-06)"
+    ]
   },
   "params": {
     "session_start": "09:30",
     "session_end": "11:00",
     "or_end": "09:45",
     "market_tz": "America/New_York",
-    "rth_full": ["09:30", "16:00"],
+    "rth_full": [
+      "09:30",
+      "16:00"
+    ],
+    "rth_half_day_end": "13:00",
     "bar_size_source": "1min",
     "bar_size_strategy": "5min",
-    "value_area_pct": 0.70,
+    "value_area_pct": 0.7,
     "profile_bin": 1.0,
     "confluence_tol": 3.0,
     "stop_pad": 3.0,
-    "fib_levels": [0.382, 0.5, 0.618, 0.786],
-    "confluence_fib_levels": [0.5, 0.618, 0.786],
+    "fib_levels": [
+      0.382,
+      0.5,
+      0.618,
+      0.786
+    ],
+    "confluence_fib_levels": [
+      0.5,
+      0.618,
+      0.786
+    ],
     "max_trades_day": 2,
     "commission_rt": 1.24,
     "slippage_pts": 0.25,
@@ -49,18 +76,66 @@
     "note": "MLL is $1,000 total room. At $50/trade risk, ~10 losses = ruin; a real edge should never approach that. VERIFY MLL on Lucid help center before funding."
   },
   "validation": {
-    "oos_holdout_months": 12,
+    "oos_holdout": {
+      "start": "2026-01-01",
+      "end": "2026-11-06",
+      "note": "calendar 2026 only, run ONCE at the very end; walk-forward windows unchanged (last test window = 2025)"
+    },
     "walk_forward": [
-      {"train": ["2020", "2021"], "test": "2022"},
-      {"train": ["2021", "2022"], "test": "2023"},
-      {"train": ["2022", "2023"], "test": "2024"},
-      {"train": ["2023", "2024"], "test": "2025"}
+      {
+        "train": [
+          "2020",
+          "2021"
+        ],
+        "test": "2022"
+      },
+      {
+        "train": [
+          "2021",
+          "2022"
+        ],
+        "test": "2023"
+      },
+      {
+        "train": [
+          "2022",
+          "2023"
+        ],
+        "test": "2024"
+      },
+      {
+        "train": [
+          "2023",
+          "2024"
+        ],
+        "test": "2025"
+      }
     ],
     "wiggle_tests": {
-      "confluence_tol": [2.0, 3.0, 4.0],
-      "stop_pad": [2.0, 3.0, 4.0]
+      "confluence_tol": [
+        2.0,
+        3.0,
+        4.0
+      ],
+      "stop_pad": [
+        2.0,
+        3.0,
+        4.0
+      ]
     },
     "confluence_ab": true,
     "regime_split": "volatility terciles (realized vol of MES or VIX)"
+  },
+  "contract_roll": {
+    "instruments": "outrights only (calendar spreads dropped)",
+    "front_rule": "volume crossover: the front for session D+1 is the contract with the most volume in session D, never an earlier expiry than the current front",
+    "session_date": "Globex trading day, 18:00 ET (prior evening) to 17:00 ET",
+    "adjust_levels": false,
+    "skip_sessions": [
+      "roll_day",
+      "first_session_new_contract"
+    ],
+    "skip_reason": "the strategy is level-based; shifting or back-adjusting levels across contracts corrupts the profile",
+    "expected_rolls_per_year": 4
   }
 }
