@@ -18,15 +18,17 @@ with --config). Steps, in this order:
   6. 5-min RTH bars: 1-min bars floored to 5 minutes, labelled by OPEN time,
      09:30 to 16:00 ET (13:00 on early-close days), NYSE holidays dropped.
 
-Outputs (data/processed/):
-  mes_1m.parquet      front-month 1-min bars, all hours (profile input)
-  mes_5m_rth.parquet  5-min RTH bars (strategy input)
+Outputs (data/processed/<INSTRUMENT>/), one folder per instrument in
+config params.instruments, every instrument through the identical pipeline:
+  bars_1m.parquet     front-month 1-min bars, all hours (profile input)
+  bars_5m_rth.parquet 5-min RTH bars (strategy input)
   sessions.parquet    one row per RTH day: contract, bar counts, half_day,
                       roll_skip, data_skip (a 1-min bar missing in the strategy
                       window), skip_reason, tradeable
   rolls.parquet       one row per roll: roll session, old, new, first new session
 
-    python -m src.load              # build, then print the validation report
+    python -m src.load                    # every instrument in config params.instruments
+    python -m src.load --instrument MNQ   # one
 """
 
 from __future__ import annotations
@@ -50,16 +52,43 @@ def load_config(path: str | Path | None = None) -> dict:
     return json.loads(Path(path or ROOT / "config.json").read_text())
 
 
+def processed_dir(instrument: str, root: Path = ROOT) -> Path:
+    return root / "data" / "processed" / instrument
+
+
+def read_processed(instrument: str, root: Path = ROOT) -> dict:
+    """{m1, m5, sessions, rolls, levels (if profile.py has run)} for one instrument."""
+    d = processed_dir(instrument, root)
+    if not (d / "bars_5m_rth.parquet").exists():
+        raise FileNotFoundError(f"{d} has no bars: run  python -m src.load --instrument {instrument}")
+    out = {"m1": pd.read_parquet(d / "bars_1m.parquet"), "m5": pd.read_parquet(d / "bars_5m_rth.parquet"),
+           "sessions": pd.read_parquet(d / "sessions.parquet"), "rolls": pd.read_parquet(d / "rolls.parquet")}
+    if (d / "levels.parquet").exists():
+        out["levels"] = pd.read_parquet(d / "levels.parquet")
+    return out
+
+
 # -------------------------------------------------------------------- read --
+_RAW_CACHE: dict = {}
+
+
 def read_raw(raw_dir: Path, expected_columns: list[str]) -> pd.DataFrame:
+    """Every raw file in data/raw/, concatenated. Files may hold any instrument; the
+    caller keeps the root it wants. Cached per process so a multi-instrument build
+    reads the files once."""
     files = sorted(p for p in raw_dir.iterdir() if p.name.endswith((".zip", ".csv", ".csv.zst")))
     if not files:
         raise FileNotFoundError(f"no .zip / .csv / .csv.zst files in {raw_dir}")
+    key = tuple((str(p), p.stat().st_mtime) for p in files)
+    if key in _RAW_CACHE:
+        return _RAW_CACHE[key]
     frames = [pd.read_csv(p) for p in files]        # pandas infers zip / zstd compression
     df = pd.concat(frames, ignore_index=True)
     missing = [c for c in expected_columns if c not in df.columns]
     if missing:
         raise ValueError(f"raw data missing columns {missing}")
+    _RAW_CACHE.clear()
+    _RAW_CACHE[key] = df
     return df
 
 
@@ -210,17 +239,24 @@ def rth_5m(front_1m: pd.DataFrame, rth_start: str, rth_end: str, half_day_end: s
 
 
 # ------------------------------------------------------------------- build --
-def build(cfg: dict, root: Path = ROOT) -> dict:
-    ds, p, roll_cfg = cfg["data_source"], cfg["params"], cfg["contract_roll"]
+def build(cfg: dict, instrument: str, root: Path = ROOT) -> dict:
+    """The whole pipeline for ONE instrument (config instrument_specs[instrument]).
+    Identical steps for every instrument; only the root symbol and output folder differ."""
+    ds, p = cfg["data_source"], cfg["params"]
+    spec = cfg["instrument_specs"][instrument]
+    sym = spec.get("root", instrument)
     raw = read_raw(root / ds["raw_dir"], ds["expected_columns"])
     n_raw = len(raw)
-    bars = to_market_tz(raw, ds["source_tz"], p["market_tz"])                     # step 2: FIRST
-    outr = bars[bars["symbol"].map(lambda s: is_outright(s, ds["symbol"]))].copy()
+    mine = raw[raw["symbol"].str.startswith(sym)]
+    if mine.empty:
+        raise FileNotFoundError(f"no {sym} rows in {root / ds['raw_dir']}: drop the {instrument} Databento file there")
+    bars = to_market_tz(mine, ds["source_tz"], p["market_tz"])                    # step 2: FIRST
+    outr = bars[bars["symbol"].map(lambda s_: is_outright(s_, sym))].copy()
     outr["session_date"] = session_dates(outr.index)
 
     first_year = outr.index[0].year
     vol = outr.groupby(["session_date", "symbol"])["volume"].sum().unstack(fill_value=0).sort_index()
-    front, rolls = choose_front(vol, ds["symbol"], first_year)
+    front, rolls = choose_front(vol, sym, first_year)
     front_1m = outr[outr["symbol"].to_numpy() == front.reindex(outr["session_date"]).to_numpy()]
     front_1m = front_1m.rename(columns={"symbol": "contract"})
     dup = int(front_1m.index.duplicated().sum())
@@ -269,22 +305,24 @@ def build(cfg: dict, root: Path = ROOT) -> dict:
     sess["tradeable"] = ~(sess["roll_skip"] | sess["data_skip"])
     sess.index.name = "date"
 
-    out = root / "data" / "processed"
+    out = processed_dir(instrument, root)
     out.mkdir(parents=True, exist_ok=True)
-    front_1m.to_parquet(out / "mes_1m.parquet")
-    m5.to_parquet(out / "mes_5m_rth.parquet")
+    front_1m.to_parquet(out / "bars_1m.parquet")
+    m5.to_parquet(out / "bars_5m_rth.parquet")
     sess.to_parquet(out / "sessions.parquet")
     rolls.to_parquet(out / "rolls.parquet")
-    return {"n_raw": n_raw, "n_outright": len(outr), "front_1m": front_1m, "m5": m5, "sessions": sess,
-            "rolls": rolls, "holidays": holidays, "half_days": half_days, "cfg": cfg}
+    return {"instrument": instrument, "n_raw": n_raw, "n_raw_instrument": len(mine), "n_outright": len(outr),
+            "front_1m": front_1m, "m5": m5, "sessions": sess, "rolls": rolls, "holidays": holidays,
+            "half_days": half_days, "cfg": cfg, "out_dir": out}
 
 
 # ---------------------------------------------------------------- validate --
 def validate(res: dict, n_sample: int = 10, seed: int = 7) -> str:
     sess, rolls, m5 = res["sessions"], res["rolls"], res["m5"]
     full = sess[~sess["half_day"]]
-    lines = [f"raw rows {res['n_raw']:,}; outright rows {res['n_outright']:,}; "
-             f"front-month 1-min rows {len(res['front_1m']):,}",
+    lines = [f"[{res['instrument']}] raw rows in data/raw {res['n_raw']:,}; {res['instrument']} rows "
+             f"{res['n_raw_instrument']:,}; outright rows {res['n_outright']:,}; "
+             f"front-month 1-min rows {len(res['front_1m']):,}  -> {res['out_dir']}",
              f"RTH days {len(sess):,} ({sess.index[0].date()} to {sess.index[-1].date()}); "
              f"5-min RTH bars {len(m5):,}", ""]
     sample = sess.sample(n=min(n_sample, len(sess)), random_state=seed).sort_index()
@@ -331,9 +369,12 @@ def validate(res: dict, n_sample: int = 10, seed: int = 7) -> str:
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--config", default=None)
+    ap.add_argument("--instrument", action="append", help="repeatable; default: config params.instruments")
     a = ap.parse_args(argv)
-    res = build(load_config(a.config))
-    print(validate(res))
+    cfg = load_config(a.config)
+    for inst in a.instrument or cfg["params"]["instruments"]:
+        print(validate(build(cfg, inst)))
+        print()
 
 
 if __name__ == "__main__":

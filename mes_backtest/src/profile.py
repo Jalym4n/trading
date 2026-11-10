@@ -1,7 +1,7 @@
 """Prior-session volume profile: POC / VAH / VAL for every RTH trading day.
 
-Input: data/processed/mes_1m.parquet and sessions.parquet (from src.load).
-Output: data/processed/levels.parquet, one row per trading day D, built ONLY
+Input: data/processed/<INSTRUMENT>/bars_1m.parquet and sessions.parquet (src.load).
+Output: data/processed/<INSTRUMENT>/levels.parquet, one row per trading day D, built ONLY
 from the 1-minute bars of the previous trading day's RTH session (09:30-16:00
 ET, 13:00 on early-close days). Nothing from day D enters D's levels.
 
@@ -20,7 +20,8 @@ Prices are bin prices (multiples of profile_bin), never adjusted across rolls.
 A day whose prior session traded a different contract gets no levels; those
 are exactly the first sessions of a new contract, already roll_skip.
 
-    python -m src.profile        # build levels.parquet, print checks, plot one day
+    python -m src.profile                    # every instrument in config params.instruments
+    python -m src.profile --instrument MNQ   # one
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .load import ROOT, load_config
+from .load import ROOT, load_config, processed_dir
 
 
 def volume_profile(high: np.ndarray, low: np.ndarray, close: np.ndarray, volume: np.ndarray,
@@ -134,9 +135,9 @@ def plot_day(m1: pd.DataFrame, sessions: pd.DataFrame, levels: pd.DataFrame, day
     plt.close(fig)
 
 
-def build(cfg: dict, root: Path = ROOT) -> pd.DataFrame:
-    proc = root / "data" / "processed"
-    m1 = pd.read_parquet(proc / "mes_1m.parquet")
+def build(cfg: dict, instrument: str, root: Path = ROOT) -> pd.DataFrame:
+    proc = processed_dir(instrument, root)
+    m1 = pd.read_parquet(proc / "bars_1m.parquet")
     sessions = pd.read_parquet(proc / "sessions.parquet")
     levels = prior_session_levels(m1, sessions, cfg)
     levels.to_parquet(proc / "levels.parquet")
@@ -171,17 +172,21 @@ def validate(levels: pd.DataFrame, sessions: pd.DataFrame, cfg: dict, n_sample: 
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--config", default=None)
+    ap.add_argument("--instrument", action="append", help="repeatable; default: config params.instruments")
     ap.add_argument("--plot-day", default="2024-03-14")
     a = ap.parse_args(argv)
     cfg = load_config(a.config)
-    levels = build(cfg)
-    sessions = pd.read_parquet(ROOT / "data" / "processed" / "sessions.parquet")
-    print(validate(levels, sessions, cfg))
-    m1 = pd.read_parquet(ROOT / "data" / "processed" / "mes_1m.parquet")
-    out = ROOT / "results" / f"profile_{a.plot_day}.png"
-    out.parent.mkdir(exist_ok=True)
-    plot_day(m1, sessions, levels, a.plot_day, cfg, out)
-    print(f"\nprofile plot: {out}")
+    for inst in a.instrument or cfg["params"]["instruments"]:
+        levels = build(cfg, inst)
+        proc = processed_dir(inst)
+        sessions = pd.read_parquet(proc / "sessions.parquet")
+        print(f"[{inst}]")
+        print(validate(levels, sessions, cfg))
+        m1 = pd.read_parquet(proc / "bars_1m.parquet")
+        out = ROOT / "results" / f"profile_{inst}_{a.plot_day}.png"
+        out.parent.mkdir(exist_ok=True)
+        plot_day(m1, sessions, levels, a.plot_day, cfg, out)
+        print(f"profile plot: {out}\n")
 
 
 if __name__ == "__main__":

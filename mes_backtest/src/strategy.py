@@ -313,26 +313,27 @@ def trace(date: str, bars: pd.DataFrame, levels: dict, p: dict, confluence: bool
 
 def main(argv=None) -> None:
     import argparse
-    from .load import ROOT, load_config
+    from .load import load_config, read_processed
     ap = argparse.ArgumentParser(description="trace one or more days for a hand check")
     ap.add_argument("dates", nargs="*")
+    ap.add_argument("--instrument", default=None, help="default: first of config params.instruments")
     ap.add_argument("--no-confluence", action="store_true")
     ap.add_argument("--pick", action="store_true", help="pick a long, a short and a no-trade day from 2020-2021")
     a = ap.parse_args(argv)
-    p = load_config()["params"]
-    proc = ROOT / "data" / "processed"
-    m5 = pd.read_parquet(proc / "mes_5m_rth.parquet")
-    lv = pd.read_parquet(proc / "levels.parquet")
-    sess = pd.read_parquet(proc / "sessions.parquet")
+    cfg = load_config()
+    p = cfg["params"]
+    inst = a.instrument or p["instruments"][0]
+    d_ = read_processed(inst)
+    m5, lv, sess = d_["m5"], d_["levels"], d_["sessions"]
     dates = list(a.dates)
     if a.pick:
         # development years only: nothing from a walk-forward test year or the holdout is looked at
         pool = sess[(sess["tradeable"]) & (sess.index.year <= 2021)].index
         want = {"long": None, "short": None, "no-zone": None}
         for d in pool:
-            day = m5[m5["date"] == d]
-            r = run_day(day, lv.loc[d, ["poc", "vah", "val"]].to_dict() if d in lv.index else {}, p,
-                        not a.no_confluence)
+            if d not in lv.index:
+                continue
+            r = run_day(m5[m5["date"] == d], lv.loc[d, ["poc", "vah", "val"]].to_dict(), p, not a.no_confluence)
             key = r.trades[0].side if r.trades else r.status
             if key in want and want[key] is None:
                 want[key] = d.strftime("%Y-%m-%d")
@@ -341,6 +342,7 @@ def main(argv=None) -> None:
         dates += [v for v in want.values() if v]
     for d in dates:
         ts = pd.Timestamp(d)
+        print(f"[{inst}]")
         print(trace(d, m5[m5["date"] == ts], lv.loc[ts, ["poc", "vah", "val"]].to_dict(), p, not a.no_confluence))
         print()
 

@@ -19,9 +19,32 @@ trading, no broker connection, no order routing.
 | Prices / timestamps | decimal / ISO 8601 **UTC** |
 | Columns | `ts_event, rtype, publisher_id, instrument_id, open, high, low, close, volume, symbol` |
 
-Raw files go in `data/raw/` (git-ignored: licensed, not redistributable).
-`ts_event` is converted from UTC to `America/New_York` **before** any session
-logic.
+Raw files go in `data/raw/` (git-ignored: licensed, not redistributable), one
+Databento file per instrument (the MES file is there; MNQ lands next to it,
+same order: `GLBX.MDP3`, `ohlcv-1m`, raw contracts, 2020-2026). `ts_event` is
+converted from UTC to `America/New_York` **before** any session logic.
+
+## Instruments
+
+`config.json` `params.instruments` lists the active instruments; every one goes
+through the identical pipeline (drop spreads, front month by volume crossover,
+skip roll day + first new-contract session, skip missing-bar days, UTC to ET)
+into `data/processed/<INSTRUMENT>/`. Point value, tick size, tick value and
+commission are read per symbol from `instrument_specs` (MES $5/pt, MNQ $2/pt,
+both 0.25 tick); slippage is `slippage_ticks` x the instrument's tick, on the
+entry and on market exits (stop, time), never on the limit target. Results are
+reported per instrument AND pooled. To add an instrument: drop its file in
+`data/raw/`, add its spec, add it to `params.instruments`, run `src.load` and
+`src.profile` for it.
+
+## The bar every strategy must clear
+
+`lucid-25k-viability-target.md` is the pass/fail standard: four hard gates
+(>= 3 trades/week; max drawdown under ~$600 against a $1,000 wall; net
+expectancy positive in a majority of walk-forward windows; positive on the
+2026 holdout) plus soft targets. Its numbers are in `config.json`
+`viability_gates`, and every result is scored against them. A confident "no
+strategy clears these" is a real answer.
 
 ## Parameters
 
@@ -48,10 +71,13 @@ project root. Modules read it; nothing is hardcoded in `src/`.
 
 `pip install -r requirements.txt && python -m src.backtest --config config.json`
 
-Built so far: `python -m src.load` (front month, 5-min RTH, skip flags),
-`python -m src.profile` (prior-session POC / VAH / VAL, plot in `results/`),
-`python -m src.strategy --pick` (hand-check traces of a long, a short and a no-trade
-day from 2020-2021), and `python -m pytest -q tests`.
+Built so far (all take `--instrument`): `python -m src.load` (front month,
+5-min RTH, skip flags), `python -m src.profile` (prior-session POC / VAH /
+VAL, plot in `results/`), `python -m src.strategy --pick` (hand-check traces
+from 2020-2021), `python -m src.backtest --strategy confluence_off --start
+2020-01-01 --end 2021-12-31 --set min_leg_points=0` (trade log with costs;
+counts only, statistics come with stats.py), and `python -m pytest -q tests`.
+`src.backtest` clamps every window to end before the 2026 holdout.
 
 ## Result
 

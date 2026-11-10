@@ -2,7 +2,6 @@
   "data_source": {
     "provider": "Databento",
     "dataset": "GLBX.MDP3",
-    "symbol": "MES",
     "symbol_type": "parent symbology: every MES contract (outrights + calendar spreads); front month is built in load.py",
     "schema": "ohlcv-1m",
     "encoding": "csv",
@@ -25,10 +24,29 @@
       "volume",
       "symbol"
     ],
-    "notes": "Convert ts_event from UTC to America/New_York BEFORE any session logic. Volume profile is built from 1-min bars; strategy runs on 5-min RTH resample. The delivery is raw contracts, not a Databento continuous symbol: load.py drops spreads and selects the front month itself.",
+    "notes": "Convert ts_event from UTC to America/New_York BEFORE any session logic. Volume profile is built from 1-min bars; strategy runs on 5-min RTH resample. Raw contracts, not a continuous symbol: load.py drops spreads and selects the front month per instrument.",
     "delivered_files": [
       "glbx-mdp3-20200101-20261107.ohlcv-1m.zip (one CSV, 3,566,272 rows, 2020-01-01 to 2026-11-06)"
-    ]
+    ],
+    "symbols": "one raw file per instrument in data/raw/ (MES, MNQ); load.py reads every file and keeps each instrument's outrights by root symbol"
+  },
+  "instrument_specs": {
+    "MES": {
+      "name": "Micro E-mini S&P 500",
+      "root": "MES",
+      "point_value_usd": 5.0,
+      "tick_size": 0.25,
+      "tick_value_usd": 1.25,
+      "commission_rt_usd": 1.24
+    },
+    "MNQ": {
+      "name": "Micro E-mini Nasdaq-100",
+      "root": "MNQ",
+      "point_value_usd": 2.0,
+      "tick_size": 0.25,
+      "tick_value_usd": 0.5,
+      "commission_rt_usd": 1.24
+    }
   },
   "params": {
     "session_start": "09:30",
@@ -61,13 +79,15 @@
       0.786
     ],
     "max_trades_day": 2,
-    "commission_rt": 1.24,
-    "slippage_pts": 0.25,
-    "point_value_usd": 5.0,
-    "tick_size": 0.25,
-    "tick_value_usd": 1.25,
     "instruments": [
       "MES"
+    ],
+    "slippage_ticks": 1,
+    "slippage_applies_to": [
+      "entry",
+      "stop",
+      "stop_gap",
+      "time"
     ]
   },
   "lucid_25k": {
@@ -80,6 +100,18 @@
     "max_contracts_until_half_target": 1,
     "consistency_rule_pct": 50,
     "note": "MLL is $1,000 total room. At $50/trade risk, ~10 losses = ruin; a real edge should never approach that. VERIFY MLL on Lucid help center before funding."
+  },
+  "viability_gates": {
+    "source": "lucid-25k-viability-target.md",
+    "gate1_min_trades_per_week": 3.0,
+    "gate2_max_drawdown_usd": 600.0,
+    "gate2_hard_wall_usd": 1000.0,
+    "gate3_net_expectancy_positive_in_majority_of_windows": true,
+    "gate4_holdout_net_positive": true,
+    "soft_largest_day_max_pct_of_target": 40.0,
+    "soft_worst_streak_times_risk_max_usd": 600.0,
+    "soft_doubled_slippage_must_stay_positive": true,
+    "weeks_per_trading_day": 0.2
   },
   "validation": {
     "oos_holdout": {
