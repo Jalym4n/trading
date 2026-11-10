@@ -130,7 +130,7 @@ front door for everything from phase 5 on.
 
 ## Result
 
-**No strategy has cleared the viability gates. The opening-range family is closed.**
+**No strategy has cleared the viability gates. The opening-range family is closed; late-day momentum is disproved.**
 Training window only (2020-2021, MES, 1 contract); no walk-forward window and
 no holdout was run for it, because nothing earned one.
 
@@ -139,6 +139,7 @@ no holdout was run for it, because nothing earned one.
 | 1 | `or_fib_base` (nearest-node target, min_leg 0) | 127 | 1.26 | -3.15 | -6.33 | 0.50 | $883 | 1, 2, 3 |
 | 2 | `or_fib_confluence` (min_leg 10) | 3 | 0.03 | +1.67 | -1.24 | 0.85 | $25 | 1 (not testable) |
 | 3 | `or_fib_base_2r` (target = 2x stop distance) | 160 | 1.58 | -5.06 | -8.70 | 0.48 | $1,461 | 1, 2, 3 |
+| 4 | `late_day_momentum` (15:30 entry with the day's move, exit 15:55, 10-pt stop) | 481 | 4.76 | +1.04 | -2.70 | 0.87 | $2,263 | 2, 3 |
 
 Conclusion: the opening-range family fails on GROSS expectancy. With the
 nearest-node target the payoff geometry is upside-down (median target 3.25 pts
@@ -159,4 +160,8 @@ Lessons:
 3. A wider target does not rescue it inside a 09:30-11:00 window: most trades
    time out before reaching 2R.
 
-Every run is in `results/trial_log.jsonl` (3 distinct trials so far).
+Trial 4 (late-day momentum) is the first to pass Gate 1, and it is disproved
+by its own pre-written condition: a gross edge of about $1 a trade that is not
+distinguishable from zero and is smaller than the ~$3.74 round-trip cost.
+
+Every run is in `results/trial_log.jsonl` (4 of the 10-trial budget used).
