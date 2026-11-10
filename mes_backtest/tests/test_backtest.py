@@ -50,3 +50,13 @@ def test_development_window_never_touches_the_holdout():
         clamp_window(CFG, "2026-02-01", "2026-03-01")                 # start inside the holdout: refused
     s, e, _ = clamp_window(CFG, "2026-01-01", "2026-11-06", _allow_holdout=True)   # the guarded path only
     assert (s, e) == ("2026-01-01", "2026-11-06")
+
+
+def test_recost_frame_honours_strategy_overrides():
+    import pandas as pd
+    from src.backtest import recost_frame
+    t = apply_costs({"instrument": "MES", **_trade(exit_=101.0, reason="band")}, instrument_spec(CFG, "MES"), P)
+    df = pd.DataFrame([t])
+    plain = recost_frame(df, CFG, 2.0)                                   # "band" not a market exit by default
+    with_band = recost_frame(df, CFG, 2.0, {"slippage_applies_to": ["entry", "band"]})
+    assert plain["slippage_pts"].iloc[0] == 0.5 and with_band["slippage_pts"].iloc[0] == 1.0

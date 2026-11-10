@@ -76,7 +76,7 @@ def run_walk_forward(cfg: dict, strategy, instruments=None, params=None, slippag
     out["test_trades"] = tt
     out["test_pooled"] = S.summarize(tt, cfg, B.weeks_in(days, cfg) if len(days) else None)
     out["test_pooled_doubled_slippage"] = S.summarize(
-        B.recost_frame(tt, cfg, slippage_mult * 2.0), cfg, B.weeks_in(days, cfg) if len(days) else None)
+        B.recost_frame(tt, cfg, slippage_mult * 2.0, params), cfg, B.weeks_in(days, cfg) if len(days) else None)
     out["positive_test_windows"] = sum(
         1 for w in out["windows"] if (pooled(w["test"]).get("expectancy_net_usd") or 0) > 0)
     out["n_test_windows"] = len(out["windows"])
