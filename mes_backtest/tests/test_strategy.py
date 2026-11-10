@@ -139,3 +139,11 @@ def test_leg_too_small():
     r = run_day(day(OR + LEG + [TRIGGER]), LV, dict(P, min_leg_points=10.0))     # leg 104 -> 111 = 7 pts
     assert r.status == "leg-too-small" and r.detail["leg_points"] == 7
     assert run_day(day(OR + LEG + [TRIGGER]), LV, dict(P, min_leg_points=7.0)).status == "traded"   # 7 >= 7
+
+
+def test_r_multiple_target():
+    p2 = dict(P, target_mode="r_multiple", target_r=2.0)
+    r = run_day(day(OR + LEG + [TRIGGER, (108, 121, 107.5, 120)]), LV, p2)
+    t = r.trades[0]                                   # entry 107.9, stop 104 -> risk 3.9 -> target 115.7 -> 115.75
+    assert (t.entry, t.stop, t.target, t.target_source) == (107.9, 104.0, 115.75, "2R")
+    assert (t.exit_reason, t.exit) == ("target", 115.75)

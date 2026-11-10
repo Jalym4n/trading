@@ -114,3 +114,13 @@ def test_scorecard_fails_gate1_and_marks_unmeasured_gates_na():
     assert [r["verdict"] for r in rows if r["gate"].startswith("GATE")] == ["PASS", "PASS", "PASS", "n/a"]
     assert [r["verdict"] for r in rows if "doubled" in r["rule"]] == ["FAIL"]
     assert "pending: GATE 4" in G.format_scorecard(rows)
+
+
+def test_negative_training_expectancy_fails_gate3():
+    tr = {"n_trades": 127, "trades_per_week": 1.26, "max_dd_usd": 883.0, "expectancy_net_usd": -6.33,
+          "best_day_pct_of_target": 8.8, "trades_to_target": None, "worst_streak_loss_usd": -262.0,
+          "max_consec_losses": 7}
+    rows = G.scorecard(CFG, tr, None, training_doubled={"expectancy_net_usd": -8.27})
+    assert [r["verdict"] for r in rows if r["gate"] == "GATE 3"] == ["FAIL"]
+    assert [r["verdict"] for r in rows if "trades to" in r["rule"]] == ["FAIL"]
+    assert "fails GATE 1, GATE 2, GATE 3" in G.format_scorecard(rows)

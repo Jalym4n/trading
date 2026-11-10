@@ -29,3 +29,16 @@ def or_fib_confluence(day_bars, prior_levels, params):
 )
 def or_fib_base(day_bars, prior_levels, params):
     return run_day(day_bars, prior_levels, params, confluence=False)
+
+
+@register(
+    "or_fib_base_2r",
+    hypothesis="The or_fib_base entry (opening-range breakout, fib pullback, no node filter) has directional "
+               "information that the nearest-node target threw away: with the target at 2x the stop distance "
+               "the same entries are positive before costs.",
+    disproof="Gross expectancy <= 0 on training. Then the entry itself is noise and the opening-range family "
+             "is abandoned.",
+    defaults={"min_leg_points": 0.0, "target_mode": "r_multiple", "target_r": 2.0},
+)
+def or_fib_base_2r(day_bars, prior_levels, params):
+    return run_day(day_bars, prior_levels, params, confluence=False)

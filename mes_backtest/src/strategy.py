@@ -38,8 +38,10 @@ Timing on the 5-min grid (bars labelled by OPEN time, all from config.json):
                   NOT a trade: it is logged in detail["risk_skips"] and the zone
                   stays live. A day whose only signals were too risky is
                   "risk-too-large".
-  target          the nearest volume node beyond the entry in the trade direction;
-                  none -> the leg end; leg end not beyond entry -> no trade.
+  target          target_mode "nearest_node" (default): the nearest volume node beyond
+                  the entry in the trade direction; none -> the leg end; leg end not
+                  beyond entry -> no trade. target_mode "r_multiple": entry +/-
+                  target_r x (entry-to-stop distance), on the tick grid.
   exit            evaluated from the bar AFTER entry. Stop and target in the same
                   bar -> STOP (pessimistic). A bar opening through the stop fills at
                   its open; the target is a limit and fills at the target price.
@@ -215,7 +217,13 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
         if (touched and i > no_entry_through and t[i] <= last_entry_open and sgn * (c[i] - o[i]) > 0 and rng > 0
                 and fav >= 2.0 / 3.0 * rng - 1e-9):
             entry = c[i]
-            target, tsrc = _target(side, entry, levels, end)
+            if p.get("target_mode", "nearest_node") == "r_multiple":
+                # fixed reward:risk, rounded to the tick grid; always beyond the entry
+                tk = p.get("target_tick", 0.25)
+                target = round((entry + sgn * p["target_r"] * sgn * (entry - z.stop)) / tk) * tk
+                tsrc = f"{p['target_r']:g}R"
+            else:
+                target, tsrc = _target(side, entry, levels, end)
             if target is None or sgn * (entry - z.stop) <= 0:
                 zi, touched = zi + 1, False
                 i += 1

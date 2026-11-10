@@ -234,8 +234,10 @@ def scorecard(cfg: dict, training: dict | None = None, walk_forward: dict | None
             add("GATE 3", "net expectancy > 0 AND positive in a majority of test windows",
                 f"${fmt(exp)}/trade; {k}/{n} windows positive", (exp or 0) > 0 and k > n / 2)
         else:
+            # a non-positive training expectancy already fails the first condition; a positive one
+            # still needs the walk-forward windows
             add("GATE 3", "net expectancy > 0 (majority-of-windows part needs walk-forward)",
-                f"${fmt(exp)}/trade on training; windows n/a", None)
+                f"${fmt(exp)}/trade on training; windows n/a", False if (exp is not None and exp <= 0) else None)
     if holdout is not None:
         exp_h = holdout.get("expectancy_net_usd")
         add("GATE 4", "net expectancy > 0 on the 2026 holdout", f"${fmt(exp_h)}/trade, {holdout.get('n_trades')} trades",
@@ -248,7 +250,7 @@ def scorecard(cfg: dict, training: dict | None = None, walk_forward: dict | None
             f"{fmt(bd, '{:.1f}')}%", None if bd is None else bd < g["soft_largest_day_max_pct_of_target"])
         ttt = basis.get("trades_to_target")
         add("SOFT", "trades to +$1,250 is weeks, not months (at >= 3/wk, ~40 trades = 3 months)",
-            "never (expectancy <= 0)" if ttt is None else f"{ttt:.0f} trades", None if ttt is None else ttt <= 40)
+            "never (expectancy <= 0)" if ttt is None else f"{ttt:.0f} trades", False if ttt is None else ttt <= 40)
         ws = basis.get("worst_streak_loss_usd")
         add("SOFT", f"worst losing streak < ${g['soft_worst_streak_times_risk_max_usd']:,.0f}",
             f"${fmt(-ws if ws is not None else None)} over {basis.get('max_consec_losses')} losses",
