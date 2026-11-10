@@ -34,6 +34,7 @@
     "session_start": "09:30",
     "session_end": "11:00",
     "or_end": "09:45",
+    "breakout_deadline": "10:30",
     "market_tz": "America/New_York",
     "rth_full": [
       "09:30",

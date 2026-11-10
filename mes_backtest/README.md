@@ -49,8 +49,9 @@ project root. Modules read it; nothing is hardcoded in `src/`.
 `pip install -r requirements.txt && python -m src.backtest --config config.json`
 
 Built so far: `python -m src.load` (front month, 5-min RTH, skip flags),
-`python -m src.profile` (prior-session POC / VAH / VAL, plot in `results/`), and
-`python -m pytest -q tests`.
+`python -m src.profile` (prior-session POC / VAH / VAL, plot in `results/`),
+`python -m src.strategy --pick` (hand-check traces of a long, a short and a no-trade
+day from 2020-2021), and `python -m pytest -q tests`.
 
 ## Result
 
