@@ -61,6 +61,7 @@ def cmd_run(a, cfg) -> None:
     strat = R.get(a.strategy)
     params = dict(strat.defaults, **B._parse_set(a.set))
     instruments = a.instrument or cfg["params"]["instruments"]
+    G.check_budget(cfg, G.trial_key(strat.name, dict(cfg["params"], **params), instruments))
     training = wf = None
     if a.phase in ("training", "both"):
         training = W.run_training(cfg, strat, instruments, params, a.slippage_mult, strat.name)
@@ -104,7 +105,7 @@ def cmd_run(a, cfg) -> None:
         wf["test_trades"].to_csv(out / f"trial{rec['trial_line']:04d}_{strat.name}_wf_test.csv", index=False)
     print(f"\nlogged as trial line {rec['trial_line']} (key {rec['trial_key']}, commit {rec['git']['commit']}"
           f"{' DIRTY' if rec['git']['dirty'] else ''}) -> {G.TRIAL_LOG.relative_to(ROOT)}")
-    print("REMINDER: " + G.reminder())
+    print("REMINDER: " + G.reminder(ceiling=cfg["validation"]["trial_budget"]["ceiling"]))
 
 
 def cmd_list(a, cfg) -> None:

@@ -105,10 +105,26 @@ def trial_count(path: Path = TRIAL_LOG) -> dict:
     return {"lines": len(trials), "distinct": len(keys), "strategies": len({t["strategy"] for t in trials})}
 
 
-def reminder(path: Path = TRIAL_LOG) -> str:
+def reminder(path: Path = TRIAL_LOG, ceiling: int | None = None) -> str:
     n = trial_count(path)["distinct"]
+    budget = f" Trial budget: {n} of {ceiling} used." if ceiling else ""
     return (f"{n} strategies/params tested so far. At p<0.05, expect ~{n * 0.05:.1f} false positives by chance. "
-            "A winner here is a CANDIDATE, not a confirmed edge.")
+            "A winner here is a CANDIDATE, not a confirmed edge." + budget)
+
+
+class TrialBudgetExhausted(RuntimeError):
+    pass
+
+
+def check_budget(cfg: dict, key: str, path: Path = TRIAL_LOG) -> None:
+    """Refuse a NEW distinct trial once the ceiling is reached. Re-running a logged
+    configuration (e.g. its walk-forward phase) is the same trial and is allowed."""
+    ceiling = cfg["validation"]["trial_budget"]["ceiling"]
+    keys = {t["trial_key"] for t in read_trials(path) if t.get("phase") != "HOLDOUT"}
+    if key not in keys and len(keys) >= ceiling:
+        raise TrialBudgetExhausted(
+            f"trial budget exhausted: {len(keys)} of {ceiling} distinct trials used. "
+            + cfg["validation"]["trial_budget"]["stopping_rule"])
 
 
 # ------------------------------------------------------- holdout firewall --

@@ -173,7 +173,14 @@
       "note": "terciles of lagged rolling realized vol of RTH close-to-close returns, cut points from development data only"
     },
     "trial_log": "results/trial_log.jsonl (append-only, hash-chained, committed)",
-    "holdout_ledger": "results/holdout_ledger.jsonl (who consumed the holdout, when, at which commit)"
+    "holdout_ledger": "results/holdout_ledger.jsonl (who consumed the holdout, when, at which commit)",
+    "trial_budget": {
+      "ceiling": 10,
+      "set_on": "2026-11-10",
+      "set_at_trial_count": 3,
+      "advance_rule": "a strategy advances only with net expectancy > 0 on training AND across the walk-forward windows; a tweak is a new trial, counted",
+      "stopping_rule": "if nothing clears all four gates on walk-forward within the budget, the conclusion is: no edge I can build trades often enough and survives costs on a $1,000 buffer. Nothing is funded."
+    }
   },
   "contract_roll": {
     "instruments": "outrights only (calendar spreads dropped)",

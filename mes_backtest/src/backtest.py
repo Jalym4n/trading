@@ -121,11 +121,15 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
         lv = d.get("levels")
         if lv is None:
             raise FileNotFoundError(f"{inst} has no levels: run  python -m src.profile --instrument {inst}")
+        # prior session's last RTH bar close, same contract by construction on tradeable days
+        # (the first session of a new contract is roll-skip); known before the day starts
+        prior_close = m5.groupby("date")["close"].last().shift(1)
         sess = sess[(sess.index >= s_ts) & (sess.index <= e_ts)]
         for day, row in sess.iterrows():
             res: DayResult | None = None
             if not (row["roll_skip"] or row["data_skip"]):
-                levels = lv.loc[day, ["poc", "vah", "val"]].to_dict() if day in lv.index else NAN_LEVELS
+                levels = lv.loc[day, ["poc", "vah", "val"]].to_dict() if day in lv.index else dict(NAN_LEVELS)
+                levels["prior_close"] = float(prior_close.get(day, float("nan")))
                 res = strategy(m5[m5["date"] == day], levels, p)
             cat = day_category(bool(row["roll_skip"]), bool(row["data_skip"]), res)
             days.append({"instrument": inst, "date": day.date().isoformat(), "contract": row["contract"],

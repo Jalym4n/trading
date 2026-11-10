@@ -93,6 +93,16 @@ counter.
 6. Only after ONE finalist is chosen: `python -m src.harness holdout
    --strategy NAME --confirm --reason "..."`, once.
 
+### Trial budget and stopping rule (set 2026-11-10, at 3 trials, before trial 4 was run)
+
+- **Ceiling: 10 distinct trials in total.** The harness refuses an 11th
+  (`guards.check_budget`). A tweak is a new trial, counted.
+- **The bar does not move.** A strategy advances only with net expectancy > 0
+  on training AND across the walk-forward windows. No "close enough".
+- **Stopping rule.** If nothing clears all four gates on walk-forward within
+  the budget, the conclusion is: *no edge I can build trades often enough and
+  survives costs on a $1,000 buffer.* Nothing is funded. That is the deliverable.
+
 ### The holdout rule (enforced in code)
 
 The 2026 holdout (2026-01-01 to 2026-11-06) is run **once, on one finalist,

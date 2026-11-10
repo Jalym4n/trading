@@ -7,8 +7,9 @@ Contract (the harness relies on every line of it):
   - pure and deterministic: same (day_bars, prior_levels, params) -> same DayResult,
     no I/O, no state across days, no randomness;
   - day_bars is ONE day's 5-min RTH bars (index = bar open time in market tz;
-    open/high/low/close); prior_levels is {"poc", "vah", "val"} from the prior
-    session (may be NaN); params is the merged config params dict;
+    open/high/low/close); prior_levels is {"poc", "vah", "val", "prior_close"}
+    from the prior session (may be NaN; prior_close = its last RTH bar close);
+    params is the merged config params dict;
   - bars are consumed in time order: a decision at bar i uses bars <= i only.
     tests/test_registry.py mutates every bar after an entry and asserts the
     entry is unchanged, for EVERY registered strategy;
