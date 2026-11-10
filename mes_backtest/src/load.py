@@ -22,7 +22,8 @@ Outputs (data/processed/):
   mes_1m.parquet      front-month 1-min bars, all hours (profile input)
   mes_5m_rth.parquet  5-min RTH bars (strategy input)
   sessions.parquet    one row per RTH day: contract, bar counts, half_day,
-                      roll_skip, skip_reason, tradeable
+                      roll_skip, data_skip (a 1-min bar missing in the strategy
+                      window), skip_reason, tradeable
   rolls.parquet       one row per roll: roll session, old, new, first new session
 
     python -m src.load              # build, then print the validation report
@@ -250,8 +251,22 @@ def build(cfg: dict, root: Path = ROOT) -> dict:
         skip[pd.Timestamp(r.roll_session)] = f"roll day ({r.old} -> {r.new})"
         skip[pd.Timestamp(r.first_new_session)] = f"first session of {r.new}"
     sess["roll_skip"] = [d in skip for d in sess.index]
-    sess["skip_reason"] = [skip.get(d) for d in sess.index]
-    sess["tradeable"] = ~sess["roll_skip"]
+    # data skip: any missing 1-min bar inside the strategy window (March 2020 circuit-breaker halts)
+    w0, w1 = _hhmm(p["session_start"]), _hhmm(p["session_end"])
+    expected = (dt.datetime.combine(dt.date.min, w1) - dt.datetime.combine(dt.date.min, w0)).seconds // 60
+    win = rth1[(rth1.index.time >= w0) & (rth1.index.time < w1)]
+    n_win = win.groupby(win.index.tz_localize(None).normalize()).size().reindex(sess.index, fill_value=0)
+    sess["n_1m_window"] = n_win
+    sess["data_skip"] = n_win < expected
+    reasons = []
+    for d, r in sess.iterrows():
+        why = [skip[d]] if d in skip else []
+        if r["data_skip"]:
+            why.append(f"missing 1-min bars in {p['session_start']}-{p['session_end']} "
+                       f"({r['n_1m_window']}/{expected})")
+        reasons.append("; ".join(why) or None)
+    sess["skip_reason"] = reasons
+    sess["tradeable"] = ~(sess["roll_skip"] | sess["data_skip"])
     sess.index.name = "date"
 
     out = root / "data" / "processed"
@@ -305,6 +320,11 @@ def validate(res: dict, n_sample: int = 10, seed: int = 7) -> str:
                  f"{int(sess['roll_skip'].sum())} ({sess['roll_skip'].sum() / yrs:.1f}/yr)")
     lines.append(rolls.assign(roll_session=rolls["roll_session"].dt.date,
                               first_new_session=rolls["first_new_session"].dt.date).to_string(index=False))
+    ds = sess[sess["data_skip"]]
+    lines.append(f"data skips (missing 1-min bars in the strategy window): {len(ds)}")
+    if len(ds):
+        lines.append(ds[["contract", "n_1m_window", "skip_reason"]].to_string())
+    lines.append(f"tradeable days: {int(sess['tradeable'].sum()):,} of {len(sess):,}")
     return "\n".join(lines)
 
 

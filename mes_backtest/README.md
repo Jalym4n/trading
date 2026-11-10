@@ -48,8 +48,9 @@ project root. Modules read it; nothing is hardcoded in `src/`.
 
 `pip install -r requirements.txt && python -m src.backtest --config config.json`
 
-Built so far: `python -m src.load` (writes `data/processed/`, prints the validation
-report) and `python -m pytest -q tests`.
+Built so far: `python -m src.load` (front month, 5-min RTH, skip flags),
+`python -m src.profile` (prior-session POC / VAH / VAL, plot in `results/`), and
+`python -m pytest -q tests`.
 
 ## Result
 
