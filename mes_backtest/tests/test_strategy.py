@@ -5,7 +5,7 @@ import pandas as pd
 from src.load import load_config
 from src.strategy import run_day
 
-P = load_config()["params"]
+P = dict(load_config()["params"], min_leg_points=0.0)      # synthetic legs are 7 pts; the filter has its own test
 LV = {"poc": 107.0, "vah": 120.0, "val": 90.0}
 
 
@@ -133,3 +133,9 @@ def test_day_category_precedence():
     assert day_category(True, True, DayResult("traded")) == "roll-skip"
     assert day_category(False, True, DayResult("traded")) == "missing-bars"
     assert day_category(False, False, DayResult("no-zone")) == "no-zone"
+
+
+def test_leg_too_small():
+    r = run_day(day(OR + LEG + [TRIGGER]), LV, dict(P, min_leg_points=10.0))     # leg 104 -> 111 = 7 pts
+    assert r.status == "leg-too-small" and r.detail["leg_points"] == 7
+    assert run_day(day(OR + LEG + [TRIGGER]), LV, dict(P, min_leg_points=7.0)).status == "traded"   # 7 >= 7

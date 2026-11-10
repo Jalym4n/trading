@@ -14,6 +14,8 @@ Timing on the 5-min grid (bars labelled by OPEN time, all from config.json):
                   extreme from the breakout bar through the confirming bar
                   inclusive, all known at the confirming bar's close. No
                   confirmation before the window ends -> no trade.
+  min leg         a confirmed leg shorter than min_leg_points -> "leg-too-small"
+                  (both confluence modes, so the A/B differs only in the filter).
   fibs            fib_f = end - f * (end - start) for every f in fib_levels.
   zones           confluence ON: a zone is a volume node (POC / VAH / VAL) with a
                   fib in confluence_fib_levels within confluence_tol points. The
@@ -188,6 +190,10 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
     det.update({"leg_end": end, "leg_confirm_time": times[k],
                 "fibs": {f: end - f * (end - start) for f in p["fib_levels"]}})
 
+    if abs(end - start) < p["min_leg_points"] - 1e-9:
+        # fib precision is meaningless on a small leg: the three fibs sit within ~2 pts of each other
+        det["leg_points"] = abs(end - start)
+        return DayResult("leg-too-small", detail=det)
     zones = build_zones(side, start, end, levels, p, confluence)
     det["zones"] = [asdict(z) for z in zones]
     if not zones:
