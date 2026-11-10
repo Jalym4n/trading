@@ -140,7 +140,7 @@ no holdout was run for it, because nothing earned one.
 | 2 | `or_fib_confluence` (min_leg 10) | 3 | 0.03 | +1.67 | -1.24 | 0.85 | $25 | 1, 3 (not testable) |
 | 3 | `or_fib_base_2r` (target = 2x stop distance) | 160 | 1.58 | -5.06 | -8.70 | 0.48 | $1,461 | 1, 3 |
 | 4 | `late_day_momentum` (15:30 entry with the day's move, exit 15:55, 10-pt stop) | 481 | 4.76 | +1.04 | -2.70 | 0.87 | $2,263 | 2, 3 |
-| 5 | `noise_band_trend` (outside the 14-day noise band at half-hour checks, 30-pt stop) | 372 | 3.68 | +10.52 | +6.78 | 1.25 | $835 | none on training; walk-forward pending |
+| 5 | `noise_band_trend` (outside the 14-day noise band at half-hour checks, 30-pt stop) | 372 | 3.68 | +10.52 | +6.78 | 1.25 | $835 | training: none. Walk-forward 2022-2025: Gate 2 (max DD $1,944) |
 
 Scored against the LucidFlex 100K gates (Gate 2: max drawdown < $1,800). The
 account was switched from the 25K on 2026-11-10 after these four trials; they
@@ -170,5 +170,14 @@ Lessons:
 Trial 4 (late-day momentum) is the first to pass Gate 1, and it is disproved
 by its own pre-written condition: a gross edge of about $1 a trade that is not
 distinguishable from zero and is smaller than the ~$3.74 round-trip cost.
+
+Trial 5 walk-forward (2022-2025, no rule changes): net $/trade +11.32, +7.79,
++4.35, -3.83 by year; pooled out of sample +$5.18 (t = 1.3, 854 trades), 3 of 4
+windows positive (Gate 3 passes), but max drawdown $1,944 at 1 contract fails
+Gate 2, the edge shrinks every year and 2025 is negative. At 1 contract $6,000
+takes about 5 years; no contract size is both inside the $1,800 limit and fast
+enough to fund. Not a finalist; the holdout stays unspent. (Trial-log line 6
+carries a wrong pooled doubled-slippage figure, +$4.14; line 7 is the corrected
+re-run, +$2.68. Same trades, same trial.)
 
 Every run is in `results/trial_log.jsonl` (5 of the 10-trial budget used).
