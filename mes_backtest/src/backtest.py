@@ -5,7 +5,8 @@ instrument-specific lives in the strategy. Costs, point values and tick sizes
 come from config instrument_specs[<instrument>]. Every output row carries an
 `instrument` column, and summaries are produced per instrument AND pooled.
 
-  strategy          callable(day_bars, prior_levels, params) -> DayResult (src.strategy)
+  strategy          callable(day_bars, prior_levels, params) -> DayResult: any entry of
+                    src.registry (see it for the contract)
   run(...)          -> RunResult(trade_log, day_log, window, instruments)
   apply_costs(...)  gross and net P&L for one trade, in points and dollars
   counts(...)       per-instrument + POOLED day categories and trade frequency
@@ -24,8 +25,9 @@ Development window: run() never includes the 2026 holdout
 flag, reserved for guards.run_final_holdout (phase 4). P&L statistics are
 stats.py's job (phase 5); this module's CLI prints counts only.
 
-    python -m src.backtest --strategy confluence_off --start 2020-01-01 --end 2021-12-31
-    python -m src.backtest --strategy confluence_on --set min_leg_points=0
+    python -m src.backtest --strategy or_fib_base --start 2020-01-01 --end 2021-12-31
+    python -m src.backtest --strategy or_fib_confluence --set min_leg_points=0
+(counts only; statistics and the trial log live in src.harness)
 """
 
 from __future__ import annotations
@@ -37,13 +39,8 @@ from dataclasses import asdict, dataclass
 import pandas as pd
 
 from .load import ROOT, load_config, read_processed
-from .strategy import DAY_CATEGORIES, DayResult, day_category, run_day
+from .strategy import DAY_CATEGORIES, DayResult, day_category
 
-# Phase 4 replaces this with the registry; the two A/B arms are the only strategies for now.
-STRATEGIES = {
-    "confluence_on": lambda bars, levels, p: run_day(bars, levels, p, confluence=True),
-    "confluence_off": lambda bars, levels, p: run_day(bars, levels, p, confluence=False),
-}
 NAN_LEVELS = {"poc": float("nan"), "vah": float("nan"), "val": float("nan")}
 
 
@@ -147,6 +144,21 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
     return RunResult(name, instruments, (s, e), p, tl, pd.DataFrame(days))
 
 
+def recost_frame(trade_log: pd.DataFrame, cfg: dict, slippage_mult: float, params: dict | None = None) -> pd.DataFrame:
+    """The same trades with costs recomputed (the doubled-slippage robustness test)."""
+    if trade_log.empty:
+        return trade_log.copy()
+    p = dict(cfg["params"], **(params or {}))
+    rows = [apply_costs(r, instrument_spec(cfg, r["instrument"]), p, slippage_mult)
+            for r in trade_log.to_dict("records")]
+    return pd.DataFrame(rows, columns=trade_log.columns)
+
+
+def recost(result: "RunResult", cfg: dict, slippage_mult: float) -> "RunResult":
+    return RunResult(result.strategy, result.instruments, result.window, result.params,
+                     recost_frame(result.trade_log, cfg, slippage_mult, result.params), result.day_log)
+
+
 def weeks_in(day_log: pd.DataFrame, cfg: dict) -> float:
     """Calendar weeks covered by the instrument-days in the log (trading days x 0.2)."""
     return day_log.groupby("instrument")["date"].nunique().max() * cfg["viability_gates"]["weeks_per_trading_day"]
@@ -182,8 +194,9 @@ def _parse_set(items: list[str] | None) -> dict:
 
 
 def main(argv=None) -> None:
+    from . import registry as R
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--strategy", default="confluence_off", choices=sorted(STRATEGIES))
+    ap.add_argument("--strategy", default="or_fib_base", choices=R.names())
     ap.add_argument("--instrument", action="append")
     ap.add_argument("--start", default=None)
     ap.add_argument("--end", default=None)
@@ -191,7 +204,7 @@ def main(argv=None) -> None:
     ap.add_argument("--slippage-mult", type=float, default=1.0)
     a = ap.parse_args(argv)
     cfg = load_config()
-    res = run(cfg, STRATEGIES[a.strategy], a.instrument, a.start, a.end, _parse_set(a.set), a.slippage_mult,
+    res = run(cfg, R.get(a.strategy), a.instrument, a.start, a.end, _parse_set(a.set), a.slippage_mult,
               a.strategy)
     print(f"{a.strategy}  {res.window[0]} -> {res.window[1]}  instruments {res.instruments}  "
           f"overrides {_parse_set(a.set) or 'none'}")

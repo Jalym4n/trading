@@ -67,6 +67,43 @@ project root. Modules read it; nothing is hardcoded in `src/`.
 6. `src/guards.py` + `src/walkforward.py`: trial counter, OOS holdout (calendar 2026,
    run once), walk-forward windows, regime split, confluence on/off A/B.
 
+## The hypothesis loop (phase 4)
+
+Any mechanical strategy, yours or another model's, goes through the identical
+harness: same costs, same windows, same statistics, same scorecard, same trial
+counter.
+
+1. **Propose** a falsifiable hypothesis, and write down what result would
+   disprove it BEFORE running.
+2. **Register** it: one file in `src/strategies/` with a function
+   `(day_bars, prior_levels, params) -> DayResult`, decorated
+   `@register(name, hypothesis=..., disproof=...)`. Pure, deterministic, bars
+   consumed in order; `tests/test_registry.py` runs a no-look-ahead probe on
+   every registered strategy automatically.
+3. **Run** it on training, then walk-forward:
+   `python -m src.harness run --strategy NAME --phase training` and
+   `--phase walkforward`. The holdout is unreachable from here.
+4. It is **auto-logged** to `results/trial_log.jsonl` (append-only,
+   hash-chained, committed to git): strategy, effective params, instruments,
+   window, git commit, results, scorecard. Every result prints the reminder:
+   *N strategies/params tested so far. At p<0.05, expect ~N x 0.05 false
+   positives by chance. A winner here is a CANDIDATE, not a confirmed edge.*
+5. **Compare** against the current best on the same windows:
+   `python -m src.harness compare A B --phase walkforward`.
+6. Only after ONE finalist is chosen: `python -m src.harness holdout
+   --strategy NAME --confirm --reason "..."`, once.
+
+### The holdout rule (enforced in code)
+
+The 2026 holdout (2026-01-01 to 2026-11-06) is run **once, on one finalist,
+after all searching is done**. Peeking and then tweaking burns it: the second
+look is no longer out of sample. In code: `backtest.run` clamps every window
+to end on 2025-12-31 and refuses a start inside 2026; the only road in is
+`guards.run_final_holdout`, which refuses without `confirm=True` and a written
+reason, refuses if `results/holdout_ledger.jsonl` already has any entry, prints
+a banner, and records the consumption in the ledger and the trial log. The
+ledger is committed, so a second attempt is a visible edit in git history.
+
 ## How to run (once modules exist)
 
 `pip install -r requirements.txt && python -m src.backtest --config config.json`
@@ -77,7 +114,9 @@ VAL, plot in `results/`), `python -m src.strategy --pick` (hand-check traces
 from 2020-2021), `python -m src.backtest --strategy confluence_off --start
 2020-01-01 --end 2021-12-31 --set min_leg_points=0` (trade log with costs;
 counts only, statistics come with stats.py), and `python -m pytest -q tests`.
-`src.backtest` clamps every window to end before the 2026 holdout.
+`src.backtest` clamps every window to end before the 2026 holdout. The
+harness (`python -m src.harness list | run | log | compare | holdout`) is the
+front door for everything from phase 5 on.
 
 ## Result
 

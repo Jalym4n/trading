@@ -114,6 +114,11 @@
     "weeks_per_trading_day": 0.2
   },
   "validation": {
+    "training": {
+      "start": "2020-01-01",
+      "end": "2021-12-31",
+      "note": "the first training read (phase 5) and the only window looked at while building; also wf1's train period"
+    },
     "oos_holdout": {
       "start": "2026-01-01",
       "end": "2026-11-06",
@@ -162,7 +167,13 @@
       ]
     },
     "confluence_ab": true,
-    "regime_split": "volatility terciles (realized vol of MES or VIX)"
+    "regime_split": "volatility terciles (realized vol of MES or VIX)",
+    "regime": {
+      "realized_vol_window_days": 20,
+      "note": "terciles of lagged rolling realized vol of RTH close-to-close returns, cut points from development data only"
+    },
+    "trial_log": "results/trial_log.jsonl (append-only, hash-chained, committed)",
+    "holdout_ledger": "results/holdout_ledger.jsonl (who consumed the holdout, when, at which commit)"
   },
   "contract_roll": {
     "instruments": "outrights only (calendar spreads dropped)",

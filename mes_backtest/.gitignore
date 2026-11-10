@@ -19,6 +19,9 @@ env/
 # Results — regenerable, keep repo clean (comment out if you want them tracked)
 results/*
 !results/.gitkeep
+# the trial counter and the holdout ledger are evidence, not regenerable: tracked
+!results/trial_log.jsonl
+!results/holdout_ledger.jsonl
 
 # OS / editor
 .DS_Store
