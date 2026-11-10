@@ -39,8 +39,8 @@ reported per instrument AND pooled. To add an instrument: drop its file in
 
 ## The bar every strategy must clear
 
-`lucid-25k-viability-target.md` is the pass/fail standard: four hard gates
-(>= 3 trades/week; max drawdown under ~$600 against a $1,000 wall; net
+`lucid-100k-viability-target.md` is the pass/fail standard (LucidFlex 100K since 2026-11-10; the 25K figures are kept in `config.json` `account.previous`): four hard gates
+(>= 3 trades/week; max drawdown under ~$1,800 against a $3,000 wall; net
 expectancy positive in a majority of walk-forward windows; positive on the
 2026 holdout) plus soft targets. Its numbers are in `config.json`
 `viability_gates`, and every result is scored against them. A confident "no
@@ -134,12 +134,18 @@ front door for everything from phase 5 on.
 Training window only (2020-2021, MES, 1 contract); no walk-forward window and
 no holdout was run for it, because nothing earned one.
 
-| Trial | Strategy | Trades | /week | Gross $/trade | Net $/trade | PF net | Max DD | Gates failed |
+| Trial | Strategy | Trades | /week | Gross $/trade | Net $/trade | PF net | Max DD | Gates failed (100K) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `or_fib_base` (nearest-node target, min_leg 0) | 127 | 1.26 | -3.15 | -6.33 | 0.50 | $883 | 1, 2, 3 |
-| 2 | `or_fib_confluence` (min_leg 10) | 3 | 0.03 | +1.67 | -1.24 | 0.85 | $25 | 1 (not testable) |
-| 3 | `or_fib_base_2r` (target = 2x stop distance) | 160 | 1.58 | -5.06 | -8.70 | 0.48 | $1,461 | 1, 2, 3 |
+| 1 | `or_fib_base` (nearest-node target, min_leg 0) | 127 | 1.26 | -3.15 | -6.33 | 0.50 | $883 | 1, 3 |
+| 2 | `or_fib_confluence` (min_leg 10) | 3 | 0.03 | +1.67 | -1.24 | 0.85 | $25 | 1, 3 (not testable) |
+| 3 | `or_fib_base_2r` (target = 2x stop distance) | 160 | 1.58 | -5.06 | -8.70 | 0.48 | $1,461 | 1, 3 |
 | 4 | `late_day_momentum` (15:30 entry with the day's move, exit 15:55, 10-pt stop) | 481 | 4.76 | +1.04 | -2.70 | 0.87 | $2,263 | 2, 3 |
+
+Scored against the LucidFlex 100K gates (Gate 2: max drawdown < $1,800). The
+account was switched from the 25K on 2026-11-10 after these four trials; they
+were re-scored from the logged statistics (`python -m src.harness rescore`),
+not re-run and not re-logged. Under the 25K's $600 limit trials 1, 3 and 4 also
+failed Gate 2. The switch changed no verdict: every trial still fails Gate 3.
 
 Conclusion: the opening-range family fails on GROSS expectancy. With the
 nearest-node target the payoff geometry is upside-down (median target 3.25 pts

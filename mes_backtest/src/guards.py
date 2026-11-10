@@ -209,13 +209,50 @@ def regime_tags(cfg: dict, instruments: list[str]) -> pd.DataFrame:
     return pd.concat(rows, ignore_index=True)[["instrument", "date", "realized_vol", "regime"]]
 
 
+# ---------------------------------------------------------------- re-score --
+def rescore(cfg: dict, path: Path = TRIAL_LOG) -> list[dict]:
+    """Every logged trial's scorecard recomputed against the CURRENT config gates, from the
+    statistics stored in the log. Reads only: nothing is appended, the trial count is unchanged."""
+    target = float(cfg["account"]["profit_target"])
+    out = []
+
+    def fix(s: dict | None) -> dict | None:
+        if not s:
+            return s
+        s = dict(s)
+        if s.get("best_day_usd") is not None:
+            s["best_day_pct_of_target"] = 100 * s["best_day_usd"] / target
+        e = s.get("expectancy_net_usd")
+        s["trades_to_target"] = (target / e) if (e and e > 0) else None
+        return s
+
+    def pooled(d):
+        return d.get("POOLED") or next(iter(d.values()))
+    for t in read_trials(path):
+        if t.get("phase") == "HOLDOUT":
+            continue
+        r = t["results"]
+        tr = fix(pooled(r["training"])) if "training" in r else None
+        trd = pooled(r["training_doubled_slippage"]) if "training_doubled_slippage" in r else None
+        wf = None
+        if "walk_forward_test_pooled" in r:
+            k, n = r["positive_test_windows"].split("/")
+            wf = {"test_pooled": fix(r["walk_forward_test_pooled"]), "positive_test_windows": int(k),
+                  "n_test_windows": int(n),
+                  "test_pooled_doubled_slippage": r.get("walk_forward_test_pooled_doubled_slippage")}
+        out.append({"trial_line": t["trial_line"], "strategy": t["strategy"], "overrides": t.get("overrides", {}),
+                    "phase": t["phase"], "logged_scorecard": t.get("scorecard"),
+                    "scorecard": scorecard(cfg, tr, wf, training_doubled=trd)})
+    return out
+
+
 # --------------------------------------------------------------- scorecard --
 def scorecard(cfg: dict, training: dict | None = None, walk_forward: dict | None = None, holdout: dict | None = None,
               training_doubled: dict | None = None) -> list[dict]:
     """Rows of {gate, rule, actual, verdict} against config viability_gates. A gate not yet
     measurable is 'n/a', never 'pass'. Pooled figures are used (the combined book)."""
     g = cfg["viability_gates"]
-    target = cfg["lucid_25k"]["profit_target"]
+    target = cfg["account"]["profit_target"]
     rows = []
 
     def fmt(v, f="{:.2f}"):
@@ -264,9 +301,11 @@ def scorecard(cfg: dict, training: dict | None = None, walk_forward: dict | None
         bd = basis.get("best_day_pct_of_target")
         add("SOFT", f"largest day < {g['soft_largest_day_max_pct_of_target']:g}% of the ${target:,} target",
             f"{fmt(bd, '{:.1f}')}%", None if bd is None else bd < g["soft_largest_day_max_pct_of_target"])
-        ttt = basis.get("trades_to_target")
-        add("SOFT", "trades to +$1,250 is weeks, not months (at >= 3/wk, ~40 trades = 3 months)",
-            "never (expectancy <= 0)" if ttt is None else f"{ttt:.0f} trades", False if ttt is None else ttt <= 40)
+        ttt, tpw = basis.get("trades_to_target"), basis.get("trades_per_week")
+        wk = (ttt / tpw) if (ttt and tpw) else None
+        add("SOFT", f"weeks to +${target:,} at this expectancy and frequency <= {g['soft_max_weeks_to_target']}",
+            "never (expectancy <= 0)" if ttt is None else f"{ttt:.0f} trades = {wk:.0f} weeks",
+            False if ttt is None else (None if wk is None else wk <= g["soft_max_weeks_to_target"]))
         ws = basis.get("worst_streak_loss_usd")
         add("SOFT", f"worst losing streak < ${g['soft_worst_streak_times_risk_max_usd']:,.0f}",
             f"${fmt(-ws if ws is not None else None)} over {basis.get('max_consec_losses')} losses",

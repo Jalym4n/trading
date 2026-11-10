@@ -90,28 +90,35 @@
       "time"
     ]
   },
-  "lucid_25k": {
-    "account": "LucidFlex 25K",
-    "profit_target": 1250,
-    "max_loss_limit": 1000,
-    "drawdown_model": "EOD trailing, locks at start + $100 after initial trail",
-    "per_trade_risk_cap": 50,
-    "daily_loss_stop": 100,
-    "max_contracts_until_half_target": 1,
+  "account": {
+    "account": "LucidFlex 100K",
+    "profit_target": 6000,
+    "max_loss_limit": 3000,
+    "drawdown_model": "EOD trailing (lock rule: VERIFY on Lucid help center)",
+    "per_trade_risk_cap": 150,
+    "max_contracts": 6,
     "consistency_rule_pct": 50,
-    "note": "MLL is $1,000 total room. At $50/trade risk, ~10 losses = ruin; a real edge should never approach that. VERIFY MLL on Lucid help center before funding."
+    "note": "Switched from LucidFlex 25K on 2026-11-10 at 4 trials. Consistency rule, daily loss stop and payout terms carried over from the 25K notes are UNVERIFIED for the 100K: check Lucid's help center before funding. Backtests stay at 1 contract; P&L and drawdown scale linearly with contracts.",
+    "previous": {
+      "account": "LucidFlex 25K",
+      "profit_target": 1250,
+      "max_loss_limit": 1000,
+      "gate2_max_drawdown_usd": 600,
+      "per_trade_risk_cap": 50
+    }
   },
   "viability_gates": {
-    "source": "lucid-25k-viability-target.md",
+    "source": "lucid-100k-viability-target.md",
     "gate1_min_trades_per_week": 3.0,
-    "gate2_max_drawdown_usd": 600.0,
-    "gate2_hard_wall_usd": 1000.0,
+    "gate2_max_drawdown_usd": 1800.0,
+    "gate2_hard_wall_usd": 3000.0,
     "gate3_net_expectancy_positive_in_majority_of_windows": true,
     "gate4_holdout_net_positive": true,
     "soft_largest_day_max_pct_of_target": 40.0,
-    "soft_worst_streak_times_risk_max_usd": 600.0,
+    "soft_worst_streak_times_risk_max_usd": 1800.0,
     "soft_doubled_slippage_must_stay_positive": true,
-    "weeks_per_trading_day": 0.2
+    "weeks_per_trading_day": 0.2,
+    "soft_max_weeks_to_target": 13
   },
   "validation": {
     "training": {

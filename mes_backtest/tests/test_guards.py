@@ -122,5 +122,18 @@ def test_negative_training_expectancy_fails_gate3():
           "max_consec_losses": 7}
     rows = G.scorecard(CFG, tr, None, training_doubled={"expectancy_net_usd": -8.27})
     assert [r["verdict"] for r in rows if r["gate"] == "GATE 3"] == ["FAIL"]
-    assert [r["verdict"] for r in rows if "trades to" in r["rule"]] == ["FAIL"]
-    assert "fails GATE 1, GATE 2, GATE 3" in G.format_scorecard(rows)
+    assert [r["verdict"] for r in rows if "weeks to" in r["rule"]] == ["FAIL"]
+    assert [r["verdict"] for r in rows if r["gate"] == "GATE 2"] == ["PASS"]          # $883 < $1,800 on the 100K
+    assert "fails GATE 1, GATE 3" in G.format_scorecard(rows)
+
+
+def test_rescore_reads_only(tmp_path):
+    log = tmp_path / "t.jsonl"
+    G.append_trial({"strategy": "s", "params": {}, "instruments": ["MES"], "phase": "training", "trial_key": "k",
+                    "results": {"training": {"MES": {"n_trades": 481, "trades_per_week": 4.76, "max_dd_usd": 2263.09,
+                                                     "expectancy_net_usd": -2.7, "best_day_usd": 335.0,
+                                                     "worst_streak_loss_usd": -448.0, "max_consec_losses": 10}}}}, log)
+    before = log.read_text()
+    r = G.rescore(CFG, log)
+    assert log.read_text() == before and G.trial_count(log)["distinct"] == 1
+    assert [x["verdict"] for x in r[0]["scorecard"] if x["gate"] == "GATE 2"] == ["FAIL"]   # $2,263 > $1,800

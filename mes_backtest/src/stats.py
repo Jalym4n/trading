@@ -64,7 +64,7 @@ def r_histogram(r: pd.Series, edges: list[float] = R_EDGES) -> dict[str, int]:
 
 
 def summarize(trade_log: pd.DataFrame, cfg: dict, weeks: float | None = None) -> dict:
-    target = float(cfg["lucid_25k"]["profit_target"])
+    target = float(cfg["account"]["profit_target"])
     t = ordered(trade_log)
     n = len(t)
     out = {"n_trades": n, "weeks": weeks, "trades_per_week": (n / weeks) if (weeks and n is not None) else None}

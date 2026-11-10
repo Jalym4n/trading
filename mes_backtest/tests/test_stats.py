@@ -24,8 +24,8 @@ def test_summary_numbers():
     assert s["max_dd_usd"] == 75.0                      # 50 -> -25: peak 50, trough -25
     assert (s["max_consec_losses"], s["worst_streak_loss_usd"]) == (3, -75.0)
     assert (s["worst_day_usd"], s["best_day_usd"]) == (-25.0, 100.0)
-    assert s["best_day_pct_of_target"] == 100 * 100 / 1250
-    assert s["trades_to_target"] == pytest.approx(1250 / (50 / 6))
+    assert s["best_day_pct_of_target"] == 100 * 100 / 6000
+    assert s["trades_to_target"] == pytest.approx(6000 / (50 / 6))
 
 
 def test_empty_and_no_wins():

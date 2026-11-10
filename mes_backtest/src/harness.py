@@ -88,7 +88,7 @@ def cmd_run(a, cfg) -> None:
             _print_stats("test trades by volatility regime (terciles of lagged 20-day realized vol)", wf["by_regime"])
     rows = G.scorecard(cfg, W.pooled(training["stats"]) if training else None, wf,
                        training_doubled=W.pooled(training["stats_doubled_slippage"]) if training else None)
-    print("\nSCORECARD (lucid-25k-viability-target.md)")
+    print(f"\nSCORECARD ({cfg['viability_gates']['source']}, {cfg['account']['account']})")
     print(G.format_scorecard(rows))
     eff = dict(cfg["params"], **params)
     rec = G.append_trial({"strategy": strat.name, "params": eff, "overrides": params, "instruments": instruments,
@@ -148,6 +148,17 @@ def cmd_compare(a, cfg) -> None:
     print("\n" + G.reminder())
 
 
+def cmd_rescore(a, cfg) -> None:
+    """Re-score every logged trial against the current gates. Appends nothing."""
+    G.verify_chain()
+    print(f"re-scored against {cfg['account']['account']}: Gate 2 < ${cfg['viability_gates']['gate2_max_drawdown_usd']:,.0f}"
+          f", target ${cfg['account']['profit_target']:,} (read-only; trial count unchanged)")
+    for r in G.rescore(cfg):
+        print(f"\ntrial {r['trial_line']}  {r['strategy']}  {r['overrides'] or ''}  [{r['phase']}]")
+        print(G.format_scorecard(r["scorecard"]))
+    print("\n" + G.reminder(ceiling=cfg["validation"]["trial_budget"]["ceiling"]))
+
+
 def cmd_holdout(a, cfg) -> None:
     strat = R.get(a.strategy)
     out = G.run_final_holdout(cfg, strat, confirm=a.confirm, reason=a.reason or "",
@@ -170,6 +181,7 @@ def main(argv=None) -> None:
     r.add_argument("--note", default="")
     sub.add_parser("list")
     sub.add_parser("log")
+    sub.add_parser("rescore")
     c = sub.add_parser("compare")
     c.add_argument("strategies", nargs="+")
     c.add_argument("--phase", default="training", choices=["training", "walkforward"])
@@ -181,7 +193,7 @@ def main(argv=None) -> None:
     h.add_argument("--set", action="append", metavar="PARAM=VALUE")
     a = ap.parse_args(argv)
     cfg = load_config()
-    {"run": cmd_run, "list": cmd_list, "log": cmd_log, "compare": cmd_compare, "holdout": cmd_holdout}[a.cmd](a, cfg)
+    {"run": cmd_run, "rescore": cmd_rescore, "list": cmd_list, "log": cmd_log, "compare": cmd_compare, "holdout": cmd_holdout}[a.cmd](a, cfg)
 
 
 if __name__ == "__main__":
