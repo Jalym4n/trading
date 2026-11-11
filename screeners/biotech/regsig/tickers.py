@@ -77,6 +77,25 @@ def main():
                 s = trading_symbol(http, cik, a)
                 if s and s not in [x for x, _ in syms]:
                     syms.append((s, f"dei:TradingSymbol in {a} ({d})"))
+        # mid-history check: if the symbols found leave > 180 days of the reporting life without
+        # bars (Vyne: earliest filing under a predecessor, current symbol new), read up to three
+        # evenly spaced filings from the middle
+        def uncovered(symbols):
+            a, b = max(r["first_periodic"], "2018-05-01"), min(r["last_periodic"], END_OF_DATA)
+            spans = sorted((max(summ[x]["min"], a), min(summ[x]["max"], b)) for x, _ in symbols if x in summ)
+            gap, cur = 0, dt.date.fromisoformat(a)
+            for lo_, hi_ in spans:
+                if lo_ > hi_:
+                    continue
+                gap += max(0, (dt.date.fromisoformat(lo_) - cur).days)
+                cur = max(cur, dt.date.fromisoformat(hi_))
+            return gap + max(0, (dt.date.fromisoformat(b) - cur).days)
+        if len(per) >= 3 and uncovered(syms) > 180:
+            for k in (1, 2, 3):
+                d, a = per[len(per) * k // 4]
+                s = trading_symbol(http, cik, a)
+                if s and s not in [x for x, _ in syms]:
+                    syms.append((s, f"dei:TradingSymbol in {a} ({d}) [mid-history]"))
         alive = r["last_periodic"] >= "2025-07-01"
         lo = (dt.date.fromisoformat(r["first_periodic"]) - dt.timedelta(days=730)).isoformat()
         hi = END_OF_DATA if alive else (dt.date.fromisoformat(r["last_periodic"]) + dt.timedelta(days=270)).isoformat()
@@ -88,7 +107,7 @@ def main():
         for s, src in syms:
             b = summ.get(s) or summ.get(s.replace("-", ".")) or {}
             in_window = bool(b) and b["min"] <= hi and b["max"] >= lo
-            rows.append({**base, "symbol": s, "source": src, "bars_first": b.get("min"), "bars_last": b.get("max"),
+            rows.append({**base, "symbol": s, "source": src, "uncovered_days": uncovered(syms), "bars_first": b.get("min"), "bars_last": b.get("max"),
                          "n_bars": b.get("size"), "has_bars_in_window": in_window})
         if n % 100 == 0:
             print(f"{n}/{len(listed)} entities", flush=True)
