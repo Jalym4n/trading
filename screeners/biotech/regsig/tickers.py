@@ -2,8 +2,8 @@
 
 For every matched CIK:
   - SEC submissions JSON: SIC code, current tickers (empty for most dead companies);
-  - if no current ticker: dei:TradingSymbol from the XBRL of its latest and earliest
-    10-K / 10-Q in the window (two filings, so a ticker change shows up);
+  - dei:TradingSymbol from the XBRL of its earliest 10-K / 10-Q in the window (and its
+    latest, when SEC lists no current ticker), so a ticker change or a dead company shows up;
   - the symbol must have bars in the price file inside the company's reporting life
     (first periodic filing - 730 days .. last periodic filing + 270 days, or the end of the
     data for companies still filing in 2025H2). Bars outside that window are not this
@@ -68,9 +68,12 @@ def main():
         per = [(d, a) for d, f, a in zip(rec.get("filingDate", []), rec.get("form", []), rec.get("accessionNumber", []))
                if f in PERIODIC and "2018-01-01" <= d <= END_OF_DATA]
         syms = [(t.upper(), "submissions.tickers") for t in sub.get("tickers") or []]
-        if not syms and per:
+        if per:
+            # the earliest filing too, for EVERY company: submissions.tickers holds only the current
+            # symbol, so a renamed company (Vyne: VYNE -> YARW) or a post-bankruptcy symbol
+            # (Sorrento: SRNE -> SRNEQ) would otherwise lose the ticker its events traded under
             per.sort()
-            for d, a in {per[-1], per[0]}:
+            for d, a in ([per[0]] if syms else sorted({per[-1], per[0]})):
                 s = trading_symbol(http, cik, a)
                 if s and s not in [x for x, _ in syms]:
                     syms.append((s, f"dei:TradingSymbol in {a} ({d})"))
