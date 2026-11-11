@@ -1,0 +1,983 @@
+sponsor,n_trials,cik,sec_names,first_periodic,last_periodic,forms,n_cik_matches
+Novartis Pharmaceuticals,958,1114448,NOVARTIS AG,2019-01-30,2025-01-31,20-F,1
+GlaxoSmithKline,845,1131399,GLAXOSMITHKLINE PLC | GSK PLC | GSK plc,2019-03-15,2025-03-03,20-F,1
+Pfizer,649,78003,PFIZER INC,2018-05-10,2025-11-04,10-K|10-Q,1
+AstraZeneca,604,901832,ASTRAZENECA PLC,2019-03-05,2025-02-18,20-F,1
+Eli Lilly and Company,595,59478,ELI LILLY & Co | LILLY ELI & CO,2018-04-27,2025-10-30,10-K|10-Q,1
+AbbVie,432,1551152,AbbVie Inc.,2018-05-04,2025-11-04,10-K|10-Q,1
+Amgen,393,318154,AMGEN INC,2018-04-25,2025-11-05,10-K|10-Q,1
+Bristol-Myers Squibb,362,14272,BRISTOL MYERS SQUIBB CO,2018-04-26,2025-10-30,10-K|10-Q,1
+Organon and Co,332,1821825,Organon & Co.,2021-06-21,2025-11-10,10-K|10-Q,1
+Gilead Sciences,321,882095,"GILEAD SCIENCES INC | GILEAD SCIENCES, INC.",2018-05-09,2025-11-07,10-K|10-Q,1
+Sanofi,289,1121404,Sanofi,2019-03-08,2025-02-13,20-F,1
+Novo Nordisk A/S,267,353278,NOVO NORDISK A S,2019-02-04,2025-02-05,20-F,1
+Takeda,244,1395064,TAKEDA PHARMACEUTICAL CO LTD,2019-06-27,2025-06-25,20-F,1
+Shire,220,936402,Shire plc,2018-04-26,2018-11-01,10-Q,1
+Regeneron Pharmaceuticals,201,872589,"REGENERON PHARMACEUTICALS INC | REGENERON PHARMACEUTICALS, INC.",2018-05-03,2025-10-28,10-K|10-Q,1
+Incyte Corporation,169,879169,INCYTE CORP,2018-05-01,2025-10-28,10-K|10-Q,1
+Biogen,120,875045,BIOGEN INC.,2018-04-24,2025-10-30,10-K|10-Q,1
+Jazz Pharmaceuticals,120,1232524,Jazz Pharmaceuticals plc,2018-04-24,2025-11-05,10-K|10-Q,1
+"Alexion Pharmaceuticals, Inc.",116,899866,"ALEXION PHARMACEUTICALS INC | ALEXION PHARMACEUTICALS, INC.",2018-04-26,2021-04-30,10-K|10-Q,1
+LEO Pharma,113,1725134,"Digital Media Solutions, Inc. | Leo Holdings Corp.",2018-05-11,2024-05-15,10-K|10-Q,1
+Vertex Pharmaceuticals Incorporated,106,875320,VERTEX PHARMACEUTICALS INC / MA,2018-04-27,2025-11-04,10-K|10-Q,2
+Vertex Pharmaceuticals Incorporated,106,1806837,"Vertex, Inc.",2020-09-11,2025-11-03,10-K|10-Q,2
+Allergan,105,1578845,Allergan plc,2018-05-03,2020-05-07,10-K|10-Q,1
+BeiGene,74,1651308,"BeOne Medicines Ltd. | BeiGene, Ltd.",2018-05-09,2025-11-06,10-K|10-Q,1
+"Ionis Pharmaceuticals, Inc.",70,874015,IONIS PHARMACEUTICALS INC,2018-05-07,2025-10-29,10-K|10-Q,1
+Colgate Palmolive,64,21665,COLGATE PALMOLIVE CO,2018-04-27,2025-10-31,10-K|10-Q,1
+"ImmunityBio, Inc.",59,1326110,"ImmunityBio, Inc. | NantKwest, Inc.",2018-05-07,2025-11-05,10-K|10-Q,1
+BioNTech SE,58,1776985,BioNTech SE,2020-03-31,2025-03-10,20-F,1
+argenx,58,1697862,ARGENX SE,2019-03-26,2025-03-20,20-F,1
+Bausch & Lomb Incorporated,53,1860742,Bausch & Lomb Corp,2022-06-08,2025-10-29,10-K|10-Q,1
+Neurocrine Biosciences,49,914475,NEUROCRINE BIOSCIENCES INC,2018-04-30,2025-10-28,10-K|10-Q,1
+PTC Therapeutics,47,857005,PTC INC.,2018-05-02,2025-11-21,10-K|10-Q,2
+PTC Therapeutics,47,1070081,"PTC THERAPEUTICS, INC.",2018-05-09,2025-11-04,10-K|10-Q,2
+Vanda Pharmaceuticals,47,1347178,Vanda Pharmaceuticals Inc.,2018-05-02,2025-10-30,10-K|10-Q,1
+BioMarin Pharmaceutical,47,1048477,BIOMARIN PHARMACEUTICAL INC,2018-04-27,2025-10-28,10-K|10-Q,1
+Novartis,46,1114448,NOVARTIS AG,2019-01-30,2025-01-31,20-F,1
+Alnylam Pharmaceuticals,42,1178670,"ALNYLAM PHARMACEUTICALS, INC.",2018-05-04,2025-10-30,10-K|10-Q,1
+"AbbVie (prior sponsor, Abbott)",40,1551152,AbbVie Inc.,2018-05-04,2025-11-04,10-K|10-Q,1
+Ultragenyx Pharmaceutical Inc,38,1515673,Ultragenyx Pharmaceutical Inc.,2018-05-08,2025-11-05,10-K|10-Q,1
+"Supernus Pharmaceuticals, Inc.",37,1356576,"SUPERNUS PHARMACEUTICALS INC | SUPERNUS PHARMACEUTICALS, INC.",2018-05-10,2025-11-06,10-K|10-Q,1
+Boston Scientific Corporation,37,885725,BOSTON SCIENTIFIC CORP,2018-05-01,2025-11-03,10-K|10-Q,1
+"Pacira Pharmaceuticals, Inc",37,1396814,"Pacira BioSciences, Inc. | Pacira Pharmaceuticals, Inc.",2018-05-03,2025-11-06,10-K|10-Q,1
+Arrowhead Pharmaceuticals,36,879407,"ARROWHEAD PHARMACEUTICALS, INC.",2018-05-08,2025-11-25,10-K|10-Q,1
+"Aldeyra Therapeutics, Inc.",35,1341235,"Aldeyra Therapeutics, Inc.",2018-05-15,2025-11-05,10-K|10-Q,1
+"Spectrum Pharmaceuticals, Inc",34,831547,SPECTRUM PHARMACEUTICALS INC,2018-05-01,2023-05-11,10-K|10-Q,1
+"Alkermes, Inc.",33,1520262,Alkermes plc.,2018-04-26,2025-10-28,10-K|10-Q,1
+United Therapeutics,32,1082554,UNITED THERAPEUTICS Corp,2018-05-02,2025-10-29,10-K|10-Q,1
+ACADIA Pharmaceuticals Inc.,32,1070494,ACADIA PHARMACEUTICALS INC,2018-05-04,2025-11-06,10-K|10-Q,1
+"Axsome Therapeutics, Inc.",32,1579428,"Axsome Therapeutics, Inc.",2018-05-08,2025-11-03,10-K|10-Q,1
+Karyopharm Therapeutics Inc,31,1503802,Karyopharm Therapeutics Inc.,2018-05-10,2025-11-03,10-K|10-Q,1
+Cytokinetics,31,1061983,CYTOKINETICS INC,2018-05-10,2025-11-05,10-K|10-Q,1
+"Mirum Pharmaceuticals, Inc.",30,1759425,"Mirum Pharmaceuticals, Inc.",2019-08-28,2025-11-04,10-K|10-Q,1
+BeOne Medicines,30,1651308,"BeOne Medicines Ltd. | BeiGene, Ltd.",2018-05-09,2025-11-06,10-K|10-Q,1
+"Sinovac Biotech Co., Ltd",29,1084201,SINOVAC BIOTECH LTD,2018-05-11,2024-04-29,20-F,1
+"Intra-Cellular Therapies, Inc.",29,1567514,"Intra-Cellular Therapies, Inc.",2018-05-03,2025-03-20,10-K|10-Q,1
+Insmed Incorporated,28,1104506,INSMED Inc,2018-05-02,2025-10-30,10-K|10-Q,1
+"Aclaris Therapeutics, Inc.",28,1557746,"Aclaris Therapeutics, Inc.",2018-05-08,2025-11-06,10-K|10-Q,1
+Novavax,28,1000694,NOVAVAX INC,2018-05-09,2025-11-06,10-K|10-Q,1
+"Sorrento Therapeutics, Inc.",27,850261,"Sorrento Therapeutics, Inc.",2018-04-26,2023-08-14,10-K|10-Q,1
+Lexicon Pharmaceuticals,26,1062822,"LEXICON PHARMACEUTICALS, INC.",2018-05-03,2025-11-06,10-K|10-Q,1
+Seagen Inc.,26,1060736,SEATTLE GENETICS INC /WA | Seagen Inc.,2018-04-13,2023-11-01,10-K|10-Q,1
+Nektar Therapeutics,26,906709,NEKTAR THERAPEUTICS,2018-05-10,2025-11-07,10-K|10-Q,1
+Amicus Therapeutics,24,1178879,"AMICUS THERAPEUTICS INC | AMICUS THERAPEUTICS, INC.",2018-05-09,2025-11-04,10-K|10-Q,1
+"Sarepta Therapeutics, Inc.",24,873303,"Sarepta Therapeutics, Inc.",2018-05-03,2025-11-06,10-K|10-Q,1
+"TG Therapeutics, Inc.",24,1001316,"TG THERAPEUTICS, INC.",2018-05-10,2025-11-05,10-K|10-Q,1
+Grifols Therapeutics LLC,24,1438569,Grifols SA,2018-04-06,2025-04-11,20-F,1
+Glaukos Corporation,24,1192448,GLAUKOS Corp,2018-05-09,2025-10-31,10-K|10-Q,1
+NewLink Genetics Corporation,24,1126234,"LUMOS PHARMA, INC. | NEWLINK GENETICS CORP",2018-04-09,2024-11-07,10-K|10-Q,1
+Akebia Therapeutics,23,1517022,"Akebia Therapeutics, Inc.",2018-05-09,2025-11-10,10-K|10-Q,1
+Hutchmed,23,1648257,HUTCHMED (China) Ltd | Hutchison China MediTech Ltd,2019-03-11,2025-03-19,20-F,1
+"Arcutis Biotherapeutics, Inc.",22,1787306,"Arcutis Biotherapeutics, Inc.",2020-03-19,2025-10-28,10-K|10-Q,1
+Marinus Pharmaceuticals,21,1267813,"MARINUS PHARMACEUTICALS INC | MARINUS PHARMACEUTICALS, INC.",2018-05-02,2024-11-12,10-K|10-Q,1
+Exelixis,21,939767,"EXELIXIS, INC.",2018-05-02,2025-11-04,10-K|10-Q,1
+Vyne Therapeutics Inc.,21,1566044,Menlo Therapeutics Inc. | VYNE Therapeutics Inc.,2018-05-09,2025-11-06,10-K|10-Q,1
+"Apellis Pharmaceuticals, Inc.",21,1492422,"Apellis Pharmaceuticals, Inc.",2018-04-30,2025-10-30,10-K|10-Q,1
+"Rhythm Pharmaceuticals, Inc.",21,1649904,"RHYTHM PHARMACEUTICALS, INC.",2018-05-14,2025-11-04,10-K|10-Q,1
+Mylan Inc.,21,1623613,Mylan N.V.,2018-04-30,2020-11-06,10-K|10-Q,1
+CTI BioPharma,20,891293,CTI BIOPHARMA CORP,2018-05-03,2023-05-15,10-K|10-Q,1
+Mallinckrodt,20,1567892,Mallinckrodt plc,2018-05-08,2025-11-10,10-K|10-Q,1
+"OPKO Health, Inc.",20,944809,"OPKO HEALTH, INC. | Opko Health, Inc.",2018-05-08,2025-10-29,10-K|10-Q,1
+"Tonix Pharmaceuticals, Inc.",19,1430306,Tonix Pharmaceuticals Holding Corp.,2018-05-11,2025-11-10,10-K|10-Q,1
+BioCryst Pharmaceuticals,19,882796,BIOCRYST PHARMACEUTICALS INC,2018-05-09,2025-11-04,10-K|10-Q,1
+"Esperion Therapeutics, Inc.",19,1434868,"Esperion Therapeutics, Inc.",2018-05-02,2025-11-06,10-K|10-Q,1
+Can-Fite BioPharma,18,1536196,Can-Fite BioPharma Ltd.,2019-03-29,2025-04-14,20-F,1
+GE Healthcare,17,1932393,GE HealthCare Technologies Inc.,2023-02-15,2025-10-29,10-K|10-Q,1
+"Opus Genetics, Inc",17,1228627,"Ocuphire Pharma, Inc. | Opus Genetics, Inc. | REXAHN PHARMACEUTICALS, INC.",2018-05-04,2025-11-12,10-K|10-Q,1
+"Impax Laboratories, LLC",17,1003642,"IMPAX LABORATORIES INC | Impax Laboratories, LLC",2018-04-13,2018-05-10,10-K|10-Q,1
+Ardelyx,17,1437402,"ARDELYX, INC.",2018-05-08,2025-10-30,10-K|10-Q,1
+"Ocular Therapeutix, Inc.",17,1393434,"OCULAR THERAPEUTIX, INC",2018-05-08,2025-11-04,10-K|10-Q,1
+MacroGenics,17,1125345,MACROGENICS INC,2018-05-07,2025-11-12,10-K|10-Q,1
+Corcept Therapeutics,17,1088856,CORCEPT THERAPEUTICS INC,2018-05-09,2025-11-04,10-K|10-Q,1
+"Agios Pharmaceuticals, Inc.",17,1439222,"AGIOS PHARMACEUTICALS INC | AGIOS PHARMACEUTICALS, INC.",2018-05-04,2025-10-30,10-K|10-Q,1
+"Puma Biotechnology, Inc.",17,1401667,"PUMA BIOTECHNOLOGY, INC.",2018-05-10,2025-11-06,10-K|10-Q,1
+Abivax S.A.,16,1956827,Abivax S.A.,2024-04-05,2025-03-24,20-F,1
+"EyePoint Pharmaceuticals, Inc.",16,1314102,"EyePoint Pharmaceuticals, Inc.",2018-05-10,2025-11-06,10-K|10-KT|10-Q,1
+"CytoDyn, Inc.",16,1175680,CytoDyn Inc.,2018-04-09,2025-10-10,10-K|10-Q,1
+"Revance Therapeutics, Inc.",16,1479290,"Revance Therapeutics, Inc.",2018-05-09,2024-11-07,10-K|10-Q,1
+"AMAG Pharmaceuticals, Inc.",16,792977,"AMAG PHARMACEUTICALS INC. | AMAG PHARMACEUTICALS, INC.",2018-05-04,2020-11-06,10-K|10-Q,1
+Mirati Therapeutics Inc.,15,1576263,"Mirati Therapeutics, Inc.",2018-05-07,2023-11-06,10-K|10-Q,1
+RedHill Biopharma Limited,15,1553846,RedHill Biopharma Ltd.,2019-02-26,2025-04-10,20-F,1
+Celldex Therapeutics,15,744218,"Celldex Therapeutics, Inc.",2018-05-10,2025-11-10,10-K|10-Q,1
+Praxis Precision Medicines,15,1689548,"Praxis Precision Medicines, Inc.",2020-11-23,2025-11-05,10-K|10-Q,1
+Stealth BioTherapeutics Inc.,15,1696396,Stealth BioTherapeutics Corp,2019-04-04,2022-04-07,20-F,1
+Biohaven Therapeutics Ltd.,15,1689813,Biohaven Pharmaceutical Holding Co Ltd.,2018-05-15,2022-08-05,10-K|10-Q,2
+Biohaven Therapeutics Ltd.,15,1935979,Biohaven Ltd.,2022-11-09,2025-11-10,10-K|10-Q,2
+"Mesoblast, Inc.",15,1345099,MESOBLAST LTD,2018-08-31,2025-08-29,20-F,1
+"Cara Therapeutics, Inc.",15,1346830,"Cara Therapeutics, Inc. | Tvardi Therapeutics, Inc.",2018-05-09,2025-11-13,10-K|10-Q,1
+"Otonomy, Inc.",15,1493566,"OTONOMY, INC.",2018-05-09,2022-11-10,10-K|10-Q,1
+Aerie Pharmaceuticals,15,1337553,AERIE PHARMACEUTICALS INC,2018-05-09,2022-11-04,10-K|10-Q,1
+Syndax Pharmaceuticals,15,1395937,Syndax Pharmaceuticals Inc,2018-05-09,2025-11-03,10-K|10-Q,1
+"Mesoblast, Ltd.",14,1345099,MESOBLAST LTD,2018-08-31,2025-08-29,20-F,1
+Taiwan Liposome Company,14,1722890,"Taiwan Liposome Company, Ltd.",2019-04-30,2021-03-30,20-F,1
+Cumberland Pharmaceuticals,14,1087294,CUMBERLAND PHARMACEUTICALS INC,2018-05-09,2025-11-07,10-K|10-Q,1
+"AVEO Pharmaceuticals, Inc.",14,1325879,"AVEO PHARMACEUTICALS INC | AVEO PHARMACEUTICALS, INC.",2018-05-08,2022-11-07,10-K|10-Q,1
+Inovio Pharmaceuticals,14,1055726,"INOVIO PHARMACEUTICALS, INC.",2018-05-09,2025-11-10,10-K|10-Q,1
+Emergent BioSolutions,14,1367644,Emergent BioSolutions Inc.,2018-05-04,2025-10-30,10-K|10-Q,1
+Agenus Inc.,14,1098972,AGENUS INC,2018-05-10,2025-11-10,10-K|10-Q,1
+Theravance Biopharma,14,1583107,"Theravance Biopharma, Inc.",2018-05-09,2025-11-12,10-K|10-Q,1
+NewAmsterdam Pharma,14,1936258,NewAmsterdam Pharma Co N.V.,2022-11-28,2025-11-05,10-K|10-Q|20-F,1
+Intercept Pharmaceuticals,14,1270073,"INTERCEPT PHARMACEUTICALS, INC.",2018-05-10,2023-11-06,10-K|10-Q,1
+Xenon Pharmaceuticals Inc.,14,1582313,Xenon Pharmaceuticals Inc.,2018-05-08,2025-11-03,10-K|10-Q,1
+"Tesaro, Inc.",14,1491576,"TESARO, Inc.",2018-05-03,2018-11-02,10-Q,1
+Portola Pharmaceuticals,14,1269021,PORTOLA PHARMACEUTICALS INC,2018-05-10,2020-05-11,10-K|10-Q,1
+Sangamo Therapeutics,14,1001233,"SANGAMO THERAPEUTICS, INC",2018-04-24,2025-11-06,10-K|10-Q,1
+"Revolution Medicines, Inc.",14,1628171,"Revolution Medicines, Inc.",2020-03-30,2025-11-05,10-K|10-Q,1
+GTx,14,1375793,"GTX CORP | Metalert, Inc.",2018-04-03,2025-12-11,10-K|10-Q,1
+Dynavax Technologies Corporation,14,1029142,DYNAVAX TECHNOLOGIES CORP,2018-05-09,2025-11-05,10-K|10-Q,1
+"Vir Biotechnology, Inc.",13,1706431,"Vir Biotechnology, Inc.",2019-11-19,2025-11-05,10-K|10-Q,1
+Crinetics Pharmaceuticals Inc.,13,1658247,"Crinetics Pharmaceuticals, Inc.",2018-08-30,2025-11-06,10-K|10-Q,1
+Pharming Technologies B.V.,13,1828316,Pharming Group N.V.,2021-04-07,2025-04-03,20-F,1
+"Zai Lab (Shanghai) Co., Ltd.",13,1704292,Zai Lab Ltd,2018-04-30,2025-11-06,10-K|10-Q|20-F,1
+"Stemline Therapeutics, Inc.",13,1264587,STEMLINE THERAPEUTICS INC,2018-05-10,2020-05-11,10-K|10-Q,1
+Alaunos Therapeutics,13,1107421,"Alaunos Therapeutics, Inc. | ZIOPHARM ONCOLOGY INC",2018-04-30,2025-11-14,10-K|10-Q,1
+"Iovance Biotherapeutics, Inc.",13,1425205,"IOVANCE BIOTHERAPEUTICS, INC.",2018-05-10,2025-11-06,10-K|10-Q,1
+"Verastem, Inc.",13,1526119,"Verastem, Inc.",2018-05-03,2025-11-04,10-K|10-Q,1
+Acorda Therapeutics,12,1008848,"ACORDA THERAPEUTICS INC | Acorda Therapeutics, Inc.",2018-05-09,2024-05-14,10-K|10-Q,1
+Ascendis Pharma A/S,12,1612042,Ascendis Pharma A/S,2019-04-03,2025-02-12,20-F,1
+"Calithera Biosciences, Inc",12,1496671,"Calithera Biosciences, Inc.",2018-05-10,2023-03-31,10-K|10-Q,1
+Durect,12,1082038,DURECT CORP,2018-05-09,2025-08-13,10-K|10-Q,1
+Tracon Pharmaceuticals Inc.,12,1394319,"Tracon Pharmaceuticals, Inc.",2018-05-10,2024-08-13,10-K|10-Q,1
+Arena Pharmaceuticals,12,894871,"Arena Group Holdings, Inc. | theMaven, Inc.",2018-05-15,2025-11-13,10-K|10-Q,2
+Arena Pharmaceuticals,12,1080709,ARENA PHARMACEUTICALS INC,2018-05-09,2022-03-10,10-K|10-Q,2
+"Sol-Gel Technologies, Ltd.",12,1684693,Sol-Gel Technologies Ltd.,2019-03-21,2025-04-29,20-F,1
+"Novan, Inc.",12,1467154,"Novan, Inc.",2018-05-15,2023-05-15,10-K|10-Q,1
+"G1 Therapeutics, Inc.",12,1560241,"G1 Therapeutics, Inc.",2018-05-03,2024-08-08,10-K|10-Q,1
+"Enanta Pharmaceuticals, Inc",12,1177648,ENANTA PHARMACEUTICALS INC,2018-05-10,2025-11-19,10-K|10-Q,1
+Omeros Corporation,12,1285819,OMEROS CORP,2018-05-10,2025-11-13,10-K|10-Q,1
+Veru Inc.,12,863894,VERU INC.,2018-05-11,2025-12-17,10-K|10-Q,1
+BioXcel Therapeutics Inc,11,1720893,"BioXcel Therapeutics, Inc.",2018-05-14,2025-11-12,10-K|10-Q,1
+"Oramed, Ltd.",11,1176309,ORAMED PHARMACEUTICALS INC.,2018-04-09,2025-11-13,10-K|10-Q,1
+Xeris Pharmaceuticals,11,1346302,XERIS PHARMACEUTICALS INC,2018-08-14,2021-08-05,10-K|10-Q,1
+Vericel Corporation,11,887359,Vericel Corp,2018-05-08,2025-11-06,10-K|10-Q,1
+DBV Technologies,11,1613780,DBV Technologies S.A.,2019-04-01,2025-10-28,10-K|10-Q|20-F,1
+Aurinia Pharmaceuticals Inc.,11,1600620,Aurinia Pharmaceuticals Inc.,2019-03-19,2025-11-04,10-K|10-Q|40-F,1
+Nuvation Bio Inc.,11,1811063,Nuvation Bio Inc. | Panacea Acquisition Corp,2020-08-14,2025-11-03,10-K|10-Q,1
+Trevi Therapeutics,11,1563880,"Trevi Therapeutics, Inc.",2019-06-14,2025-11-13,10-K|10-Q,1
+"Clearside Biomedical, Inc.",11,1539029,"Clearside Biomedical, Inc.",2018-05-10,2025-11-14,10-K|10-Q,1
+Allakos Inc.,11,1564824,Allakos Inc.,2018-08-29,2025-05-07,10-K|10-Q,1
+Ampio Pharmaceuticals. Inc.,11,1411906,"Ampio Pharmaceuticals, Inc.",2018-05-10,2024-03-27,10-K|10-Q,1
+"Sound Pharmaceuticals, Incorporated",11,1783407,LIZHI INC. | Sound Group Inc.,2020-04-20,2025-04-29,20-F,1
+"Kadmon Corporation, LLC",11,1557142,"Kadmon Holdings, Inc.",2018-05-08,2021-11-04,10-K|10-Q,1
+"Aimmune Therapeutics, Inc.",11,1631650,"Aimmune Therapeutics, Inc.",2018-05-08,2020-07-30,10-K|10-Q,1
+"Deciphera Pharmaceuticals, LLC",11,1654151,"Deciphera Pharmaceuticals, Inc.",2018-05-08,2024-05-10,10-K|10-Q,1
+"NGM Biopharmaceuticals, Inc",11,1426332,NGM BIOPHARMACEUTICALS INC,2019-05-16,2024-04-04,10-K|10-Q,1
+Kodiak Sciences Inc,11,1468748,Kodiak Sciences Inc.,2018-11-16,2025-11-13,10-K|10-Q,1
+"Scynexis, Inc.",11,1178253,SCYNEXIS INC,2018-05-08,2025-11-05,10-K|10-Q,1
+"Clovis Oncology, Inc.",10,1466301,"Clovis Oncology, Inc.",2018-05-09,2022-11-09,10-K|10-Q,1
+Anavex Life Sciences Corp.,10,1314052,ANAVEX LIFE SCIENCES CORP.,2018-05-10,2025-11-25,10-K|10-Q,1
+Mereo BioPharma,10,1719714,Mereo BioPharma Group plc | Mereo Biopharma Group plc,2019-04-29,2025-11-10,10-K|10-Q|20-F,1
+Verrica Pharmaceuticals Inc.,10,1660334,Verrica Pharmaceuticals Inc.,2018-08-07,2025-11-14,10-K|10-Q,1
+NeuroBo Pharmaceuticals Inc.,10,1638287,"Gemphire Therapeutics Inc. | MetaVia Inc. | NeuroBo Pharmaceuticals, Inc.",2018-05-08,2025-11-06,10-K|10-Q,1
+Immunocore Ltd,10,1671927,Immunocore Holdings plc,2021-03-25,2025-11-06,10-K|10-Q|20-F,1
+"Armata Pharmaceuticals, Inc.",10,921114,"AmpliPhi Biosciences Corp | Armata Pharmaceuticals, Inc.",2018-05-15,2025-11-12,10-K|10-Q,1
+"Biohaven Pharmaceuticals, Inc.",10,1689813,Biohaven Pharmaceutical Holding Co Ltd.,2018-05-15,2022-08-05,10-K|10-Q,2
+"Biohaven Pharmaceuticals, Inc.",10,1935979,Biohaven Ltd.,2022-11-09,2025-11-10,10-K|10-Q,2
+Endocyte,10,1235007,ENDOCYTE INC,2018-05-09,2018-11-08,10-Q,1
+"Lisata Therapeutics, Inc.",10,320017,"CALADRIUS BIOSCIENCES, INC. | LISATA THERAPEUTICS, INC.",2018-04-02,2025-11-06,10-K|10-Q,1
+MediWound Ltd,10,1593984,MediWound Ltd.,2019-03-25,2025-03-19,20-F,1
+Amylyx Pharmaceuticals Inc.,10,1658551,"Amylyx Pharmaceuticals, Inc.",2022-03-31,2025-11-06,10-K|10-Q,1
+Polaris Group,10,931015,POLARIS INDUSTRIES INC/MN | Polaris Inc.,2018-04-26,2025-10-28,10-K|10-Q,1
+Telix Pharmaceuticals (Innovations) Pty Limited,10,2007191,Telix Pharmaceuticals Ltd,2025-02-24,2025-02-24,20-F,1
+Alto Neuroscience,10,1999480,"Alto Neuroscience, Inc.",2024-03-21,2025-11-12,10-K|10-Q,1
+Tiziana Life Sciences LTD,10,1723069,Tiziana Life Sciences Ltd | Tiziana Life Sciences plc,2019-04-04,2025-05-08,20-F,1
+Rigel Pharmaceuticals,10,1034842,RIGEL PHARMACEUTICALS INC,2018-05-01,2025-11-04,10-K|10-Q,1
+"RVL Pharmaceuticals, Inc.",10,1739426,Osmotica Pharmaceuticals plc | RVL Pharmaceuticals plc,2018-11-08,2023-08-14,10-K|10-Q,1
+"Krystal Biotech, Inc.",10,1711279,"Krystal Biotech, Inc.",2018-05-07,2025-11-03,10-K|10-Q,1
+Oculis,10,1953530,Oculis Holding AG,2023-03-08,2025-03-11,20-F,1
+"Avidity Biosciences, Inc.",10,1599901,"Avidity Biosciences, Inc.",2020-08-11,2025-11-10,10-K|10-Q,1
+MediciNova,9,1226616,MEDICINOVA INC,2018-04-25,2025-11-12,10-K|10-Q,1
+Paratek Pharmaceuticals Inc,9,1178711,"Paratek Pharmaceuticals, Inc.",2018-05-09,2023-08-03,10-K|10-Q,1
+"Protagonist Therapeutics, Inc.",9,1377121,"Protagonist Therapeutics, Inc",2018-05-09,2025-11-06,10-K|10-Q,1
+Talaris Therapeutics Inc.,9,1827506,"Talaris Therapeutics, Inc. | Tourmaline Bio, Inc.",2021-06-14,2025-08-13,10-K|10-Q,1
+Entero Therapeutics,9,1604191,"AzurRx BioPharma, Inc. | Entero Therapeutics, Inc. | First Wave BioPharma, Inc.",2018-04-27,2025-11-19,10-K|10-Q,1
+"Travere Therapeutics, Inc.",9,1438533,"Retrophin, Inc. | Travere Therapeutics, Inc.",2018-05-01,2025-10-30,10-K|10-Q,1
+"Epizyme, Inc.",9,1571498,"Epizyme, Inc.",2018-05-08,2022-08-09,10-K|10-Q,1
+"Viking Therapeutics, Inc.",9,1607678,"Viking Therapeutics, Inc.",2018-05-09,2025-10-23,10-K|10-Q,2
+"Viking Therapeutics, Inc.",9,1745201,Viking Holdings Ltd,2025-03-11,2025-03-11,20-F,2
+Capricor Inc.,9,1133869,"CAPRICOR THERAPEUTICS, INC.",2018-05-14,2025-11-10,10-K|10-Q,1
+Assembly Biosciences,9,1426800,"ASSEMBLY BIOSCIENCES, INC.",2018-05-07,2025-11-10,10-K|10-Q,1
+"Arcturus Therapeutics, Inc.",9,1566049,Arcturus Therapeutics Ltd.,2018-05-14,2019-05-13,10-K|10-Q|20-F,2
+"Arcturus Therapeutics, Inc.",9,1768224,Arcturus Therapeutics Holdings Inc.,2019-08-14,2025-11-12,10-K|10-Q,2
+"VistaGen Therapeutics, Inc.",9,1411685,"VistaGen Therapeutics, Inc. | Vistagen Therapeutics, Inc.",2018-06-26,2025-11-13,10-K|10-Q,1
+"Cyclacel Pharmaceuticals, Inc.",9,1130166,"Bio Green Med Solution, Inc. | Cyclacel Pharmaceuticals, Inc.",2018-05-14,2025-11-26,10-K|10-Q,1
+"Loxo Oncology, Inc.",9,1581720,"Loxo Oncology, Inc.",2018-05-08,2018-11-08,10-Q,1
+"Dermira, Inc.",9,1557883,"Dermira, Inc.",2018-05-03,2019-11-05,10-K|10-Q,1
+Ocugen,9,1372299,"HISTOGENICS CORP | Ocugen, Inc.",2018-05-10,2025-11-05,10-K|10-Q,1
+The Medicines Company,9,1113481,MEDICINES CO /DE,2018-05-09,2019-10-30,10-K|10-Q,1
+"Traws Pharma, Inc.",9,1130598,"Onconova Therapeutics, Inc. | Traws Pharma, Inc.",2018-04-25,2025-11-13,10-K|10-Q,1
+"Meridian Bioscience, Inc.",9,794172,MERIDIAN BIOSCIENCE INC,2018-05-10,2023-02-09,10-K|10-Q,2
+"Meridian Bioscience, Inc.",9,1750735,Meridian Corp,2018-11-14,2025-11-07,10-K|10-Q,2
+4D Molecular Therapeutics,9,1650648,"4D Molecular Therapeutics Inc. | 4D Molecular Therapeutics, Inc.",2021-03-25,2025-11-10,10-K|10-Q,1
+Summit Therapeutics,9,1599298,Summit Therapeutics Inc. | Summit Therapeutics plc,2018-04-13,2025-10-20,10-K|10-Q|20-F,1
+"aTyr Pharma, Inc.",9,1339970,aTYR PHARMA INC,2018-05-15,2025-11-06,10-K|10-Q,1
+MoonLake Immunotherapeutics AG,9,1821586,Helix Acquisition Corp | MoonLake Immunotherapeutics,2020-12-03,2025-11-05,10-K|10-Q,1
+"Tarsus Pharmaceuticals, Inc.",9,1819790,"Tarsus Pharmaceuticals, Inc.",2020-11-25,2025-11-04,10-K|10-Q,1
+Genfit,9,1757064,Genfit S.A.,2020-05-27,2025-04-29,20-F,1
+Ophthotech Corporation,9,1410939,"IVERIC bio, Inc. | Ophthotech Corp.",2018-05-09,2023-05-10,10-K|10-Q,1
+"Rockwell Medical Technologies, Inc.",9,1041024,"ROCKWELL MEDICAL, INC.",2018-05-10,2025-11-12,10-K|10-Q,1
+"Palvella Therapeutics, Inc.",9,1583648,"PALVELLA THERAPEUTICS, INC. | PIERIS PHARMACEUTICALS, INC.",2018-04-26,2025-11-12,10-K|10-Q,1
+"AnaptysBio, Inc.",8,1370053,"ANAPTYSBIO INC | ANAPTYSBIO, INC",2018-05-08,2025-11-04,10-K|10-Q,1
+Titan Pharmaceuticals,8,910267,TITAN PHARMACEUTICALS INC,2018-04-02,2025-08-14,10-K|10-Q,1
+Soligenix,8,812796,"SOLIGENIX, INC.",2018-05-11,2025-11-07,10-K|10-Q,1
+InflaRx GmbH,8,1708688,InflaRx N.V.,2019-03-28,2025-03-20,20-F,1
+Celularity Incorporated,8,1752828,Celularity Inc | GX Acquisition Corp.,2019-08-07,2025-11-14,10-K|10-Q,1
+"Altimmune, Inc.",8,1326190,"Altimmune, Inc.",2018-04-02,2025-11-06,10-K|10-Q,1
+"Madrigal Pharmaceuticals, Inc.",8,1157601,"MADRIGAL PHARMACEUTICALS, INC.",2018-05-08,2025-11-04,10-K|10-Q,1
+Imunon,8,749647,"Celsion CORP | Imunon, Inc.",2018-05-11,2025-11-13,10-K|10-Q,1
+Akcea Therapeutics,8,1662524,"AKCEA THERAPEUTICS, INC.",2018-05-07,2020-08-05,10-K|10-Q,1
+Vaxart,8,72444,"Vaxart, Inc.",2018-05-15,2025-11-13,10-K|10-Q,1
+"Replimune, Inc.",8,1737953,"Replimune Group, Inc.",2018-08-30,2025-11-06,10-K|10-Q,1
+"Vaxcyte, Inc.",8,1649094,"Vaxcyte, Inc.",2020-08-12,2025-11-04,10-K|10-Q,1
+"Oyster Point Pharma, Inc.",8,1720725,"Oyster Point Pharma, Inc.",2019-12-03,2022-11-10,10-K|10-Q,1
+AKARI Therapeutics,8,1541157,Akari Therapeutics Plc,2018-07-18,2025-11-13,10-K|10-Q|20-F,1
+Blueprint Medicines Corporation,8,1597264,Blueprint Medicines Corp,2018-05-02,2025-05-01,10-K|10-Q,1
+Achieve Life Sciences,8,949858,"ACHIEVE LIFE SCIENCES, INC.",2018-05-09,2025-11-06,10-K|10-Q,1
+Urovant Sciences GmbH,8,1740547,Urovant Sciences Ltd.,2018-11-13,2021-02-12,10-K|10-Q,1
+UroGen Pharma Ltd.,8,1668243,UroGen Pharma Ltd.,2019-02-28,2025-11-06,10-K|10-Q,1
+Savara Inc.,8,1160308,Savara Inc,2018-05-09,2025-11-12,10-K|10-Q,1
+Aprea Therapeutics,8,1781983,"Aprea Therapeutics, Inc.",2019-11-14,2025-11-12,10-K|10-Q,1
+Processa Pharmaceuticals,8,1533743,"Processa Pharmaceuticals, Inc.",2018-04-16,2025-11-06,10-K|10-Q,1
+"Annexon, Inc.",8,1528115,"Annexon, Inc.",2020-09-08,2025-11-10,10-K|10-Q,1
+"Ironwood Pharmaceuticals, Inc.",8,1446847,IRONWOOD PHARMACEUTICALS INC,2018-04-27,2025-11-10,10-K|10-Q,1
+Cerus Corporation,8,1020214,CERUS CORP,2018-05-08,2025-11-06,10-K|10-Q,1
+Corbus Pharmaceuticals Inc.,8,1595097,"Corbus Pharmaceuticals Holdings, Inc.",2018-05-10,2025-11-12,10-K|10-Q,1
+"Kura Oncology, Inc.",8,1422143,"Kura Oncology, Inc.",2018-05-08,2025-11-04,10-K|10-Q,1
+"Kamada, Ltd.",8,1567529,KAMADA LTD,2019-02-27,2025-03-05,20-F,1
+"Humacyte, Inc.",8,1818382,"Alpha Healthcare Acquisition Corp. | Humacyte, Inc.",2020-11-13,2025-11-12,10-K|10-Q,1
+Y-mAbs Therapeutics,8,1722964,"Y-mAbs Therapeutics, Inc.",2018-11-13,2025-08-08,10-K|10-Q,1
+"Forma Therapeutics, Inc.",8,1538927,"Forma Therapeutics Holdings, Inc.",2020-08-13,2022-08-05,10-K|10-Q,1
+"Arcus Biosciences, Inc.",8,1724521,"Arcus Biosciences, Inc.",2018-05-09,2025-10-28,10-K|10-Q,1
+Concert Pharmaceuticals,8,1367920,"CONCERT PHARMACEUTICALS, INC.",2018-05-03,2022-11-07,10-K|10-Q,1
+Effector Therapeutics,8,1828522,"Locust Walk Acquisition Corp. | eFFECTOR Therapeutics, Inc.",2021-03-29,2024-05-09,10-K|10-Q,1
+"Galera Therapeutics, Inc.",8,1563577,"Galera Therapeutics, Inc.",2019-12-10,2025-11-13,10-K|10-Q,1
+Halozyme Therapeutics,8,1159036,"HALOZYME THERAPEUTICS INC | HALOZYME THERAPEUTICS, INC.",2018-05-10,2025-11-03,10-K|10-Q,1
+"Xencor, Inc.",8,1326732,Xencor Inc,2018-05-07,2025-11-05,10-K|10-Q,1
+COMPASS Pathways,8,1816590,COMPASS Pathways plc,2021-03-09,2025-11-04,10-K|10-Q|20-F,1
+"Kala Pharmaceuticals, Inc.",8,1479419,"KALA BIO, Inc. | Kala Pharmaceuticals, Inc.",2018-04-02,2025-11-19,10-K|10-Q,1
+Lipocine Inc.,8,1535955,Lipocine Inc.,2018-05-07,2025-11-06,10-K|10-Q,1
+"Aadi Bioscience, Inc.",8,1422142,"Aadi Bioscience, Inc. | Aerpio Pharmaceuticals, Inc. | Whitehawk Therapeutics, Inc.",2018-04-06,2025-11-06,10-K|10-Q,1
+"Atea Pharmaceuticals, Inc.",8,1593899,"Atea Pharmaceuticals, Inc.",2020-12-10,2025-11-12,10-K|10-Q,1
+"Relmada Therapeutics, Inc.",8,1553643,"RELMADA THERAPEUTICS, INC.",2018-05-14,2025-11-13,10-K|10-KT|10-Q,1
+Myovant Sciences GmbH,8,1679082,Myovant Sciences Ltd.,2018-06-07,2023-01-26,10-K|10-Q,1
+Journey Medical Corporation,8,1867066,Journey Medical Corp,2021-12-16,2025-11-12,10-K|10-Q,1
+Aptinyx,7,1674365,Aptinyx Inc.,2018-08-14,2023-05-18,10-K|10-Q,1
+Aquestive Therapeutics,7,1398733,"Aquestive Therapeutics, Inc.",2018-09-04,2025-11-05,10-K|10-Q,1
+Quince Therapeutics S.p.A.,7,1662774,"Cortexyme, Inc. | Quince Therapeutics, Inc.",2019-06-12,2025-11-12,10-K|10-Q,1
+"Abeona Therapeutics, Inc",7,318306,ABEONA THERAPEUTICS INC.,2018-05-10,2025-11-12,10-K|10-Q,1
+Alumis Inc,7,1847367,ALUMIS INC.,2024-08-13,2025-11-13,10-K|10-Q,1
+Cognition Therapeutics,7,1455365,COGNITION THERAPEUTICS INC,2021-11-17,2025-11-06,10-K|10-Q,1
+"Tango Therapeutics, Inc.",7,1819133,"BCTG Acquisition Corp. | Tango Therapeutics, Inc.",2020-11-13,2025-11-04,10-K|10-Q,1
+"Idera Pharmaceuticals, Inc.",7,861838,"Aceragen, Inc. | IDERA PHARMACEUTICALS, INC.",2018-05-09,2023-06-29,10-K|10-Q,1
+Autolus Limited,7,1730463,Autolus Therapeutics plc,2018-11-23,2025-11-12,10-K|10-Q|20-F,1
+X4 Pharmaceuticals,7,1501697,"Arsanis, Inc. | X4 Pharmaceuticals, Inc",2018-05-10,2025-11-05,10-K|10-Q,1
+"Tenax Therapeutics, Inc.",7,34956,"TENAX THERAPEUTICS, INC.",2018-04-02,2025-11-12,10-K|10-Q,1
+NovoCure GmbH,7,1645113,NovoCure Ltd | Novocure Ltd,2018-04-26,2025-10-30,10-K|10-Q,1
+Cartesian Therapeutics,7,1094814,"Cartesian, Inc.",2018-04-27,2018-05-21,10-K|10-Q,2
+Cartesian Therapeutics,7,1453687,"Cartesian Therapeutics, Inc. | SELECTA BIOSCIENCES INC",2018-05-09,2025-11-06,10-K|10-Q,2
+Longeveron Inc.,7,1721484,Longeveron Inc.,2021-03-30,2025-11-04,10-K|10-Q,1
+Trevena Inc.,7,1429560,TREVENA INC,2018-05-03,2024-11-07,10-K|10-Q,1
+Abbott,7,1800,ABBOTT LABORATORIES,2018-05-02,2025-10-29,10-K|10-Q,1
+Barinthus Biotherapeutics,7,1828185,Barinthus Biotherapeutics plc. | Vaccitech plc,2021-06-14,2025-11-07,10-K|10-Q,1
+AlloVir,7,1754068,"Allovir, Inc. | Kalaris Therapeutics, Inc.",2020-09-02,2025-11-12,10-K|10-Q,1
+"Candel Therapeutics, Inc.",7,1841387,"Candel Therapeutics, Inc.",2021-09-08,2025-11-13,10-K|10-Q,1
+Indivior Inc.,7,1625297,INDIVIOR PLC,2024-03-06,2025-10-30,10-K|10-Q|20-F,1
+"Palatin Technologies, Inc",7,911216,PALATIN TECHNOLOGIES INC,2018-04-13,2025-11-14,10-K|10-Q,1
+"CalciMedica, Inc.",7,1534133,"CalciMedica, Inc. | GRAYBUG VISION, INC.",2020-11-12,2025-11-12,10-K|10-Q,1
+Innate Pharma,7,1598599,Innate Pharma SA,2020-04-24,2025-04-30,20-F,1
+"Catalyst Pharmaceuticals, Inc.",7,1124105,"CATALYST BIOSCIENCES, INC. | GYRE THERAPEUTICS, INC.",2018-05-03,2025-11-07,10-K|10-Q,2
+"Catalyst Pharmaceuticals, Inc.",7,1369568,"CATALYST PHARMACEUTICALS, INC.",2018-05-09,2025-11-05,10-K|10-Q,2
+"Zogenix, Inc.",7,1375151,"ZOGENIX, INC.",2018-05-09,2022-03-07,10-K|10-Q,1
+ACELYRIN Inc.,7,1962918,"ACELYRIN, Inc.",2023-06-15,2025-05-14,10-K|10-Q,1
+Spruce Biosciences,7,1683553,"SPRUCE BIOSCIENCES, INC.",2020-11-18,2025-11-10,10-K|10-Q,1
+Lumos Pharma,7,1126234,"LUMOS PHARMA, INC. | NEWLINK GENETICS CORP",2018-04-09,2024-11-07,10-K|10-Q,1
+Recursion Pharmaceuticals Inc.,7,1601830,"RECURSION PHARMACEUTICALS, INC.",2021-05-12,2025-11-05,10-K|10-Q,1
+Navidea Biopharmaceuticals,7,810509,"NAVIDEA BIOPHARMACEUTICALS, INC.",2018-05-09,2023-11-14,10-K|10-Q,1
+Eiger BioPharmaceuticals,7,1305253,"Eiger BioPharmaceuticals, Inc.",2018-05-11,2024-04-29,10-K|10-Q,1
+"Momenta Pharmaceuticals, Inc.",7,1235010,MOMENTA PHARMACEUTICALS INC,2018-05-09,2020-08-10,10-K|10-Q,1
+"Spark Therapeutics, Inc.",7,1609351,"Spark Therapeutics, Inc.",2018-05-08,2019-11-07,10-K|10-Q,1
+"Coherus Oncology, Inc.",7,1512762,"Coherus BioSciences, Inc. | Coherus Oncology, Inc.",2018-05-10,2025-11-06,10-K|10-Q,1
+Mylan Pharmaceuticals Inc,7,1623613,Mylan N.V.,2018-04-30,2020-11-06,10-K|10-Q,1
+Gamida Cell ltd,7,1600847,Gamida Cell Ltd.,2019-02-25,2024-05-23,10-K|10-Q|20-F,1
+"KalVista Pharmaceuticals, Ltd.",7,1348911,"KalVista Pharmaceuticals, Inc.",2018-07-30,2025-11-10,10-K|10-Q,1
+Annovis Bio Inc.,7,1477845,"Annovis Bio, Inc.",2020-03-25,2025-11-12,10-K|10-Q,1
+Delcath Systems Inc.,7,872912,"DELCATH SYSTEMS, INC.",2018-04-30,2025-11-04,10-K|10-Q,1
+"CG Oncology, Inc.",7,1991792,"CG Oncology, Inc.",2024-03-26,2025-11-14,10-K|10-Q,1
+"Clarus Therapeutics, Inc.",7,913277,Clarus Corp,2018-05-07,2025-11-06,10-K|10-Q,2
+"Clarus Therapeutics, Inc.",7,1817944,"Blue Water Acquisition Corp. | Clarus Therapeutics Holdings, Inc.",2021-05-06,2022-08-19,10-K|10-Q,2
+Axovant Sciences Ltd.,7,1636050,Axovant Gene Therapies Ltd. | Axovant Sciences Ltd. | Sio Gene Therapies Inc.,2018-06-11,2023-02-14,10-K|10-Q,1
+REGENXBIO Inc.,7,1590877,REGENXBIO Inc.,2018-05-08,2025-11-06,10-K|10-Q,1
+"Advaxis, Inc.",7,1100397,"Advaxis, Inc. | Ayala Pharmaceuticals, Inc.",2018-06-07,2024-04-26,10-K|10-Q,1
+Canopy Growth Corporation,7,1737927,Canopy Growth Corp,2018-06-28,2025-11-07,10-K|10-Q|40-F,1
+Sellas Life Sciences Group,6,1390478,"SELLAS Life Sciences Group, Inc.",2018-04-13,2025-11-12,10-K|10-Q,1
+"Adverum Biotechnologies, Inc.",6,1501756,"Adverum Biotechnologies, Inc.",2018-05-09,2025-11-12,10-K|10-Q,1
+"Invivyd, Inc.",6,1832038,"Adagio Therapeutics, Inc. | Invivyd, Inc.",2021-09-20,2025-11-06,10-K|10-Q,1
+Intellia Therapeutics,6,1652130,"Intellia Therapeutics, Inc.",2018-05-01,2025-11-06,10-K|10-Q,1
+Allena Pharmaceuticals,6,1624658,"Allena Pharmaceuticals, Inc.",2018-05-08,2022-08-15,10-K|10-Q,1
+"Liquidia Technologies, Inc.",6,1330436,Liquidia Technologies Inc,2018-08-14,2020-11-06,10-K|10-Q,2
+"Liquidia Technologies, Inc.",6,1819576,Liquidia Corp,2021-03-25,2025-11-03,10-K|10-Q,2
+Allarity Therapeutics,6,1860657,"Allarity Therapeutics, Inc.",2021-11-23,2025-11-14,10-K|10-Q,1
+Albireo,6,1322505,"ALBIREO PHARMA, INC.",2018-05-10,2022-11-08,10-K|10-Q,1
+"Zenas BioPharma (USA), LLC",6,1953926,"Zenas BioPharma, Inc.",2024-11-12,2025-11-12,10-K|10-Q,1
+"Aardvark Therapeutics, Inc.",6,1774857,"Aardvark Therapeutics, Inc.",2025-03-31,2025-11-13,10-K|10-Q,1
+Clementia Pharmaceuticals Inc.,6,1647320,Clementia Pharmaceuticals Inc.,2019-03-29,2019-03-29,20-F,1
+CytomX Therapeutics,6,1501989,"CytomX Therapeutics, Inc.",2018-05-09,2025-11-06,10-K|10-Q,1
+"Akero Therapeutics, Inc",6,1744659,"Akero Therapeutics, Inc.",2019-08-12,2025-11-07,10-K|10-Q,1
+"Theriva Biologics, Inc.",6,894158,"Synthetic Biologics, Inc. | Theriva Biologics, Inc.",2018-05-08,2025-11-12,10-K|10-Q,1
+Prokidney,6,1850270,PROKIDNEY CORP. | Social Capital Suvretta Holdings Corp. III,2021-08-16,2025-11-10,10-K|10-Q,1
+Eyenovia Inc.,6,1682639,"EYENOVIA, INC. | HYPERION DEFI, INC.",2018-04-02,2025-11-14,10-K|10-Q,1
+"Neumora Therapeutics, Inc.",6,1885522,"Neumora Therapeutics, Inc.",2023-11-01,2025-11-06,10-K|10-Q,1
+ADC Therapeutics S.A.,6,1771910,ADC Therapeutics SA,2021-03-18,2025-11-10,10-K|10-Q|20-F,1
+"Tetraphase Pharmaceuticals, Inc",6,1373707,TETRAPHASE PHARMACEUTICALS INC,2018-05-03,2020-05-07,10-K|10-Q,1
+"Xynomic Pharmaceuticals, Inc.",6,1697805,"Bison Capital Acquisition Corp. | XYNOMIC PHARMACEUTICALS HOLDINGS, INC.",2018-05-14,2020-06-01,10-K|10-Q,1
+"Kezar Life Sciences, Inc.",6,1645666,"Kezar Life Sciences, Inc.",2018-08-09,2025-11-12,10-K|10-Q,1
+Immunic AG,6,1280776,"IMMUNIC, INC. | VITAL THERAPIES INC",2018-05-08,2025-11-13,10-K|10-Q,1
+Denali Therapeutics Inc.,6,1714899,Denali Therapeutics Inc.,2018-05-11,2025-11-06,10-K|10-Q,1
+vTv Therapeutics,6,1641489,vTv Therapeutics Inc.,2018-05-15,2025-11-06,10-K|10-Q,1
+OncoSec Medical Incorporated,6,1444307,ONCOSEC MEDICAL Inc,2018-06-13,2023-03-14,10-K|10-Q,1
+"Applied Therapeutics, Inc.",6,1607549,Applied BioSciences Corp.,2018-06-28,2020-02-18,10-K|10-Q,2
+"Applied Therapeutics, Inc.",6,1697532,"Applied Therapeutics Inc. | Applied Therapeutics, Inc.",2019-06-21,2025-11-13,10-K|10-Q,2
+IDEAYA Biosciences,6,1676725,"IDEAYA Biosciences, Inc.",2019-08-12,2025-11-04,10-K|10-Q,1
+Inozyme Pharma,6,1693011,"Inozyme Pharma, Inc.",2020-09-03,2025-05-14,10-K|10-Q,1
+Alector Inc.,6,1653087,"Alector, Inc.",2019-03-26,2025-11-06,10-K|10-Q,1
+Mineralys Therapeutics Inc.,6,1933414,"Mineralys Therapeutics, Inc.",2023-03-15,2025-11-10,10-K|10-Q,1
+"Evommune, Inc.",6,2044725,"Evommune, Inc.",2025-12-11,2025-12-11,10-Q,1
+Cardiff Oncology,6,1213037,"Cardiff Oncology, Inc. | Trovagene, Inc.",2018-05-08,2025-11-06,10-K|10-Q,1
+"BioAge Labs, Inc.",6,1709941,"BioAge Labs, Inc.",2024-11-07,2025-11-06,10-K|10-Q,1
+Evofem Inc.,6,1618835,"Evofem Biosciences, Inc.",2018-05-14,2025-11-13,10-K|10-Q,1
+Kyverna Therapeutics,6,1994702,"Kyverna Therapeutics, Inc.",2024-03-26,2025-11-12,10-K|10-Q,1
+"Scholar Rock, Inc.",6,1727196,Scholar Rock Holding Corp,2018-08-08,2025-11-14,10-K|10-Q,1
+ERYtech Pharma,6,1624422,Erytech Pharma S.A.,2018-04-24,2023-03-28,20-F,1
+"Disc Medicine, Inc",6,1816736,"Disc Medicine, Inc. | FS Development Corp. | Gemini Therapeutics, Inc. /DE",2020-11-12,2025-11-06,10-K|10-Q,1
+Vor Biopharma,6,1817229,Vor Biopharma Inc.,2021-03-25,2025-11-13,10-K|10-Q,1
+Cabaletta Bio,6,1759138,"Cabaletta Bio, Inc.",2019-12-05,2025-11-10,10-K|10-Q,1
+Rain Oncology Inc,6,1724979,Rain Oncology Inc. | Rain Therapeutics Inc.,2021-05-25,2023-11-09,10-K|10-Q,1
+Fulcrum Therapeutics,6,1680581,"Fulcrum Therapeutics, Inc.",2019-08-26,2025-10-29,10-K|10-Q,1
+"XBiotech, Inc.",6,1626878,XBiotech Inc.,2018-05-08,2025-11-12,10-K|10-Q,1
+BioVie Inc.,6,1580149,BIOVIE INC.,2018-05-14,2025-11-10,10-K|10-Q,1
+BioDelivery Sciences International,6,1103021,BIODELIVERY SCIENCES INTERNATIONAL INC,2018-05-10,2022-03-09,10-K|10-Q,1
+"Phathom Pharmaceuticals, Inc.",6,1783183,"Phathom Pharmaceuticals, Inc.",2019-11-25,2025-10-30,10-K|10-Q,1
+"Vera Therapeutics, Inc.",6,1831828,"Vera Therapeutics, Inc.",2021-06-24,2025-11-05,10-K|10-Q,1
+Eledon Pharmaceuticals,6,1404281,"Eledon Pharmaceuticals, Inc. | Novus Therapeutics, Inc.",2018-04-02,2025-11-14,10-K|10-Q,1
+"Cassava Sciences, Inc.",6,1069530,CASSAVA SCIENCES INC | PAIN THERAPEUTICS INC,2018-05-09,2025-11-12,10-K|10-Q,1
+BeyondSpring Pharmaceuticals Inc.,6,1677940,BeyondSpring Inc.,2018-04-03,2025-11-12,10-K|10-Q|20-F,1
+"Pliant Therapeutics, Inc.",6,1746473,"PLIANT THERAPEUTICS, INC.",2020-08-11,2025-11-06,10-K|10-Q,1
+ObsEva SA,6,1685316,ObsEva SA,2019-03-05,2023-03-31,10-K|20-F,1
+MapLight Therapeutics,6,1770069,"MapLight Therapeutics, Inc.",2025-12-04,2025-12-04,10-Q,1
+"Edgewise Therapeutics, Inc.",6,1710072,"Edgewise Therapeutics, Inc.",2021-05-13,2025-11-06,10-K|10-Q,1
+Prothena Biosciences Ltd.,6,1559053,PROTHENA CORP PUBLIC LTD CO | Prothena Corp plc,2018-05-09,2025-11-06,10-K|10-Q,1
+"Mural Oncology, Inc",6,1971543,Mural Oncology plc,2023-12-14,2025-11-06,10-K|10-Q,1
+Bellicum Pharmaceuticals,6,1358403,"BELLICUM PHARMACEUTICALS, INC",2018-05-08,2023-11-14,10-K|10-Q,1
+GlycoMimetics Incorporated,6,1253689,"CRESCENT BIOPHARMA, INC. | GLYCOMIMETICS INC",2018-05-03,2025-11-06,10-K|10-Q,1
+"Amphastar Pharmaceuticals, Inc.",5,1297184,"Amphastar Pharmaceuticals, Inc.",2018-05-10,2025-11-06,10-K|10-Q,1
+"Cogent Biosciences, Inc.",5,1622229,"Cogent Biosciences, Inc. | Unum Therapeutics Inc.",2018-05-14,2025-11-07,10-K|10-Q,1
+Versartis Inc.,5,1513818,"Aravive, Inc. | Versartis, Inc.",2018-04-11,2023-11-09,10-K|10-Q,1
+Restorbio Inc.,5,1720580,"Adicet Bio, Inc. | resTORbio, Inc.",2018-04-27,2025-11-05,10-K|10-Q,1
+"Radius Health, Inc.",5,1428522,"Radius Health, Inc.",2018-05-10,2022-08-09,10-K|10-Q,1
+Brainstorm-Cell Therapeutics,5,1137883,BRAINSTORM CELL THERAPEUTICS INC.,2018-05-14,2025-11-14,10-K|10-Q,1
+PolyPid Ltd.,5,1611842,PolyPid Ltd.,2021-03-05,2025-02-26,20-F,1
+"Inmune Bio, Inc.",5,1711754,"Inmune Bio, Inc.",2019-03-29,2025-10-30,10-K|10-Q,1
+Bionomics Limited,5,1191070,BIONOMICS LIMITED/FI | Neuphoria Therapeutics Inc.,2022-10-14,2025-11-14,10-K|10-Q|20-F,1
+"BioLineRx, Ltd.",5,1498403,BioLineRx Ltd.,2019-03-28,2025-03-31,20-F,1
+"BioAtla, Inc.",5,1826892,"BioAtla, Inc.",2021-03-24,2025-11-13,10-K|10-Q,1
+"MiMedx Group, Inc.",5,1376339,"MIMEDX GROUP, INC.",2020-03-17,2025-10-29,10-K|10-Q,1
+"Outlook Therapeutics, Inc.",5,1649989,"Oncobiologics, Inc. | Outlook Therapeutics, Inc.",2018-05-15,2025-12-19,10-K|10-Q,1
+Rocket Pharmaceuticals Inc.,5,1281895,"ROCKET PHARMACEUTICALS, INC.",2018-05-11,2025-11-06,10-K|10-Q,1
+Arbutus Biopharma Corporation,5,1447028,Arbutus Biopharma Corp,2018-05-04,2025-11-13,10-K|10-Q,1
+Intersect ENT,5,1271214,"Intersect ENT, Inc.",2018-05-03,2022-05-04,10-K|10-Q,1
+"Moleculin Biotech, Inc.",5,1659617,"Moleculin Biotech, Inc.",2018-05-14,2025-11-13,10-K|10-Q,1
+"Adamas Pharmaceuticals, Inc.",5,1328143,Adamas Pharmaceuticals Inc,2018-05-03,2021-11-10,10-K|10-Q,1
+Mannkind Corporation,5,899460,MANNKIND CORP,2018-05-09,2025-11-05,10-K|10-Q,1
+"Oruka Therapeutics, Inc.",5,907654,"ARCA biopharma, Inc. | Oruka Therapeutics, Inc.",2018-05-08,2025-11-12,10-K|10-Q,1
+"Aridis Pharmaceuticals, Inc.",5,1614067,"Aridis Pharmaceuticals, Inc.",2018-09-26,2023-11-06,10-K|10-Q,1
+VectivBio AG,5,1836379,VectivBio Holding AG,2022-04-07,2023-04-19,20-F,1
+"scPharmaceuticals, Inc.",5,1604950,scPharmaceuticals Inc.,2018-05-07,2025-08-07,10-K|10-Q,1
+Rapport Therapeutics Inc.,5,2012593,"Rapport Therapeutics, Inc.",2024-08-08,2025-11-06,10-K|10-Q,1
+"Evolus, Inc.",5,1570562,"Evolus, Inc.",2018-05-10,2025-11-05,10-K|10-Q,1
+"Atossa Therapeutics, Inc.",5,1488039,"ATOSSA GENETICS INC | ATOSSA THERAPEUTICS, INC.",2018-05-14,2025-11-12,10-K|10-Q,1
+"NextCure, Inc.",5,1661059,"NextCure, Inc.",2019-06-10,2025-11-05,10-K|10-Q,1
+Sagimet Biosciences Inc.,5,1400118,Sagimet Biosciences Inc.,2023-08-21,2025-11-13,10-K|10-Q,1
+"Aduro Biotech, Inc.",5,1435049,"ADURO BIOTECH, INC. | CHINOOK THERAPEUTICS, INC.",2018-05-02,2023-08-07,10-K|10-Q,1
+Sage Therapeutics,5,1597553,"Sage Therapeutics, Inc.",2018-05-03,2025-07-30,10-K|10-Q,1
+Geron Corporation,5,886744,GERON CORP,2018-05-10,2025-11-07,10-K|10-Q,1
+"Eloxx Pharmaceuticals, Inc.",5,1035354,"Eloxx Pharmaceuticals, Inc.",2018-04-19,2023-11-13,10-K|10-Q,1
+Actinium Pharmaceuticals,5,1388320,"Actinium Pharmaceuticals, Inc.",2018-05-10,2025-11-14,10-K|10-Q,1
+ProQR Therapeutics,5,1612940,ProQR Therapeutics N.V.,2019-03-28,2025-03-13,20-F,1
+Baudax Bio,5,1780097,"Baudax Bio, Inc.",2019-11-14,2023-11-20,10-K|10-Q,1
+"Kiora Pharmaceuticals, Inc.",5,1372514,EYEGATE PHARMACEUTICALS INC | KIORA PHARMACEUTICALS INC,2018-05-11,2025-11-07,10-K|10-Q,1
+"Oncternal Therapeutics, Inc",5,1260990,"GTX INC /DE/ | Oncternal Therapeutics, Inc.",2018-05-15,2024-11-06,10-K|10-Q,1
+Organogenesis,5,1661181,Avista Healthcare Public Acquisition Corp. | Organogenesis Holdings Inc.,2018-05-10,2025-11-06,10-K|10-Q,1
+CureVac,5,1809122,CureVac N.V.,2021-04-27,2025-04-11,20-F,1
+"Soleno Therapeutics, Inc.",5,1484565,SOLENO THERAPEUTICS INC,2018-04-02,2025-11-04,10-K|10-Q,1
+NovoCure Ltd.,5,1645113,NovoCure Ltd | Novocure Ltd,2018-04-26,2025-10-30,10-K|10-Q,1
+Pluristem Ltd.,5,1158780,PLURISTEM THERAPEUTICS INC | Pluri Inc.,2018-05-09,2025-11-12,10-K|10-Q,1
+"Evergreen Therapeutics, Inc.",5,1900402,Evergreen Corp,2022-04-14,2025-04-15,10-K|10-Q,1
+Longboard Pharmaceuticals,5,1832168,"Longboard Pharmaceuticals, Inc.",2021-05-10,2024-11-07,10-K|10-Q,1
+Warner Chilcott,5,1620602,Warner Chilcott Ltd,2018-05-03,2020-05-07,10-K|10-Q,1
+Inventiva Pharma,5,1756594,Inventiva S.A.,2021-03-15,2025-04-15,20-F,1
+Orchard Therapeutics,5,1748907,Orchard Therapeutics plc,2019-03-22,2023-11-13,10-K|10-Q|20-F,1
+Liminal BioSciences Ltd.,5,1351172,Liminal BioSciences Inc.,2020-03-20,2023-03-15,20-F,1
+"Jounce Therapeutics, Inc.",5,1640455,"Jounce Therapeutics, Inc.",2018-05-09,2023-04-28,10-K|10-Q,1
+Vaccinex Inc.,5,1205922,"VACCINEX, INC.",2018-08-14,2025-04-15,10-K|10-Q,1
+VBI Vaccines Inc.,5,764195,VBI Vaccines Inc/BC,2018-05-01,2024-05-15,10-K|10-Q,1
+Procter and Gamble,5,80424,PROCTER & GAMBLE Co,2018-04-19,2025-10-24,10-K|10-Q,1
+Adaptimmune,5,1621227,Adaptimmune Therapeutics PLC,2018-05-09,2025-08-13,10-K|10-Q,1
+Intuitive Surgical,5,1035267,INTUITIVE SURGICAL INC,2018-04-18,2025-10-22,10-K|10-Q,1
+Immutep S.A.S.,5,1506184,IMMUTEP Ltd,2018-10-19,2025-10-24,20-F,1
+MBX Biosciences,4,1776111,"MBX Biosciences, Inc.",2024-11-07,2025-11-06,10-K|10-Q,1
+"Tricida, Inc.",4,1595585,"Tricida, Inc.",2018-08-10,2022-11-14,10-K|10-Q,1
+Centessa Pharmaceuticals (UK) Limited,4,1847903,Centessa Pharmaceuticals plc,2021-08-16,2025-11-05,10-K|10-Q,1
+"F-star Therapeutics, Inc.",4,1566373,"F-star Therapeutics, Inc. | Spring Bank Pharmaceuticals, Inc.",2018-04-27,2022-11-10,10-K|10-Q,1
+Actuate Therapeutics Inc.,4,1652935,"ACTUATE THERAPEUTICS, INC.",2024-09-24,2025-11-13,10-K|10-Q,1
+"Day One Biopharmaceuticals, Inc.",4,1845337,"Day One Biopharmaceuticals, Inc.",2021-08-10,2025-11-04,10-K|10-Q,1
+"Vital Therapies, Inc.",4,1280776,"IMMUNIC, INC. | VITAL THERAPIES INC",2018-05-08,2025-11-13,10-K|10-Q,1
+Aura Biosciences,4,1501796,"Aura Biosciences, Inc.",2021-11-24,2025-11-13,10-K|10-Q,1
+Ra Pharmaceuticals,4,1481512,"Ra Pharmaceuticals, Inc.",2018-05-09,2020-04-03,10-K|10-Q,1
+Lyra Therapeutics,4,1327273,"Lyra Therapeutics, Inc.",2020-05-28,2025-11-12,10-K|10-Q,1
+LB Pharmaceuticals Inc.,4,1691082,LB PHARMACEUTICALS INC,2025-11-06,2025-11-06,10-Q,1
+"Athenex, Inc.",4,1300699,"Athenex, Inc.",2018-05-14,2023-04-28,10-K|10-Q,1
+Frontera Therapeutics,4,1602813,FRONTERA GROUP INC.,2018-06-19,2023-02-24,10-K|10-Q,1
+Dermata Therapeutics,4,1853816,"Dermata Therapeutics, Inc.",2021-09-27,2025-11-14,10-K|10-Q,1
+"Genocea Biosciences, Inc.",4,1457612,"GENOCEA BIOSCIENCES, INC.",2018-05-11,2022-05-05,10-K|10-Q,1
+"Astria Therapeutics, Inc.",4,1454789,"Astria Therapeutics, Inc. | CATABASIS PHARMACEUTICALS INC",2018-05-10,2025-11-12,10-K|10-Q,1
+"Daré Bioscience, Inc.",4,1401914,"Dare Bioscience, Inc.",2018-04-30,2025-11-13,10-K|10-Q,1
+PhaseBio Pharmaceuticals Inc.,4,1169245,PhaseBio Pharmaceuticals Inc,2018-11-29,2022-08-12,10-K|10-Q,1
+Asana BioSciences,4,1477720,"Asana, Inc.",2020-12-10,2025-12-02,10-K|10-Q,1
+Cardiol Therapeutics Inc.,4,1702123,Cardiol Therapeutics Inc.,2022-03-24,2025-03-31,20-F|40-F,1
+SIGA Technologies,4,1010086,SIGA TECHNOLOGIES INC,2018-05-04,2025-11-06,10-K|10-Q,1
+"Curis, Inc.",4,1108205,CURIS INC,2018-05-03,2025-11-06,10-K|10-Q,1
+AC Immune SA,4,1651625,AC Immune SA,2019-03-21,2025-03-13,20-F,1
+IO Biotech,4,1865494,"IO Biotech, Inc.",2021-12-17,2025-11-14,10-K|10-Q,1
+Cingulate Therapeutics,4,1862150,Cingulate Inc.,2022-03-28,2025-11-13,10-K|10-Q,1
+Opthea Limited,4,1815620,Opthea Ltd,2021-10-28,2025-09-15,20-F,1
+Biomea Fusion Inc.,4,1840439,"Biomea Fusion, Inc.",2021-05-27,2025-11-04,10-K|10-Q,1
+"AEON Biopharma, Inc.",4,1837607,"AEON Biopharma, Inc. | Priveterra Acquisition Corp.",2021-03-31,2025-11-14,10-K|10-Q,1
+Prevail Therapeutics,4,1714798,Prevail Therapeutics Inc.,2019-08-14,2020-11-13,10-K|10-Q,1
+"Proteostasis Therapeutics, Inc.",4,1445283,"KINETA, INC./DE | PROTEOSTASIS THERAPEUTICS, INC. | YUMANITY THERAPEUTICS, INC.",2018-05-09,2025-05-15,10-K|10-Q,1
+"Evelo Biosciences, Inc.",4,1694665,"Evelo Biosciences, Inc.",2018-05-31,2023-11-09,10-K|10-Q,1
+Synlogic,4,1527599,"SYNLOGIC, INC.",2018-05-15,2025-11-13,10-K|10-Q,1
+CRISPR Therapeutics AG,4,1674416,CRISPR Therapeutics AG,2018-05-08,2025-11-10,10-K|10-Q,1
+"OncoMed Pharmaceuticals, Inc.",4,1302573,OncoMed Pharmaceuticals Inc,2018-05-08,2019-03-07,10-K|10-Q,1
+"ImmunoGen, Inc.",4,855654,"IMMUNOGEN INC | ImmunoGen, Inc.",2018-05-09,2023-11-02,10-K|10-Q,1
+"Aravive, Inc.",4,1513818,"Aravive, Inc. | Versartis, Inc.",2018-04-11,2023-11-09,10-K|10-Q,1
+Upstream Bio Inc.,4,2022626,"Upstream Bio, Inc.",2024-11-07,2025-11-05,10-K|10-Q,1
+"Unity Biotechnology, Inc.",4,1463361,"Unity Biotechnology, Inc.",2018-06-07,2025-04-22,10-K|10-Q,1
+"Tyra Biosciences, Inc",4,1863127,"Tyra Biosciences, Inc.",2021-11-03,2025-11-05,10-K|10-Q,1
+60 Degrees Pharmaceuticals LLC,4,1946563,"60 DEGREES PHARMACEUTICALS, INC.",2023-08-25,2025-11-13,10-K|10-Q,1
+Cyclerion Therapeutics,4,1755237,"Cyclerion Therapeutics, Inc.",2019-05-13,2025-11-12,10-K|10-Q,1
+Sunesis Pharmaceuticals,4,1061027,"SUNESIS PHARMACEUTICALS INC | Viracta Therapeutics, Inc.",2018-05-08,2024-11-13,10-K|10-Q,1
+"RayzeBio, Inc.",4,1825367,"RayzeBio, Inc.",2023-11-13,2023-11-13,10-Q,1
+"Lyell Immunopharma, Inc.",4,1806952,"Lyell Immunopharma, Inc.",2021-08-12,2025-11-12,10-K|10-Q,1
+Acura Pharmaceuticals Inc.,4,786947,"ACURA PHARMACEUTICALS, INC",2018-06-07,2023-06-30,10-K|10-Q,1
+BriaCell Therapeutics Corporation,4,1610820,BriaCell Therapeutics Corp.,2021-10-29,2025-12-11,10-K|10-Q|40-F,1
+Affimed GmbH,4,1608390,Affimed N.V.,2019-03-27,2024-03-28,20-F,1
+"Anika Therapeutics, Inc.",4,898437,"Anika Therapeutics, Inc.",2018-05-10,2025-11-05,10-K|10-Q,1
+Kiromic BioPharma Inc.,4,1792581,"Kiromic Biopharma, Inc.",2020-11-30,2025-02-14,10-K|10-Q,1
+Fate Therapeutics,4,1434316,FATE THERAPEUTICS INC,2018-05-10,2025-11-13,10-K|10-Q,1
+"NKGen Biotech, Inc.",4,1845459,"Graf Acquisition Corp. IV | NKGen Biotech, Inc.",2021-07-02,2025-10-08,10-K|10-Q,1
+Medicure,4,1133519,MEDICURE INC,2018-05-15,2025-04-25,20-F,1
+"Jasper Therapeutics, Inc.",4,1788028,"Amplitude Healthcare Acquisition Corp | Jasper Therapeutics, Inc.",2020-03-26,2025-11-10,10-K|10-Q,1
+"Turning Point Therapeutics, Inc.",4,1595893,"Turning Point Therapeutics, Inc.",2019-05-31,2022-08-08,10-K|10-Q,1
+Protara Therapeutics,4,1359931,"ArTara Therapeutics, Inc. | PROTEON THERAPEUTICS INC | Protara Therapeutics, Inc.",2018-05-09,2025-11-10,10-K|10-Q,1
+Beam Therapeutics Inc.,4,1745999,Beam Therapeutics Inc.,2020-03-30,2025-11-04,10-K|10-Q,1
+Diffusion Pharmaceuticals Inc,4,1053691,CervoMed Inc. | Diffusion Pharmaceuticals Inc.,2018-04-02,2025-11-07,10-K|10-Q,1
+La Jolla Pharmaceutical Company,4,920465,LA JOLLA PHARMACEUTICAL CO,2018-04-30,2022-08-15,10-K|10-Q,1
+Angion Biomedica Corp,4,1601485,"Angion Biomedica Corp. | Elicio Therapeutics, Inc.",2021-03-30,2025-11-13,10-K|10-Q,1
+Atara Biotherapeutics,4,1604464,"Atara Biotherapeutics, Inc.",2018-05-08,2025-11-12,10-K|10-Q,1
+Allogene Therapeutics,4,1737287,"Allogene Therapeutics, Inc.",2018-11-21,2025-11-06,10-K|10-Q,1
+Molecular Partners AG,4,1745114,MOLECULAR PARTNERS AG,2022-03-15,2025-03-06,20-F,1
+"Editas Medicine, Inc.",4,1650664,"Editas Medicine, Inc.",2018-05-04,2025-11-10,10-K|10-Q,1
+"Eagle Pharmaceuticals, Inc.",4,827871,"EAGLE PHARMACEUTICALS, INC.",2018-05-10,2023-08-09,10-K|10-Q,1
+"89bio, Inc.",4,1785173,"89bio, Inc.",2019-12-18,2025-08-08,10-K|10-Q,1
+"Kiniksa Pharmaceuticals International, plc",4,1730430,"Kiniksa Pharmaceuticals International, plc | Kiniksa Pharmaceuticals, Ltd.",2018-08-06,2025-10-28,10-K|10-Q,1
+Quoin Pharmaceuticals,4,1671502,"Cellect Biotechnology Ltd. | Quoin Pharmaceuticals, Ltd.",2019-03-18,2025-11-06,10-K|10-Q|20-F,1
+Spero Therapeutics,4,1701108,"Spero Therapeutics, Inc.",2018-04-02,2025-11-13,10-K|10-Q,1
+4D pharma plc,4,1830162,4D Pharma PLC,2021-04-02,2022-03-31,20-F,1
+Arvinas Inc.,4,1655759,"ARVINAS, INC.",2018-11-14,2025-11-05,10-K|10-Q,1
+Fusion Pharmaceuticals Inc.,4,1805890,Fusion Pharmaceuticals Inc.,2020-08-11,2024-05-07,10-K|10-Q,1
+Dyne Therapeutics,4,1818794,"Dyne Therapeutics, Inc.",2020-11-05,2025-11-05,10-K|10-Q,1
+"Kintara Therapeutics, Inc.",4,1498382,"DelMar Pharmaceuticals, Inc. | Kintara Therapeutics, Inc. | TuHURA Biosciences, Inc./NV",2018-05-15,2025-11-14,10-K|10-Q,1
+Cullinan Therapeutics Inc.,4,1789972,"Cullinan Oncology, Inc. | Cullinan Therapeutics, Inc.",2021-03-30,2025-11-06,10-K|10-Q,1
+Enlivex Therapeutics Ltd.,4,1596812,Bioblast Pharma Ltd. | Enlivex Therapeutics Ltd.,2018-04-23,2025-04-30,20-F,1
+Galectin Therapeutics Inc.,4,1133416,GALECTIN THERAPEUTICS INC,2018-05-11,2025-11-14,10-K|10-Q,1
+LianBio LLC,4,1831283,LianBio,2021-12-09,2023-11-13,10-K|10-Q,1
+AEterna Zentaris,4,1113423,Aeterna Zentaris Inc. | COSCIENS Biopharma Inc.,2019-04-01,2025-04-09,20-F|40-F,1
+PepGen Inc,4,1835597,PepGen Inc.,2022-06-16,2025-11-12,10-K|10-Q,1
+"Alder Biopharmaceuticals, Inc.",4,1423824,ALDER BIOPHARMACEUTICALS INC,2018-05-08,2019-08-06,10-K|10-Q,1
+ALX Oncology Inc.,4,1810182,ALX ONCOLOGY HOLDINGS INC,2020-08-27,2025-11-07,10-K|10-Q,1
+"MeiraGTx, LLC",4,1735438,MeiraGTx Holdings plc,2018-08-08,2025-11-13,10-K|10-Q,1
+"Seres Therapeutics, Inc.",4,1609809,"Seres Therapeutics, Inc.",2018-05-09,2025-11-05,10-K|10-Q,1
+"Erasca, Inc.",4,1761918,"Erasca, Inc.",2021-08-26,2025-11-12,10-K|10-Q,1
+Lexeo Therapeutics,4,1907108,"Lexeo Therapeutics, Inc.",2023-12-11,2025-11-05,10-K|10-Q,1
+Catalyst Biosciences,4,1124105,"CATALYST BIOSCIENCES, INC. | GYRE THERAPEUTICS, INC.",2018-05-03,2025-11-07,10-K|10-Q,2
+Catalyst Biosciences,4,1369568,"CATALYST PHARMACEUTICALS, INC.",2018-05-09,2025-11-05,10-K|10-Q,2
+"Spyre Therapeutics, Inc.",4,1636282,"Aeglea BioTherapeutics, Inc. | Spyre Therapeutics, Inc.",2018-05-08,2025-11-04,10-K|10-Q,1
+MorphoSys AG,4,1340243,MorphoSys AG,2019-03-13,2024-03-13,20-F,1
+Auris Medical AG,4,1601936,Altamira Therapeutics Ltd. | Auris Medical Holding AG | Auris Medical Holding Ltd.,2019-03-14,2025-04-30,20-F,1
+Beyond Air Inc.,4,1641631,"AIT Therapeutics, Inc. | Beyond Air, Inc.",2018-06-15,2025-11-10,10-K|10-KT|10-Q,1
+"Vedanta Biosciences, Inc.",4,1370431,Vedanta Ltd,2018-07-31,2022-08-01,20-F,1
+Nabriva Therapeutics AG,4,1641640,Nabriva Therapeutics plc,2018-05-08,2023-10-19,10-K|10-Q,1
+"Cellectar Biosciences, Inc.",4,1279704,"Cellectar Biosciences, Inc.",2018-05-11,2025-11-13,10-K|10-Q,1
+"Nurix Therapeutics, Inc.",3,1549595,"Nurix Therapeutics, Inc.",2020-10-14,2025-10-09,10-K|10-Q,1
+Addex Pharma S.A.,3,1574232,Addex Therapeutics Ltd.,2020-04-27,2025-05-15,20-F,1
+"Kymera Therapeutics, Inc.",3,1815442,"Kymera Therapeutics, Inc.",2020-11-05,2025-11-04,10-K|10-Q,1
+"Flex Pharma, Inc.",3,866374,FLEX LTD.,2018-06-14,2025-10-31,10-K|10-Q,2
+"Flex Pharma, Inc.",3,1615219,"Flex Pharma, Inc. | Salarius Pharmaceuticals, Inc.",2018-05-02,2025-11-14,10-K|10-Q,2
+Incannex Healthcare Ltd,3,1873875,Incannex Healthcare Inc. | Incannex Healthcare Ltd,2022-10-28,2025-11-14,10-K|10-Q|20-F,1
+"Entrada Therapeutics, Inc.",3,1689375,"Entrada Therapeutics, Inc.",2021-12-09,2025-11-06,10-K|10-Q,1
+"Neurotrope Bioscience, Inc.",3,1513856,"Neurotrope, Inc.",2018-05-14,2020-11-09,10-K|10-Q,1
+PainReform LTD,3,1801834,PAINREFORM LTD.,2021-03-18,2025-04-07,20-F,1
+Celyad Oncology SA,3,1637890,CELYAD S.A. | Celyad Oncology SA,2018-04-06,2023-03-23,20-F,1
+Perspective Therapeutics,3,728387,"IsoRay, Inc. | Isoray, Inc. | Perspective Therapeutics, Inc.",2018-05-04,2025-11-10,10-K|10-KT|10-Q,1
+Elevation Oncology,3,1783032,"Elevation Oncology, Inc.",2021-08-12,2025-05-15,10-K|10-Q,1
+"Progenics Pharmaceuticals, Inc.",3,835887,PROGENICS PHARMACEUTICALS INC,2018-05-09,2020-05-07,10-K|10-Q,1
+"Belite Bio, Inc",3,1889109,"BELITE BIO, INC",2023-03-31,2025-03-17,20-F,1
+"Odonate Therapeutics, Inc.",3,1717452,"Odonate Therapeutics, Inc.",2018-04-02,2021-11-10,10-K|10-Q,1
+"Keros Therapeutics, Inc.",3,1664710,"Keros Therapeutics, Inc.",2020-05-22,2025-11-05,10-K|10-Q,1
+AVROBIO,3,1681087,"AVROBIO, Inc. | Tectonic Therapeutic, Inc.",2018-08-09,2025-11-06,10-K|10-Q,1
+"Rexahn Pharmaceuticals, Inc.",3,1228627,"Ocuphire Pharma, Inc. | Opus Genetics, Inc. | REXAHN PHARMACEUTICALS, INC.",2018-05-04,2025-11-12,10-K|10-Q,1
+Global Blood Therapeutics,3,1629137,"Global Blood Therapeutics, Inc.",2018-05-07,2022-08-08,10-K|10-Q,1
+"Axcella Health, Inc",3,1633070,Axcella Health Inc.,2019-06-20,2023-08-03,10-K|10-Q,1
+"Alzamend Neuro, Inc.",3,1677077,"Alzamend Neuro, Inc.",2021-07-29,2025-12-09,10-K|10-Q,1
+"Bolt Biotherapeutics, Inc.",3,1641281,"Bolt Biotherapeutics, Inc.",2021-03-31,2025-11-12,10-K|10-Q,1
+Oncotelic Inc.,3,908259,"MATEON THERAPEUTICS INC | Oncotelic Therapeutics, Inc.",2018-04-17,2025-11-17,10-K|10-Q,1
+TCR2 Therapeutics,3,1750019,TCR2 THERAPEUTICS INC.,2019-03-29,2023-05-11,10-K|10-Q,1
+Vical,3,819050,"Brickell Biotech, Inc. | Fresh Tracks Therapeutics, Inc. | VICAL INC",2018-05-03,2024-03-15,10-K|10-Q,1
+CorMedix Therapeutics,3,1410098,CorMedix Inc.,2018-04-11,2025-11-12,10-K|10-Q,1
+Grace Therapeutics Inc.,3,1444192,"Acasti Pharma Inc. | Grace Therapeutics, Inc.",2018-06-29,2025-11-17,10-K|10-Q|20-F,1
+"Innovation Pharmaceuticals, Inc.",3,1355250,Innovation Pharmaceuticals Inc.,2018-05-10,2023-11-20,10-K|10-Q,1
+"Neonc Technologies, Inc.",3,1979414,"NEONC TECHNOLOGIES HOLDINGS, INC.",2025-05-09,2025-11-14,10-Q,1
+Minerva Neurosciences,3,1598646,"Minerva Neurosciences, Inc.",2018-05-03,2025-11-05,10-K|10-Q,1
+"Radiopharm Theranostics, Ltd",3,1949257,Radiopharm Theranostics Ltd,2025-09-18,2025-12-10,20-F,1
+Heat Biologics,3,1476963,"HEAT BIOLOGICS, INC. | NightHawk Biosciences, Inc. | Scorpius Holdings, Inc.",2018-05-15,2025-08-22,10-K|10-Q,1
+Immuron Ltd.,3,1660046,Immuron Ltd,2018-10-31,2025-09-25,20-F,1
+Celcuity Inc,3,1603454,Celcuity Inc.,2018-05-14,2025-11-13,10-K|10-Q,1
+Biofrontera Inc.,3,1712641,Biofrontera AG,2018-04-30,2021-04-12,20-F,2
+Biofrontera Inc.,3,1858685,Biofrontera Inc.,2021-11-30,2025-11-12,10-K|10-Q,2
+"Genprex, Inc.",3,1595248,"Genprex, Inc.",2018-04-17,2025-11-14,10-K|10-Q,1
+Alterity Therapeutics,3,1131343,ALTERITY THERAPEUTICS LTD | PRANA BIOTECHNOLOGY LTD,2018-08-31,2025-08-29,20-F,1
+Immuneering Corporation,3,1790340,Immuneering Corp,2021-09-09,2025-11-12,10-K|10-Q,1
+"Hepion Pharmaceuticals, Inc.",3,1583771,"ContraVir Pharmaceuticals, Inc. | Hepion Pharmaceuticals, Inc.",2018-05-15,2025-11-12,10-K|10-Q,1
+"Selecta Biosciences, Inc.",3,1453687,"Cartesian Therapeutics, Inc. | SELECTA BIOSCIENCES INC",2018-05-09,2025-11-06,10-K|10-Q,1
+Edesa Biotech Inc.,3,1540159,"Edesa Biotech, Inc. | Stellar Biotechnologies, Inc.",2018-05-07,2025-12-12,10-K|10-KT|10-Q,1
+"ARS Pharmaceuticals, Inc.",3,1671858,"ARS Pharmaceuticals, Inc. | Silverback Therapeutics, Inc.",2021-03-29,2025-11-10,10-K|10-Q,1
+Avadel,3,1012477,AVADEL PHARMACEUTICALS PLC,2018-04-30,2025-11-04,10-K|10-Q,1
+Syros Pharmaceuticals,3,1556263,"Syros Pharmaceuticals, Inc.",2018-05-10,2024-10-31,10-K|10-Q,1
+AIM ImmunoTech Inc.,3,946644,AIM ImmunoTech Inc. | HEMISPHERX BIOPHARMA INC,2018-05-15,2025-11-17,10-K|10-Q,1
+"Forte Biosciences, Inc.",3,1419041,"Forte Biosciences, Inc. | Tocagen Inc",2018-05-11,2025-11-14,10-K|10-Q,1
+INSYS Therapeutics Inc,3,1516479,"Insys Therapeutics, Inc.",2018-05-10,2019-05-13,10-K|10-Q,1
+"Amneal Pharmaceuticals, LLC",3,1723128,"Amneal Pharmaceuticals, Inc.",2018-05-15,2025-11-06,10-K|10-Q,1
+"miRagen Therapeutics, Inc.",3,1590750,"MIRAGEN THERAPEUTICS, INC. | Viridian Therapeutics, Inc.\DE",2018-04-20,2025-11-05,10-K|10-Q,1
+Zosano Pharma Corporation,3,1587221,Zosano Pharma Corp,2018-05-15,2022-05-13,10-K|10-Q,1
+"Precigen, Inc",3,1356090,"INTREXON CORP | PRECIGEN, INC.",2018-05-10,2025-11-13,10-K|10-Q,1
+"Larimar Therapeutics, Inc.",3,1374690,"Larimar Therapeutics, Inc. | ZAFGEN, INC.",2018-05-10,2025-11-05,10-K|10-Q,1
+"GeoVax, Inc.",3,832489,"GeoVax Labs, Inc.",2018-05-03,2025-11-13,10-K|10-Q,1
+"Lipella Pharmaceuticals, Inc.",3,1347242,LIPELLA PHARMACEUTICALS INC | LIPELLA PHARMACEUTICALS INC.,2023-03-31,2025-11-14,10-K|10-Q,1
+"CASI pharmaceuticals, Inc.",3,895051,"CASI Pharmaceuticals, Inc.",2018-05-15,2022-11-14,10-K|10-Q,2
+"CASI pharmaceuticals, Inc.",3,1962738,"CASI Pharmaceuticals, Inc.",2023-04-26,2025-03-31,20-F,2
+Catabasis Pharmaceuticals,3,1454789,"Astria Therapeutics, Inc. | CATABASIS PHARMACEUTICALS INC",2018-05-10,2025-11-12,10-K|10-Q,1
+NLS Pharmaceutics,3,1783036,NLS Pharmaceutics Ltd.,2021-05-14,2025-05-16,20-F,1
+"Marker Therapeutics, Inc.",3,1094038,"Marker Therapeutics, Inc. | TAPIMMUNE INC.",2018-05-15,2025-11-13,10-K|10-Q,1
+Conatus Pharmaceuticals Inc.,3,1383701,Conatus Pharmaceuticals Inc. | Histogen Inc.,2018-05-03,2023-11-09,10-K|10-Q,1
+"Akorn, Inc.",3,3116,AKORN INC,2018-05-02,2020-08-07,10-K|10-Q,1
+"Olema Pharmaceuticals, Inc.",3,1750284,"Olema Pharmaceuticals, Inc.",2021-03-17,2025-11-10,10-K|10-Q,1
+"Teva Pharmaceutical Industries, Ltd.",3,818686,TEVA PHARMACEUTICAL INDUSTRIES LTD,2018-05-03,2025-11-05,10-K|10-Q,1
+"Corvus Pharmaceuticals, Inc.",3,1626971,"Corvus Pharmaceuticals, Inc.",2018-05-03,2025-11-04,10-K|10-Q,1
+Biophytis,3,1768946,Biophytis SA,2021-03-12,2024-04-08,20-F,1
+"IVERIC bio, Inc.",3,1410939,"IVERIC bio, Inc. | Ophthotech Corp.",2018-05-09,2023-05-10,10-K|10-Q,1
+Aeglea Biotherapeutics,3,1636282,"Aeglea BioTherapeutics, Inc. | Spyre Therapeutics, Inc.",2018-05-08,2025-11-04,10-K|10-Q,1
+"Eyegate Pharmaceuticals, Inc.",3,1372514,EYEGATE PHARMACEUTICALS INC | KIORA PHARMACEUTICALS INC,2018-05-11,2025-11-07,10-K|10-Q,1
+"Protalex, Inc.",3,1099215,PROTALEX INC,2018-04-13,2018-10-12,10-K|10-Q,1
+Okyo Pharma Ltd,3,1849296,OKYO Pharma Ltd,2022-08-15,2025-08-12,20-F,1
+"9 Meters Biopharma, Inc.",3,1551986,"9 METERS BIOPHARMA, INC. | INNOVATE BIOPHARMACEUTICALS, INC.",2018-05-15,2023-05-15,10-K|10-Q,1
+"Satsuma Pharmaceuticals, Inc.",3,1692830,"Satsuma Pharmaceuticals, Inc.",2019-11-12,2023-05-11,10-K|10-Q,1
+"Leap Therapeutics, Inc.",3,1509745,"LEAP THERAPEUTICS, INC.",2018-05-11,2025-11-12,10-K|10-Q,1
+"Five Prime Therapeutics, Inc.",3,1175505,"FIVE PRIME THERAPEUTICS INC | FIVE PRIME THERAPEUTICS, INC.",2018-05-08,2021-03-22,10-K|10-Q,1
+Inhibikase Therapeutics,3,1750149,"Inhibikase Therapeutics, Inc.",2021-03-31,2025-11-14,10-K|10-Q,1
+"Sutro Biopharma, Inc.",3,1382101,"SUTRO BIOPHARMA, INC.",2018-11-14,2025-11-06,10-K|10-Q,1
+Frequency Therapeutics,3,1624517,"Aureus Inc | Aureus, Inc. | Frequency Holdings, Inc | Yuenglings Ice Cream Corp",2020-08-28,2025-11-19,10-K|10-KT|10-Q,2
+Frequency Therapeutics,3,1703647,"Frequency Therapeutics, Inc. | Korro Bio, Inc.",2019-11-18,2025-11-12,10-K|10-Q,2
+HALEON,3,1900304,Haleon plc,2023-03-20,2025-03-20,20-F,1
+"Click Therapeutics, Inc.",3,2020027,Click Holdings Ltd.,2025-02-19,2025-10-24,20-F,1
+ChemomAb Ltd.,3,1534248,Anchiano Therapeutics Ltd. | Chemomab Therapeutics Ltd.,2019-03-25,2025-04-04,10-K|10-Q|20-F,1
+Palisade Bio,3,1357459,"Neuralstem, Inc. | PALISADE BIO, INC. | Seneca Biopharma, Inc.",2018-04-02,2025-11-10,10-K|10-Q,1
+"ZEO ScientifiX, Inc.",3,1557376,"Organicell Regenerative Medicine, Inc. | Zeo ScientifiX, Inc.",2018-11-01,2025-09-15,10-K|10-Q,1
+Pulmatrix Inc.,3,1574235,"Pulmatrix, Inc.",2018-05-11,2025-10-16,10-K|10-Q,1
+Kronos Bio,3,1741830,"Kronos Bio, Inc.",2020-11-18,2025-05-08,10-K|10-Q,1
+"Inhibrx Biosciences, Inc",3,1739614,"Inhibrx, Inc.",2020-11-13,2024-05-09,10-K|10-Q,2
+"Inhibrx Biosciences, Inc",3,2007919,"Inhibrx Biosciences, Inc.",2024-08-13,2025-11-14,10-K|10-Q,2
+"Artiva Biotherapeutics, Inc.",3,1817241,"Artiva Biotherapeutics, Inc.",2024-08-29,2025-11-12,10-K|10-Q,1
+"Nielsen BioSciences, Inc.",3,1492633,Nielsen Holdings plc,2018-04-26,2022-10-27,10-K|10-Q,1
+Impel Pharmaceuticals,3,1445499,IMPEL NEUROPHARMA INC | IMPEL PHARMACEUTICALS INC,2021-06-07,2023-11-14,10-K|10-Q,1
+"Stoke Therapeutics, Inc",3,1623526,"Stoke Therapeutics, Inc.",2019-08-14,2025-11-04,10-K|10-Q,1
+"Morphic Therapeutic, Inc. (A Wholly Owned Subsidiary of Eli Lilly and Company)",3,1679363,"Morphic Holding, Inc.",2019-08-13,2024-07-25,10-K|10-Q,1
+HilleVax,3,1888012,"HilleVax, Inc.",2022-06-08,2025-08-06,10-K|10-Q,1
+Adamis Pharmaceuticals Corporation,3,887247,Adamis Pharmaceuticals Corp | DMK PHARMACEUTICALS Corp,2018-04-30,2023-11-14,10-K|10-Q,1
+Oncolytics Biotech,3,1129928,ONCOLYTICS BIOTECH INC,2019-03-15,2025-03-07,20-F,1
+"Taysha Gene Therapies, Inc.",3,1806310,"Taysha Gene Therapies, Inc.",2020-11-12,2025-11-04,10-K|10-Q,1
+"Cocrystal Pharma, Inc.",3,1412486,"Cocrystal Pharma, Inc.",2018-04-30,2025-11-14,10-K|10-Q,1
+Nanobiotix,3,1760854,Nanobiotix S.A.,2021-04-07,2025-04-02,20-F,1
+"Achaogen, Inc.",3,1301501,"Achaogen Inc | Achaogen, Inc.",2018-05-07,2019-04-01,10-K|10-Q,1
+"MyoKardia, Inc.",3,1552451,"MyoKardia Inc | MyoKardia, Inc.",2018-05-08,2020-11-05,10-K|10-Q,1
+"Climb Bio, Inc.",3,1768446,"Climb Bio, Inc. | Eliem Therapeutics, Inc.",2021-09-13,2025-11-06,10-K|10-Q,1
+Keryx Biopharmaceuticals,3,1114220,KERYX BIOPHARMACEUTICALS INC,2018-04-30,2018-11-13,10-K|10-Q,1
+Agile Therapeutics,3,1261249,AGILE THERAPEUTICS INC,2018-05-07,2024-08-12,10-K|10-Q,1
+Compass Therapeutics,3,1563190,"Compass, Inc.",2021-05-13,2025-11-05,10-K|10-Q,2
+Compass Therapeutics,3,1738021,"Compass Therapeutics, Inc. | Olivia Ventures, Inc.",2018-08-14,2025-11-05,10-K|10-Q,2
+"MEI Pharma, Inc.",3,1262104,"Lite Strategy, Inc. | MEI Pharma, Inc.",2018-05-09,2025-11-14,10-K|10-Q,1
+Zevra Therapeutics,3,1434647,"KEMPHARM, INC | ZEVRA THERAPEUTICS, INC.",2018-05-11,2025-11-05,10-K|10-Q,1
+"Gritstone bio, Inc.",3,1656634,"Gritstone Oncology, Inc. | Gritstone bio, Inc.",2018-11-14,2024-08-13,10-K|10-Q,1
+"Seelos Therapeutics, Inc.",3,1017491,"APRICUS BIOSCIENCES, INC. | SEELOS THERAPEUTICS, INC.",2018-05-03,2024-08-14,10-K|10-Q,1
+Genenta Science,3,1838716,Genenta Science S.p.A.,2022-05-02,2025-03-28,20-F,1
+"Prime Medicine, Inc.",3,1894562,"Prime Medicine, Inc.",2022-11-14,2025-11-07,10-K|10-Q,1
+"Relay Therapeutics, Inc.",3,1812364,"Relay Therapeutics, Inc.",2020-08-27,2025-11-06,10-K|10-Q,1
+Ability Pharmaceuticals SL,3,1652866,Ability Inc.,2018-04-30,2020-07-06,20-F,1
+Nuvalent Inc.,3,1861560,"Nuvalent, Inc.",2021-09-08,2025-10-30,10-K|10-Q,1
+Equillium,3,1746466,"Equillium, Inc.",2018-11-15,2025-11-13,10-K|10-Q,1
+"Cyclo Therapeutics, Inc.",3,922247,"CTD HOLDINGS INC | Cyclo Therapeutics, Inc.",2018-04-16,2024-12-18,10-K|10-Q,1
+"Tyme, Inc",3,1537917,"TYME TECHNOLOGIES, INC.",2018-06-13,2022-08-09,10-K|10-Q,1
+Reunion Neuroscience Inc,3,1865482,Field Trip Health Ltd. | Reunion Neuroscience Inc.,2022-06-30,2023-06-29,40-F,1
+"Ventyx Biosciences, Inc",3,1851194,"Ventyx Biosciences, Inc.",2021-11-18,2025-11-06,10-K|10-Q,1
+"Sensei Biotherapeutics, Inc.",3,1829802,"Sensei Biotherapeutics, Inc.",2021-03-30,2025-11-14,10-K|10-Q,1
+Carmell Therapeutics Corporation,3,1842939,"ALPHA HEALTHCARE ACQUISITION CORP III | Carmell Corp | Longevity Health Holdings, Inc.",2021-09-13,2025-11-14,10-K|10-Q,1
+DiaMedica Therapeutics Inc,3,1401040,DiaMedica Therapeutics Inc.,2019-03-19,2025-11-12,10-K|10-Q,1
+Intec Pharma Ltd.,3,1638381,Intec Pharma Ltd.,2019-02-27,2021-05-17,10-K|10-Q,1
+"Avenue Therapeutics, Inc.",3,1644963,"AVENUE THERAPEUTICS, INC.",2018-05-03,2025-11-13,10-K|10-Q,1
+TC Biopharm,3,1872812,TC BioPharm (Holdings) plc,2022-05-13,2025-05-09,10-K|10-Q|20-F,1
+"Molecular Templates, Inc.",3,1183765,"Molecular Templates, Inc.",2018-05-14,2024-08-14,10-K|10-Q,1
+NeuroSense Therapeutics Ltd.,3,1875091,NeuroSense Therapeutics Ltd.,2022-04-14,2025-04-07,20-F,1
+Genelux Corporation,3,1231457,GENELUX CORP | GENELUX Corp,2023-03-29,2025-11-05,10-K|10-Q,1
+Solid Biosciences Inc.,3,1707502,Solid Biosciences Inc.,2018-05-10,2025-11-03,10-K|10-Q,1
+"Adynxx, Inc.",3,1054274,"Adynxx, Inc. | Alliqua BioMedical, Inc.",2018-04-30,2019-11-14,10-K|10-Q,1
+Applied Molecular Transport,3,1801777,Applied Molecular Transport Inc.,2020-08-11,2023-11-09,10-K|10-Q,1
+"BioPharmX, Inc.",3,1504167,"BioPharmX Corp | Timber Pharmaceuticals, Inc.",2018-04-26,2023-08-21,10-K|10-Q,1
+Lantheus Biosciences Ltd.,3,1521036,"Lantheus Holdings, Inc.",2018-05-02,2025-11-06,10-K|10-Q,1
+"Auris Medical, Inc.",3,1601936,Altamira Therapeutics Ltd. | Auris Medical Holding AG | Auris Medical Holding Ltd.,2019-03-14,2025-04-30,20-F,1
+Maia Biotechnology,2,1878313,"MAIA Biotechnology, Inc.",2022-08-22,2025-11-07,10-K|10-Q,1
+"Intensity Therapeutics, Inc.",2,1567264,"INTENSITY THERAPEUTICS, INC.",2023-08-14,2025-11-06,10-K|10-Q,1
+Aerovate Therapeutics,2,1798749,"Aerovate Therapeutics, Inc. | Jade Biosciences, Inc.",2021-08-16,2025-11-14,10-K|10-Q,1
+Bellerophon,2,1600132,"Bellerophon Therapeutics, Inc.",2018-05-10,2023-11-14,10-K|10-Q,1
+Emerald Health Pharmaceuticals,2,1768225,Emerald Health Therapeutics Inc.,2019-05-01,2020-08-03,20-F|40-F,1
+"TNF Pharmaceuticals, Inc.",2,1321834,"Akers Biosciences, Inc. | MyMD Pharmaceuticals, Inc. | Q/C TECHNOLOGIES, INC. | TNF Pharmaceuticals, Inc.",2018-04-03,2025-11-19,10-K|10-Q,1
+Repare Therapeutics,2,1808158,Repare Therapeutics Inc.,2020-08-13,2025-11-14,10-K|10-Q,1
+Apollomics Inc.,2,1944885,Apollomics Inc.,2023-03-31,2025-04-03,20-F,1
+Anthera Pharmaceuticals,2,1316175,Anthera Pharmaceuticals Inc,2018-05-15,2018-05-15,10-Q,1
+Silverback Therapeutics,2,1671858,"ARS Pharmaceuticals, Inc. | Silverback Therapeutics, Inc.",2021-03-29,2025-11-10,10-K|10-Q,1
+"AN2 Therapeutics, Inc",2,1880438,"AN2 Therapeutics, Inc.",2022-05-10,2025-11-12,10-K|10-Q,1
+"Infinity Pharmaceuticals, Inc.",2,1113148,"INFINITY PHARMACEUTICALS, INC.",2018-05-08,2023-08-10,10-K|10-Q,1
+"BioCardia, Inc.",2,925741,"BioCardia, Inc.",2018-05-10,2025-11-12,10-K|10-Q,1
+"Ra Pharmaceuticals, Inc.",2,1481512,"Ra Pharmaceuticals, Inc.",2018-05-09,2020-04-03,10-K|10-Q,1
+Compugen Ltd,2,1119774,COMPUGEN LTD,2019-03-21,2025-03-04,20-F,1
+Entasis Therapeutics,2,1724344,Entasis Therapeutics Holdings Inc.,2018-11-14,2022-05-02,10-K|10-Q,1
+"Benitec Biopharma, Inc.",2,1552795,Benitec Biopharma LTD/ADR,2018-10-30,2019-10-30,20-F,2
+"Benitec Biopharma, Inc.",2,1808898,Benitec Biopharma Inc.,2020-09-23,2025-11-14,10-K|10-Q,2
+"Icosavax, Inc.",2,1786255,"Icosavax, Inc.",2021-09-13,2023-11-14,10-K|10-Q,1
+"Chiasma, Inc.",2,1339469,"CHIASMA, INC",2018-05-10,2021-05-05,10-K|10-Q,1
+ORIC Pharmaceuticals,2,1796280,"Oric Pharmaceuticals, Inc.",2020-05-20,2025-11-13,10-K|10-Q,1
+Sophiris Bio Corp,2,1563855,SOPHIRIS BIO INC.,2018-05-14,2019-11-08,10-K|10-Q,1
+Theriva Biologics SL,2,894158,"Synthetic Biologics, Inc. | Theriva Biologics, Inc.",2018-05-08,2025-11-12,10-K|10-Q,1
+Merus B.V.,2,1651311,Merus N.V.,2018-04-30,2025-10-31,10-K|10-Q|20-F,1
+Context Therapeutics Inc.,2,1842952,Context Therapeutics Inc.,2021-12-02,2025-11-05,10-K|10-Q,1
+Rubius Therapeutics,2,1709401,"Rubius Therapeutics, Inc.",2018-08-31,2023-02-27,10-K|10-Q,1
+Rein Therapeutics,2,1420565,"AILERON THERAPEUTICS INC | Aileron Therapeutics, Inc. | Rein Therapeutics, Inc.",2018-04-02,2025-11-14,10-K|10-Q,1
+"Zai Lab (Hong Kong), Ltd.",2,1704292,Zai Lab Ltd,2018-04-30,2025-11-06,10-K|10-Q|20-F,1
+"ADMA Biologics, Inc.",2,1368514,"ADMA BIOLOGICS, INC.",2018-05-14,2025-11-05,10-K|10-Q,1
+Chase Therapeutics Corporation,2,830524,CHASE CORP,2018-04-09,2023-11-09,10-K|10-Q,1
+Evoke Pharma,2,1403708,Evoke Pharma Inc,2018-05-14,2025-11-13,10-K|10-Q,1
+"Gracell Biotechnologies (Shanghai) Co., Ltd.",2,1826492,Gracell Biotechnologies Inc.,2021-04-23,2023-04-25,20-F,1
+Lantern Pharma Inc.,2,1763950,Lantern Pharma Inc.,2020-07-30,2025-11-12,10-K|10-Q,1
+"Matinas Biopharma, Inc",2,1582554,"Matinas BioPharma Holdings, Inc.",2018-05-09,2025-11-10,10-K|10-Q,1
+Creative Medical Technology Holdings Inc,2,1187953,"CREATIVE MEDICAL TECHNOLOGY HOLDINGS, INC.",2018-05-21,2025-11-07,10-K|10-Q,1
+"Precision BioSciences, Inc.",2,1357874,PRECISION BIOSCIENCES INC,2019-04-29,2025-11-03,10-K|10-Q,2
+"Precision BioSciences, Inc.",2,1446159,Precision Therapeutics Inc. | Predictive Oncology Inc.,2018-04-02,2025-11-14,10-K|10-Q,2
+"Skye Bioscience, Inc.",2,1516551,"Emerald Bioscience, Inc. | Nemus Bioscience, Inc. | Skye Bioscience, Inc.",2018-05-15,2025-11-10,10-K|10-Q,1
+Acurx Pharmaceuticals Inc.,2,1736243,"Acurx Pharmaceuticals, Inc.",2021-08-13,2025-11-12,10-K|10-Q,1
+United Laboratories,2,1082554,UNITED THERAPEUTICS Corp,2018-05-02,2025-10-29,10-K|10-Q,1
+Neurogene Inc.,2,1404644,"AQUINOX PHARMACEUTICALS, INC | Neoleukin Therapeutics, Inc. | Neurogene Inc.",2018-05-08,2025-11-13,10-K|10-Q,1
+"Thryv Therapeutics, Inc.",2,1556739,"Thryv Holdings, Inc.",2020-11-12,2025-10-30,10-K|10-Q,1
+Boston Therapeutics,2,1473579,"Boston Therapeutics, Inc. | NANOMIX Corp",2018-05-14,2023-04-07,10-K|10-Q,1
+"Nkarta, Inc.",2,1787400,"Nkarta, Inc.",2020-08-20,2025-11-10,10-K|10-Q,1
+Aligos Therapeutics,2,1799448,"Aligos Therapeutics, Inc.",2020-11-25,2025-11-06,10-K|10-Q,1
+"ARCA Biopharma, Inc.",2,907654,"ARCA biopharma, Inc. | Oruka Therapeutics, Inc.",2018-05-08,2025-11-12,10-K|10-Q,1
+Better Therapeutics,2,1832415,"Better Therapeutics, Inc. | Mountain Crest Acquisition Corp II",2021-03-31,2023-11-09,10-K|10-Q,1
+Mersana Therapeutics,2,1442836,"Mersana Therapeutics, Inc.",2018-05-15,2025-11-14,10-K|10-Q,1
+"Vaxxinity, Inc.",2,1851657,"Vaxxinity, Inc.",2021-12-23,2024-04-29,10-K|10-Q,1
+"SAb Biotherapeutics, Inc.",2,1833214,"Big Cypress Acquisition Corp. | SAB Biotherapeutics, Inc.",2021-04-02,2025-11-14,10-K|10-Q,1
+Bright Minds Biosciences Pty Ltd,2,1827401,BRIGHT MINDS BIOSCIENCES INC.,2021-12-29,2025-12-23,20-F|40-F,1
+"Enzon Pharmaceuticals, Inc.",2,727510,"ENZON PHARMACEUTICALS, INC.",2018-04-25,2025-11-12,10-K|10-Q,1
+Contineum Therapeutics,2,1855175,"Contineum Therapeutics, Inc.",2024-05-16,2025-10-30,10-K|10-Q,1
+"Viracta Therapeutics, Inc.",2,1061027,"SUNESIS PHARMACEUTICALS INC | Viracta Therapeutics, Inc.",2018-05-08,2024-11-13,10-K|10-Q,1
+"Oragenics, Inc.",2,1174940,ORAGENICS INC,2018-05-15,2025-11-07,10-K|10-Q,1
+Adagene Inc,2,1818838,Adagene Inc.,2021-04-28,2025-03-24,20-F,1
+Acer Therapeutics Inc.,2,1069308,Acer Therapeutics Inc.,2018-05-14,2023-11-20,10-K|10-Q,1
+Eliem Therapeutics (UK) Ltd.,2,1768446,"Climb Bio, Inc. | Eliem Therapeutics, Inc.",2021-09-13,2025-11-06,10-K|10-Q,1
+Balance Therapeutics,2,1632121,"Balance Labs, Inc.",2018-04-12,2025-11-13,10-K|10-Q,1
+"Korro Bio, Inc.",2,1703647,"Frequency Therapeutics, Inc. | Korro Bio, Inc.",2019-11-18,2025-11-12,10-K|10-Q,1
+Sienna Biopharmaceuticals,2,1656328,"Sienna Biopharmaceuticals, Inc.",2018-05-14,2019-11-12,10-K|10-Q,1
+"Medicenna Therapeutics, Inc.",2,1807983,Medicenna Therapeutics Corp.,2021-05-28,2023-06-27,20-F|40-F,1
+"Black Diamond Therapeutics, Inc.",2,1701541,"Black Diamond Therapeutics, Inc.",2020-03-24,2025-11-06,10-K|10-Q,1
+"Lumen Bioscience, Inc.",2,18926,"CENTURYLINK, INC | Lumen Technologies, Inc.",2018-05-10,2025-10-30,10-K|10-Q,1
+"Becton, Dickinson and Company",2,10795,BECTON DICKINSON & CO,2018-05-03,2025-11-25,10-K|10-Q,1
+"Design Therapeutics, Inc.",2,1807120,"Design Therapeutics, Inc.",2021-05-10,2025-11-05,10-K|10-Q,1
+NexImmune Inc.,2,1538210,"NexImmune, Inc.",2021-03-31,2024-08-07,10-K|10-Q,1
+Sonnet BioTherapeutics,2,1106838,"Chanticleer Holdings, Inc. | Sonnet BioTherapeutics Holdings, Inc.",2018-04-30,2025-12-16,10-K|10-Q,1
+Biofrontera Bioscience GmbH,2,1712641,Biofrontera AG,2018-04-30,2021-04-12,20-F,2
+Biofrontera Bioscience GmbH,2,1858685,Biofrontera Inc.,2021-11-30,2025-11-12,10-K|10-Q,2
+"Kiniksa Pharmaceuticals, Ltd.",2,1730430,"Kiniksa Pharmaceuticals International, plc | Kiniksa Pharmaceuticals, Ltd.",2018-08-06,2025-10-28,10-K|10-Q,1
+Nova Laboratories Limited,2,1109345,NOVA LTD. | NOVA MEASURING INSTRUMENTS LTD,2019-02-28,2025-02-20,20-F,1
+Mateon Therapeutics,2,908259,"MATEON THERAPEUTICS INC | Oncotelic Therapeutics, Inc.",2018-04-17,2025-11-17,10-K|10-Q,1
+Zura Bio Inc,2,1855644,JATT Acquisition Corp | Zura Bio Ltd,2021-08-27,2025-11-13,10-K|10-Q,1
+Entera Bio Ltd.,2,1638097,Entera Bio Ltd.,2019-03-28,2025-11-14,10-K|10-Q|20-F,1
+Turn Therapeutics,2,2023016,Turn Therapeutics Inc.,2025-11-13,2025-11-13,10-Q,1
+"Brooklyn ImmunoTherapeutics, LLC",2,748592,"Brooklyn ImmunoTherapeutics, Inc. | Ernexa Therapeutics Inc. | Eterna Therapeutics Inc. | NTN BUZZTIME INC",2018-05-11,2025-11-07,10-K|10-Q,1
+Graybug Vision,2,1534133,"CalciMedica, Inc. | GRAYBUG VISION, INC.",2020-11-12,2025-11-12,10-K|10-Q,1
+SURGE Therapeutics,2,1392694,"Surge Holdings, Inc. | SurgePays, Inc.",2018-04-10,2025-11-12,10-K|10-Q,1
+"Metacrine, Inc.",2,1634379,"Metacrine, Inc.",2020-11-12,2022-11-14,10-K|10-Q,1
+BiondVax Pharmaceuticals ltd.,2,1611747,BiondVax Pharmaceuticals Ltd. | Scinai Immunotherapeutics Ltd.,2018-04-30,2025-05-07,10-K|10-Q|20-F,1
+"Westlake Pharmaceuticals (Hangzhou) Co., Ltd.",2,1262823,WESTLAKE CHEMICAL CORP | WESTLAKE CORP,2018-05-03,2025-10-31,10-K|10-Q,1
+VIVUS LLC,2,881524,VIVUS INC,2018-04-26,2020-05-06,10-K|10-Q,1
+Motif Bio,2,1674657,Motif Bio plc,2018-04-10,2019-04-15,20-F,1
+"Crescent Biopharma, Inc.",2,1253689,"CRESCENT BIOPHARMA, INC. | GLYCOMIMETICS INC",2018-05-03,2025-11-06,10-K|10-Q,1
+Boston Pharmaceuticals,2,1473579,"Boston Therapeutics, Inc. | NANOMIX Corp",2018-05-14,2023-04-07,10-K|10-Q,1
+"BiomX, Inc.",2,1739174,BiomX Inc. | Chardan Healthcare Acquisition Corp.,2019-02-06,2025-11-12,10-K|10-Q,1
+Integra LifeSciences Corporation,2,917520,INTEGRA LIFESCIENCES HOLDINGS CORP,2018-04-26,2025-10-30,10-K|10-Q,1
+"Bio-Path Holdings, Inc.",2,1133818,"BIO-PATH HOLDINGS INC | BIO-PATH HOLDINGS, INC.",2018-04-02,2025-08-14,10-K|10-Q,1
+Eupraxia Pharmaceuticals Inc.,2,1581178,EUPRAXIA PHARMACEUTICALS INC.,2024-04-01,2025-03-20,40-F,1
+Theratechnologies,2,1512717,Theratechnologies Inc.,2020-02-25,2025-02-26,20-F|40-F,1
+Silence Therapeutics plc,2,1479615,Silence Therapeutics plc,2021-03-30,2025-11-06,10-K|10-Q|20-F,1
+Telix Pharmaceuticals (Innovations) Pty Ltd,2,2007191,Telix Pharmaceuticals Ltd,2025-02-24,2025-02-24,20-F,1
+Ovid Therapeutics Inc.,2,1636651,Ovid Therapeutics Inc.,2018-05-08,2025-11-12,10-K|10-Q,1
+Aptevo Therapeutics,2,1671584,Aptevo Therapeutics Inc.,2018-05-10,2025-11-06,10-K|10-Q,1
+"Monte Rosa Therapeutics, Inc",2,1826457,"Monte Rosa Therapeutics, Inc.",2021-08-12,2025-11-06,10-K|10-Q,1
+"ArriVent BioPharma, Inc.",2,1868279,"ArriVent BioPharma, Inc. | ArriVent Biopharma, Inc.",2024-03-28,2025-11-10,10-K|10-Q,1
+Reneo Pharma Ltd,2,1637715,"OnKure Therapeutics, Inc. | Reneo Pharmaceuticals, Inc.",2021-05-20,2025-11-06,10-K|10-Q,1
+"Provention Bio, Inc.",2,1695357,"Provention Bio, Inc.",2018-08-13,2023-03-29,10-K|10-Q,1
+Azitra Inc.,2,1701478,"Azitra Inc | Azitra, Inc.",2023-08-14,2025-11-12,10-K|10-Q,1
+"Kiniksa Pharmaceuticals (UK), Ltd.",2,1730430,"Kiniksa Pharmaceuticals International, plc | Kiniksa Pharmaceuticals, Ltd.",2018-08-06,2025-10-28,10-K|10-Q,1
+Q32 Bio Inc.,2,1661998,"Homology Medicines, Inc. | Q32 Bio Inc.",2018-05-14,2025-11-13,10-K|10-Q,1
+"Tvardi Therapeutics, Incorporated",2,1346830,"Cara Therapeutics, Inc. | Tvardi Therapeutics, Inc.",2018-05-09,2025-11-13,10-K|10-Q,1
+Bioblast Pharma Ltd.,2,1596812,Bioblast Pharma Ltd. | Enlivex Therapeutics Ltd.,2018-04-23,2025-04-30,20-F,1
+"Avalo Therapeutics, Inc.",2,1534120,"Avalo Therapeutics, Inc. | Cerecor Inc.",2018-04-02,2025-11-06,10-K|10-Q,1
+Evaxion Biotech A/S,2,1828253,Evaxion Biotech A/S,2021-04-07,2025-04-01,20-F,1
+"Provectus Biopharmaceuticals, Inc.",2,315545,"PROVECTUS BIOPHARMACEUTICALS, INC.",2018-05-09,2025-11-13,10-K|10-Q,1
+"Semnur Pharmaceuticals, Inc.",2,1913577,"Denali Capital Acquisition Corp. | Semnur Pharmaceuticals, Inc.",2022-05-23,2025-11-12,10-K|10-Q,1
+"Sesen Bio, Inc.",2,1485003,"Carisma Therapeutics Inc. | Eleven Biotherapeutics, Inc. | Sesen Bio, Inc.",2018-04-02,2025-11-12,10-K|10-Q,1
+Ensysce Biosciences,2,1716947,"Ensysce Biosciences, Inc. | Leisure Acquisition Corp.",2018-05-03,2025-11-14,10-K|10-Q,1
+Aradigm Corporation,2,1013238,ARADIGM CORP,2018-05-15,2018-11-15,10-Q,1
+"Apogee Therapeutics, Inc.",2,1974640,"Apogee Therapeutics, Inc.",2023-08-28,2025-11-10,10-K|10-Q,1
+Maze Therapeutics,2,1842295,"Maze Therapeutics, Inc.",2025-03-31,2025-11-06,10-K|10-Q,1
+Acrivon Therapeutics,2,1781174,"Acrivon Therapeutics, Inc.",2022-12-15,2025-11-13,10-K|10-Q,1
+"Ayala Pharmaceuticals, Inc,",2,1100397,"Advaxis, Inc. | Ayala Pharmaceuticals, Inc.",2018-06-07,2024-04-26,10-K|10-Q,2
+"Ayala Pharmaceuticals, Inc,",2,1797336,"Ayala Pharmaceuticals, Inc. | Old Ayala, Inc",2020-06-22,2023-03-31,10-K|10-Q,2
+Constellation Pharmaceuticals,2,1434418,CONSTELLATION PHARMACEUTICALS INC,2018-08-14,2021-05-10,10-K|10-Q,1
+ContraFect,2,1478069,CONTRAFECT Corp,2018-05-10,2023-11-14,10-K|10-Q,1
+PolarityTE,2,1076682,"POLARITYTE, INC.",2018-06-14,2023-05-12,10-K|10-KT|10-Q,1
+Penumbra Inc.,2,1321732,Penumbra Inc,2018-05-08,2025-11-05,10-K|10-Q,1
+"DelMar Pharmaceuticals, Inc.",2,1498382,"DelMar Pharmaceuticals, Inc. | Kintara Therapeutics, Inc. | TuHURA Biosciences, Inc./NV",2018-05-15,2025-11-14,10-K|10-Q,1
+Proteon Therapeutics,2,1359931,"ArTara Therapeutics, Inc. | PROTEON THERAPEUTICS INC | Protara Therapeutics, Inc.",2018-05-09,2025-11-10,10-K|10-Q,1
+TherapeuticsMD,2,25743,"TherapeuticsMD, Inc.",2018-05-07,2025-11-12,10-K|10-Q,1
+Cellectis S.A.,2,1627281,Cellectis S.A.,2019-03-12,2025-03-14,20-F,1
+CRISPR Therapeutics,2,1674416,CRISPR Therapeutics AG,2018-05-08,2025-11-10,10-K|10-Q,1
+"Zynerba Pharmaceuticals, Inc.",2,1621443,"Zynerba Pharmaceuticals, Inc.",2018-05-08,2023-08-14,10-K|10-Q,1
+Melt Pharmaceuticals,2,1267612,GUOZI ZHONGYU CAPITAL HOLDINGS | MELT INC,2018-10-30,2020-12-10,10-K|10-Q,1
+Aquinox Pharmaceuticals (Canada) Inc.,2,1404644,"AQUINOX PHARMACEUTICALS, INC | Neoleukin Therapeutics, Inc. | Neurogene Inc.",2018-05-08,2025-11-13,10-K|10-Q,1
+"23andMe, Inc.",2,1804591,23andMe Holding Co. | VG Acquisition Corp.,2020-11-16,2025-08-04,10-K|10-Q,1
+"Gemini Therapeutics, Inc.",2,1816736,"Disc Medicine, Inc. | FS Development Corp. | Gemini Therapeutics, Inc. /DE",2020-11-12,2025-11-06,10-K|10-Q,1
+Reviva Pharmaceuticals,2,1742927,"REVIVA PHARMACEUTICALS HOLDINGS, INC. | Tenzing Acquisition Corp.",2018-10-11,2025-11-13,10-K|10-Q,1
+Argos Therapeutics,2,1105533,ARGOS THERAPEUTICS INC,2018-04-02,2018-11-19,10-K|10-Q,1
+Bicara Therapeutics,2,2023658,Bicara Therapeutics Inc.,2024-11-12,2025-11-10,10-K|10-Q,1
+Amryt Pharma,2,1783010,Amryt Pharma plc,2021-04-30,2022-04-29,20-F,1
+"CinCor Pharma, Inc.",2,1868734,"CinCor Pharma, Inc.",2022-03-22,2022-11-03,10-K|10-Q,1
+Wex Pharmaceuticals Inc.,2,1309108,WEX Inc.,2018-05-10,2025-10-30,10-K|10-Q,1
+"Scilex Pharmaceuticals, Inc.",2,1820190,Scilex Holding Co | Vickers Vantage Corp. I,2021-03-31,2025-11-14,10-K|10-Q,1
+Mustang Bio,2,1680048,"MUSTANG BIO, INC.",2018-05-14,2025-11-07,10-K|10-Q,1
+ICON Bioscience Inc,2,1060955,ICON PLC,2019-03-01,2025-02-21,20-F,1
+"Jade Biosciences, Inc.",2,1798749,"Aerovate Therapeutics, Inc. | Jade Biosciences, Inc.",2021-08-16,2025-11-14,10-K|10-Q,1
+Quantum Biopharma,2,1771885,FSD Pharma Inc. | Quantum Biopharma Ltd.,2020-03-04,2025-03-31,20-F|40-F,1
+Bioxytran Inc.,2,1445815,"BIOXYTRAN, INC | U.S. RARE EARTH MINERALS, INC",2018-04-02,2025-11-14,10-K|10-Q,1
+PDS Biotechnology Corp.,2,1472091,"Edge Therapeutics, Inc. | PDS Biotechnology Corp",2018-05-01,2025-11-13,10-K|10-Q,1
+Vantage Biosciences Ltd,1,2027160,Vantage Corp (Singapore),2025-07-28,2025-07-28,20-F,1
+PLx Pharma,1,1497504,PLx Pharma Inc.,2018-04-27,2022-11-10,10-K|10-Q,1
+"Chinook Therapeutics, Inc.",1,1435049,"ADURO BIOTECH, INC. | CHINOOK THERAPEUTICS, INC.",2018-05-02,2023-08-07,10-K|10-Q,1
+"HedgePath Pharmaceuticals, Inc.",1,1042418,"HedgePath Pharmaceuticals, Inc. | Inhibitor Therapeutics, Inc.",2018-05-01,2025-11-13,10-K|10-Q,1
+"Indaptus Therapeutics, Inc",1,1857044,"Indaptus Therapeutics, Inc. | Intec Parent Inc.",2021-06-28,2025-11-12,10-K|10-Q,1
+Theseus Pharmaceuticals,1,1745020,"Theseus Pharmaceuticals, Inc.",2021-11-15,2023-11-17,10-K|10-Q,1
+"Novus Therapeutics, Inc",1,1404281,"Eledon Pharmaceuticals, Inc. | Novus Therapeutics, Inc.",2018-04-02,2025-11-14,10-K|10-Q,1
+"C4 Therapeutics, Inc.",1,1662579,"C4 Therapeutics, Inc.",2020-11-12,2025-11-06,10-K|10-Q,1
+Harrow Inc,1,1360214,"HARROW HEALTH, INC. | HARROW, INC. | Imprimis Pharmaceuticals, Inc.",2018-05-15,2025-11-10,10-K|10-Q,1
+"Realm Therapeutics, Inc.",1,1718903,Realm Therapeutics plc,2019-04-10,2019-04-10,20-F,1
+"Pieris Pharmaceuticals, Inc.",1,1583648,"PALVELLA THERAPEUTICS, INC. | PIERIS PHARMACEUTICALS, INC.",2018-04-26,2025-11-12,10-K|10-Q,1
+"enGene, Inc.",1,1980845,enGene Holdings Inc.,2024-01-29,2025-12-22,10-K|10-Q,1
+TransCode Therapeutics,1,1829635,"Transcode Therapeutics, Inc.",2021-08-23,2025-11-14,10-K|10-Q,1
+Teleflex,1,96943,TELEFLEX INC,2018-05-03,2025-11-06,10-K|10-Q,1
+Clearmind Medicine Inc.,1,1892500,Clearmind Medicine Inc.,2023-02-06,2025-01-22,20-F,1
+"Homology Medicines, Inc",1,1661998,"Homology Medicines, Inc. | Q32 Bio Inc.",2018-05-14,2025-11-13,10-K|10-Q,1
+Tocagen Inc.,1,1419041,"Forte Biosciences, Inc. | Tocagen Inc",2018-05-11,2025-11-14,10-K|10-Q,1
+"TuHURA Biosciences, Inc.",1,1498382,"DelMar Pharmaceuticals, Inc. | Kintara Therapeutics, Inc. | TuHURA Biosciences, Inc./NV",2018-05-15,2025-11-14,10-K|10-Q,1
+Instil Bio,1,1789769,"Instil Bio, Inc.",2021-05-13,2025-11-13,10-K|10-Q,1
+Tilray,1,1731348,"Tilray Brands, Inc. | Tilray, Inc.",2018-08-29,2025-10-09,10-K|10-Q,1
+"22nd Century Limited, LLC",1,1347858,"22nd Century Group, Inc.",2018-05-03,2025-11-04,10-K|10-Q,1
+"Pyxis Oncology, Inc",1,1782223,"Pyxis Oncology, Inc.",2021-11-15,2025-11-03,10-K|10-Q,1
+"Sigilon Therapeutics, Inc.",1,1821323,"Sigilon Therapeutics, Inc.",2021-03-18,2023-08-07,10-K|10-Q,1
+"Werewolf Therapeutics, Inc.",1,1785530,"Werewolf Therapeutics, Inc.",2021-06-10,2025-11-04,10-K|10-Q,1
+Kaleido Biosciences,1,1751299,"Kaleido Biosciences, Inc.",2019-05-02,2022-04-01,10-K|10-Q,1
+In8bio Inc.,1,1740279,"IN8BIO, INC.",2021-09-10,2025-11-06,10-K|10-Q,1
+"Lineage Cell Therapeutics, Inc.",1,876343,"BIOTIME INC | Lineage Cell Therapeutics, Inc.",2018-04-02,2025-11-06,10-K|10-Q,1
+Enliven Therapeutics,1,1672619,"Enliven Therapeutics, Inc. | IMARA Inc.",2020-05-07,2025-11-12,10-K|10-Q,1
+BioRestorative Therapies,1,1505497,"BioRestorative Therapies, Inc.",2018-04-02,2025-11-12,10-K|10-Q,1
+Verona Pharma Inc,1,1657312,Verona Pharma plc,2019-03-19,2025-08-06,10-K|10-Q|20-F,1
+ReShape Lifesciences,1,1371217,ReShape Lifesciences Inc.,2018-04-02,2021-05-17,10-K|10-Q,2
+ReShape Lifesciences,1,1427570,"OBALON THERAPEUTICS INC | ReShape Lifesciences Inc. | Vyome Holdings, Inc",2018-05-10,2025-11-14,10-K|10-Q,2
+"Alpine Immune Sciences, Inc.",1,1626199,"ALPINE IMMUNE SCIENCES, INC.",2018-05-14,2024-05-09,10-K|10-Q,1
+"Shattuck Labs, Inc.",1,1680367,"Shattuck Labs, Inc.",2020-11-13,2025-11-06,10-K|10-Q,1
+CARGO Therapeutics,1,1966494,"CARGO Therapeutics, Inc.",2023-12-13,2025-08-06,10-K|10-Q,1
+Elicio Therapeutics,1,1601485,"Angion Biomedica Corp. | Elicio Therapeutics, Inc.",2021-03-30,2025-11-13,10-K|10-Q,1
+Cortexyme Inc.,1,1662774,"Cortexyme, Inc. | Quince Therapeutics, Inc.",2019-06-12,2025-11-12,10-K|10-Q,1
+"Xenetic Biosciences, Inc.",1,1534525,"Xenetic Biosciences, Inc.",2018-04-30,2025-11-12,10-K|10-Q,1
+Sinovac Biotech (Hong Kong) Limited,1,1084201,SINOVAC BIOTECH LTD,2018-05-11,2024-04-29,20-F,1
+Monopar Therapeutics,1,1645469,Monopar Therapeutics,2018-05-11,2025-11-13,10-K|10-Q,1
+"Poseida Therapeutics, Inc.",1,1661460,"Poseida Therapeutics, Inc.",2020-08-20,2024-11-07,10-K|10-Q,1
+Tenaya Therapeutics,1,1739208,"Tenaya Group, Inc.",2019-12-23,2023-08-14,10-K|10-Q,2
+Tenaya Therapeutics,1,1858848,"Tenaya Therapeutics, Inc.",2021-09-08,2025-11-10,10-K|10-Q,2
+"Turnstone Biologics, Corp.",1,1764974,Turnstone Biologics Corp.,2023-09-01,2025-08-08,10-K|10-Q,1
+"McCormick and Company, Inc.",1,63754,MCCORMICK & CO INC,2018-06-28,2025-10-07,10-K|10-Q,1
+"CNS Pharmaceuticals, Inc.",1,1729427,"CNS Pharmaceuticals, Inc.",2019-12-20,2025-11-14,10-K|10-Q,1
+Galmed Pharmaceuticals Ltd,1,1595353,Galmed Pharmaceuticals Ltd.,2019-03-13,2025-04-02,20-F,1
+CEL-SCI Corporation,1,725363,CEL SCI CORP,2018-05-15,2025-12-29,10-K|10-Q,1
+"Estrella Immunopharma, Inc.",1,1844417,"Estrella Immunopharma, Inc. | TradeUP Acquisition Corp.",2021-11-10,2025-11-12,10-K|10-KT|10-Q,1
+"Immix Biopharma, Inc.",1,1873835,"Immix Biopharma, Inc.",2022-03-28,2025-11-07,10-K|10-Q,1
+SQZ Biotechnologies,1,1604477,SQZ Biotechnologies Co,2020-12-10,2023-11-08,10-K|10-Q,1
+InMed Pharmaceuticals Inc.,1,1728328,InMed Pharmaceuticals Inc.,2020-12-17,2025-11-06,10-K|10-Q,1
+Sio Gene Therapies,1,1636050,Axovant Gene Therapies Ltd. | Axovant Sciences Ltd. | Sio Gene Therapies Inc.,2018-06-11,2023-02-14,10-K|10-Q,1
+ESSA Pharmaceuticals,1,1633932,ESSA Pharma Inc.,2018-12-13,2025-08-13,10-K|10-Q|20-F,1
+"Merit Medical Systems, Inc.",1,856982,MERIT MEDICAL SYSTEMS INC,2018-05-10,2025-10-30,10-K|10-Q,1
+NuGenerex Immuno-Oncology,1,1804585,"NUGENEREX IMMUNO-ONCOLOGY, INC.",2020-06-17,2021-06-14,10-K|10-Q,1
+AbCellera Biologics Inc.,1,1703057,AbCellera Biologics Inc.,2021-03-30,2025-11-06,10-K|10-Q,1
+"RegeneRx Biopharmaceuticals, Inc.",1,707511,REGENERX BIOPHARMACEUTICALS INC,2018-05-15,2023-05-15,10-K|10-Q,1
+"Asterias Biotherapeutics, Inc.",1,1572552,"Asterias Biotherapeutics, Inc.",2018-05-09,2018-11-09,10-Q,1
+Pain Therapeutics,1,1069530,CASSAVA SCIENCES INC | PAIN THERAPEUTICS INC,2018-05-09,2025-11-12,10-K|10-Q,1
+"OnKure, Inc.",1,1637715,"OnKure Therapeutics, Inc. | Reneo Pharmaceuticals, Inc.",2021-05-20,2025-11-06,10-K|10-Q,1
+"Humanigen, Inc.",1,1293310,"HUMANIGEN, INC",2018-05-08,2023-05-15,10-K|10-Q,1
+Prometheus Laboratories,1,1718852,"Prometheus Biosciences, Inc.",2021-05-13,2023-05-09,10-K|10-Q,1
+"PMV Pharmaceuticals, Inc",1,1699382,"PMV Pharmaceuticals, Inc.",2020-11-13,2025-11-12,10-K|10-Q,1
+"Lixte Biotechnology Holdings, Inc.",1,1335105,"LIXTE BIOTECHNOLOGY HOLDINGS, INC.",2018-04-27,2025-11-12,10-K|10-Q,1
+LeMaitre Vascular,1,1158895,LEMAITRE VASCULAR INC,2018-05-04,2025-11-07,10-K|10-Q,1
+"Zafgen, Inc.",1,1374690,"Larimar Therapeutics, Inc. | ZAFGEN, INC.",2018-05-10,2025-11-05,10-K|10-Q,1
+iTeos Therapeutics,1,1808865,"iTeos Therapeutics, Inc.",2020-09-01,2025-08-06,10-K|10-Q,1
+Omega Therapeutics,1,1850838,"Omega Therapeutics, Inc.",2021-09-10,2024-11-14,10-K|10-Q,1
+"Antares Therapeutics, Inc",1,1016169,"ANTARES PHARMA, INC.",2018-05-08,2022-05-10,10-K|10-Q,1
+Sinovac Biotech (Colombia) S.A.S.,1,1084201,SINOVAC BIOTECH LTD,2018-05-11,2024-04-29,20-F,1
+"TriSalus Life Sciences, Inc.",1,1826667,"MedTech Acquisition Corp | TriSalus Life Sciences, Inc.",2021-03-31,2025-11-13,10-K|10-Q,1
+Apollomics (Australia) Pty. Ltd.,1,1944885,Apollomics Inc.,2023-03-31,2025-04-03,20-F,1
+Tharimmune Inc,1,1861657,"Hillstream BioPharma Inc. | Tharimmune, Inc.",2022-04-01,2025-11-12,10-K|10-Q,1
+"Gain Therapeutics, Inc.",1,1819411,"Gain Therapeutics, Inc.",2021-05-10,2025-11-12,10-K|10-Q,1
+Tectonic Therapeutic,1,1681087,"AVROBIO, Inc. | Tectonic Therapeutic, Inc.",2018-08-09,2025-11-06,10-K|10-Q,1
+Tempus AI,1,1717115,"Tempus AI, Inc.",2024-08-06,2025-11-04,10-K|10-Q,1
+"Pfenex, Inc",1,1478121,Pfenex Inc.,2018-05-10,2020-08-06,10-K|10-Q,1
+MYnd Analytics,1,822370,"Emmaus Life Sciences, Inc. | MYnd Analytics, Inc.",2018-05-14,2025-11-14,10-K|10-Q,1
+Vyome Therapeutics Inc.,1,1427570,"OBALON THERAPEUTICS INC | ReShape Lifesciences Inc. | Vyome Holdings, Inc",2018-05-10,2025-11-14,10-K|10-Q,1
+BiomX Ltd,1,1739174,BiomX Inc. | Chardan Healthcare Acquisition Corp.,2019-02-06,2025-11-12,10-K|10-Q,1
+"LogicBio Therapeutics, Inc",1,1664106,"LogicBio Therapeutics, Inc.",2018-12-03,2022-11-14,10-K|10-Q,1
+Genelux GmbH,1,1231457,GENELUX CORP | GENELUX Corp,2023-03-29,2025-11-05,10-K|10-Q,1
+CMG Pharmaceutical Co. Ltd,1,1346655,"CMG HOLDINGS GROUP, INC.",2020-05-15,2024-11-25,10-K|10-Q,1
+Dogwood Therapeutics Inc.,1,1818844,"Dogwood Therapeutics, Inc. | Virios Therapeutics, Inc.",2021-03-23,2025-11-07,10-K|10-Q,1
+NeuroPace,1,1528287,NeuroPace Inc,2021-06-03,2025-11-04,10-K|10-Q,1
+Voyager Therapeutics,1,1640266,"Voyager Therapeutics, Inc.",2018-05-10,2025-11-10,10-K|10-Q,2
+Voyager Therapeutics,1,1788060,"Voyager Technologies, Inc./DE",2025-08-05,2025-11-04,10-Q,2
+"Todos Medical, Ltd.",1,1645260,TODOS MEDICAL LTD.,2018-05-15,2022-11-14,10-K|10-Q|20-F,1
+"GT Biopharma, Inc.",1,109657,"GT Biopharma, Inc.",2018-05-15,2025-11-14,10-K|10-Q,1
+"Aytu BioPharma, Inc.",1,1385818,"AYTU BIOPHARMA, INC | AYTU BIOSCIENCE, INC",2018-05-14,2025-11-13,10-K|10-Q,1
+Vyant Bio,1,1349929,"CANCER GENETICS, INC | Vyant Bio, Inc.",2018-04-02,2023-03-31,10-K|10-Q,1
+3M,1,66740,3M CO,2018-05-08,2025-10-21,10-K|10-Q,1
+Cybin Therapeutics Inc.,1,1833141,CYBIN INC.,2022-06-22,2025-07-01,40-F,1
+"Revelation Biosciences, Inc",1,1810560,"Petra Acquisition Inc. | REVELATION BIOSCIENCES, INC.",2020-11-16,2025-11-06,10-K|10-Q,1
+"Magenta Therapeutics, Inc.",1,1690585,"Dianthus Therapeutics, Inc. /DE/ | Magenta Therapeutics, Inc.",2018-08-09,2025-11-05,10-K|10-Q,1
+"CytoSorbents, Inc",1,1175151,Cytosorbents Corp,2018-05-08,2025-11-13,10-K|10-Q,1
+"Viatris Pharmaceuticals Co., Ltd.",1,1792044,Upjohn Inc | Viatris Inc,2020-05-07,2025-11-06,10-K|10-Q,1
+Vitro Biopharma Inc.,1,793171,"Vitro Biopharma, Inc.",2023-01-30,2025-09-12,10-K|10-Q,1
+Rallybio,1,1739410,Rallybio Corp,2021-09-09,2025-11-06,10-K|10-Q,1
+Merrimack Pharmaceuticals,1,1274792,MERRIMACK PHARMACEUTICALS INC,2018-05-08,2024-05-15,10-K|10-Q,1
+"EQRx, Inc.",1,1843762,"CM Life Sciences III Inc. | EQRx, Inc.",2021-05-26,2023-11-06,10-K|10-Q,1
+"Arsanis, Inc.",1,1501697,"Arsanis, Inc. | X4 Pharmaceuticals, Inc",2018-05-10,2025-11-05,10-K|10-Q,1
+XOMA (US) LLC,1,791908,XOMA Corp | XOMA Royalty Corp,2018-05-09,2025-11-12,10-K|10-Q,1
+"Telomir Pharmaceuticals, Inc.",1,1971532,"Telomir Pharmaceuticals, Inc.",2024-03-29,2025-11-10,10-K|10-Q,1
+Sionna Therapeutics Inc.,1,2036042,"Sionna Therapeutics, Inc.",2025-03-20,2025-11-05,10-K|10-Q,1
+"IGC Pharma, LLC",1,1326205,"IGC Pharma, Inc. | India Globalization Capital, Inc.",2018-06-21,2025-11-14,10-K|10-Q,1
+Skyline Therapeutics (US) Inc.,1,90896,"Champion Homes, Inc. | SKYLINE CORP | Skyline Champion Corp",2018-04-12,2025-11-05,10-K|10-Q,1
+United Pharmaceuticals,1,1082554,UNITED THERAPEUTICS Corp,2018-05-02,2025-10-29,10-K|10-Q,1
+Prelude Therapeutics Incorporated,1,1678660,Prelude Therapeutics Inc,2020-11-10,2025-11-12,10-K|10-Q,1
+Millendo Therapeutics SAS,1,1544227,"Millendo Therapeutics, Inc. | OvaScience, Inc. | Tempest Therapeutics, Inc.",2018-05-03,2025-11-05,10-K|10-Q,1
+Adagene (Suzhou) Limited,1,1818838,Adagene Inc.,2021-04-28,2025-03-24,20-F,1
+Codiak BioSciences,1,1659352,"Codiak BioSciences, Inc.",2020-11-19,2022-11-03,10-K|10-Q,1
+Histogenics Corporation,1,1372299,"HISTOGENICS CORP | Ocugen, Inc.",2018-05-10,2025-11-05,10-K|10-Q,1
+"Crown Laboratories, Inc.",1,1219601,"CROWN HOLDINGS INC | CROWN HOLDINGS, INC.",2018-05-02,2025-10-30,10-K|10-Q,1
+Aceragen,1,861838,"Aceragen, Inc. | IDERA PHARMACEUTICALS, INC.",2018-05-09,2023-06-29,10-K|10-Q,1
+Aerpio Therapeutics,1,1422142,"Aadi Bioscience, Inc. | Aerpio Pharmaceuticals, Inc. | Whitehawk Therapeutics, Inc.",2018-04-06,2025-11-06,10-K|10-Q,1
+"Passage Bio, Inc.",1,1787297,"Passage BIO, Inc.",2020-05-11,2025-11-10,10-K|10-Q,1
+ResMed,1,943819,RESMED INC,2018-04-27,2025-10-31,10-K|10-Q,1
+"Angiodynamics, Inc.",1,1275187,ANGIODYNAMICS INC,2018-04-05,2025-10-02,10-K|10-Q,1
+Paxmedica,1,1811623,"PaxMedica, Inc.",2022-09-30,2024-09-20,10-K|10-Q,1
+"Kitov Pharmaceuticals, Ltd.",1,1614744,Kitov Pharma Ltd. | PURPLE BIOTECH LTD.,2019-03-26,2025-03-10,20-F,1
+"Shuttle Pharmaceuticals, Inc.",1,1757499,"Shuttle Pharmaceuticals Holdings, Inc.",2022-11-14,2025-11-13,10-K|10-Q,1
+Ligand Pharmaceuticals,1,886163,LIGAND PHARMACEUTICALS INC,2018-05-09,2025-11-07,10-K|10-Q,1
+Fusion Pharma LLC,1,1805890,Fusion Pharmaceuticals Inc.,2020-08-11,2024-05-07,10-K|10-Q,1
+Adial Pharmaceuticals,1,1513525,"ADIAL PHARMACEUTICALS, INC.",2018-09-10,2025-11-13,10-K|10-Q,1
+Zai Lab Pty. Ltd.,1,1704292,Zai Lab Ltd,2018-04-30,2025-11-06,10-K|10-Q|20-F,1
+Bioventus LLC,1,1665988,Bioventus Inc.,2021-03-26,2025-11-04,10-K|10-Q,1
+RespireRx,1,849636,RespireRx Pharmaceuticals Inc.,2018-04-17,2023-11-17,10-K|10-Q,1
+"Salarius Pharmaceuticals, LLC",1,1615219,"Flex Pharma, Inc. | Salarius Pharmaceuticals, Inc.",2018-05-02,2025-11-14,10-K|10-Q,1
+Portage Biotech,1,1095435,PORTAGE BIOTECH INC.,2018-07-30,2025-07-25,20-F,1
+"CVRx, Inc.",1,1235912,"CVRx, Inc.",2021-08-09,2025-11-06,10-K|10-Q,1
+Coya Therapeutics,1,1835022,"Coya Therapeutics, Inc.",2023-03-29,2025-11-12,10-K|10-Q,1
+"Unicycive Therapeutics, Inc",1,1766140,"Unicycive Therapeutics, Inc.",2021-08-16,2025-11-12,10-K|10-Q,1
+Brainsway,1,1505065,Brainsway Ltd.,2020-03-23,2025-04-22,20-F,1
+UnitedHealth Group,1,731766,UNITEDHEALTH GROUP INC,2018-05-07,2025-10-28,10-K|10-Q,1
+"IGM Biosciences, Inc.",1,1496323,"IGM Biosciences, Inc.",2019-11-07,2025-07-31,10-K|10-Q,1
+RenovoRx,1,1574094,"RenovoRx, Inc.",2021-11-15,2025-11-13,10-K|10-Q,1
+"Pardes Biosciences, Inc.",1,1822711,"FS Development Corp. II | PARDES BIOSCIENCES, INC.",2021-05-17,2023-08-04,10-K|10-Q,1
+"Thorne HealthTech, Inc",1,1844280,"Thorne Healthtech, Inc.",2021-11-10,2023-08-09,10-K|10-Q,1
+Mylan Technologies Inc.,1,1623613,Mylan N.V.,2018-04-30,2020-11-06,10-K|10-Q,1
+"Exicure, Inc.",1,1698530,"EXICURE, INC.",2018-05-15,2025-11-07,10-K|10-Q,1
+Absci Pty Ltd.,1,1672688,Absci Corp,2021-09-07,2025-11-12,10-K|10-Q,1
+"Checkpoint Therapeutics, Inc.",1,1651407,"Checkpoint Therapeutics, Inc.",2018-05-10,2025-05-13,10-K|10-Q,1
+Edge Therapeutics Inc,1,1472091,"Edge Therapeutics, Inc. | PDS Biotechnology Corp",2018-05-01,2025-11-13,10-K|10-Q,1
+Acumen Pharmaceuticals,1,1576885,"Acumen Pharmaceuticals, Inc.",2021-08-16,2025-11-12,10-K|10-Q,1
+Histogen,1,1383701,Conatus Pharmaceuticals Inc. | Histogen Inc.,2018-05-03,2023-11-09,10-K|10-Q,1
+"Panbela Therapeutics, Inc.",1,1029125,"Panbela Therapeutics, Inc. | Sun BioPharma, Inc.",2018-05-14,2024-11-14,10-K|10-Q,1
+"Chinook Therapeutics, Inc. (formerly Aduro)",1,1435049,"ADURO BIOTECH, INC. | CHINOOK THERAPEUTICS, INC.",2018-05-02,2023-08-07,10-K|10-Q,1
+Aptose Biosciences Inc.,1,882361,Aptose Biosciences Inc.,2019-03-12,2025-11-13,10-K|10-Q,1
+"Noah Pharmaceuticals, Inc.",1,1499543,Noah Holdings Ltd,2018-04-30,2025-04-24,20-F,1
+"TFF Pharmaceuticals, Inc.",1,1733413,"TFF Pharmaceuticals, Inc.",2019-12-09,2024-11-20,10-K|10-Q,1
+"Immunome, Inc.",1,1472012,Immunome Inc.,2020-11-16,2025-11-06,10-K|10-Q,1
+Cellect Biotechnology,1,1671502,"Cellect Biotechnology Ltd. | Quoin Pharmaceuticals, Ltd.",2019-03-18,2025-11-06,10-K|10-Q|20-F,1
+Pieris Pharmaceuticals GmbH,1,1583648,"PALVELLA THERAPEUTICS, INC. | PIERIS PHARMACEUTICALS, INC.",2018-04-26,2025-11-12,10-K|10-Q,1
+Tempest Therapeutics,1,1544227,"Millendo Therapeutics, Inc. | OvaScience, Inc. | Tempest Therapeutics, Inc.",2018-05-03,2025-11-05,10-K|10-Q,1
+"Greenwich LifeSciences, Inc.",1,1799788,"Greenwich LifeSciences, Inc.",2020-11-16,2025-11-14,10-K|10-Q,1
+"Cyteir Therapeutics, Inc.",1,1662244,"Cyteir Therapeutics, Inc.",2021-08-09,2023-11-06,10-K|10-Q,1
+Viatris Inc.,1,1792044,Upjohn Inc | Viatris Inc,2020-05-07,2025-11-06,10-K|10-Q,1
+"Ritter Pharmaceuticals, Inc.",1,1460702,"Qualigen Therapeutics, Inc. | RITTER PHARMACEUTICALS INC",2018-05-15,2025-11-14,10-K|10-KT|10-Q,1
+"Collegium Pharmaceutical, Inc.",1,1267565,"COLLEGIUM PHARMACEUTICAL, INC",2018-05-09,2025-11-06,10-K|10-Q,1
+Accuray Incorporated,1,1138723,ACCURAY INC,2018-05-02,2025-11-05,10-K|10-Q,1
+"Virios Therapeutics, Inc.",1,1818844,"Dogwood Therapeutics, Inc. | Virios Therapeutics, Inc.",2021-03-23,2025-11-07,10-K|10-Q,1
+IntelGenx Corp.,1,1098880,IntelGenx Technologies Corp.,2018-05-10,2024-05-15,10-K|10-Q,1
+"Vigil Neuroscience, Inc.",1,1827087,"Vigil Neuroscience, Inc.",2022-03-25,2025-08-05,10-K|10-Q,1
+"Millendo Therapeutics, Inc.",1,1544227,"Millendo Therapeutics, Inc. | OvaScience, Inc. | Tempest Therapeutics, Inc.",2018-05-03,2025-11-05,10-K|10-Q,1
+"Citius Pharmaceuticals, Inc.",1,1506251,"Citius Pharmaceuticals, Inc.",2018-05-11,2025-12-23,10-K|10-Q,1
+Axogen Corporation,1,805928,"AxoGen, Inc. | Axogen, Inc.",2018-04-30,2025-10-29,10-K|10-Q,1
+Depomed,1,1005201,"Assertio Therapeutics, Inc | DEPOMED INC",2018-05-10,2020-05-11,10-K|10-Q,1
+"Imara, Inc.",1,1672619,"Enliven Therapeutics, Inc. | IMARA Inc.",2020-05-07,2025-11-12,10-K|10-Q,1
+"Translate Bio, Inc.",1,1693415,"Translate Bio, Inc.",2018-08-09,2021-08-05,10-K|10-Q,1
+"ZyVersa Therapeutics, Inc.",1,1859007,"Larkspur Health Acquisition Corp. | ZyVersa Therapeutics, Inc.",2022-04-15,2025-11-19,10-K|10-Q,1
+MiNK Therapeutics,1,1840229,"MiNK Therapeutics, Inc.",2021-11-29,2025-11-14,10-K|10-Q,1
+"Beta Pharma (Suzhou) Co., Ltd.",1,1784570,"BETA Technologies, Inc.",2025-12-04,2025-12-04,10-Q,1
+Anebulo Pharmaceuticals,1,1815974,"Anebulo Pharmaceuticals, Inc.",2021-06-21,2025-11-13,10-K|10-Q,1
+Kineta Inc.,1,1445283,"KINETA, INC./DE | PROTEOSTASIS THERAPEUTICS, INC. | YUMANITY THERAPEUTICS, INC.",2018-05-09,2025-05-15,10-K|10-Q,1
+Northwest Biotherapeutics,1,1072379,NORTHWEST BIOTHERAPEUTICS INC,2018-04-17,2025-11-14,10-K|10-Q,1
+"Aileron Therapeutics, Inc.",1,1420565,"AILERON THERAPEUTICS INC | Aileron Therapeutics, Inc. | Rein Therapeutics, Inc.",2018-04-02,2025-11-14,10-K|10-Q,1
+Aurora Cannabis Inc,1,1683541,AURORA CANNABIS INC,2019-09-11,2025-06-18,40-F,1
+Kazia Therapeutics Limited,1,1075880,KAZIA THERAPEUTICS LTD,2018-10-24,2025-11-07,20-F,1
+Artivion Inc.,1,784199,"ARTIVION, INC. | CRYOLIFE INC",2018-05-04,2025-11-07,10-K|10-Q,1
+"Verve Therapeutics, Inc.",1,1840574,"Verve Therapeutics, Inc.",2021-08-12,2025-05-14,10-K|10-Q,1
+"Talphera, Inc",1,1427925,"ACELRX PHARMACEUTICALS INC | TALPHERA, INC.",2018-05-10,2025-11-12,10-K|10-Q,1
+"TScan Therapeutics, Inc.",1,1783328,"TScan Therapeutics, Inc.",2021-08-19,2025-11-12,10-K|10-Q,1
