@@ -21,3 +21,4 @@ __pycache__/
 screeners/biotech/biocat_out.log
 screeners/biotech/research/*/filings/
 screeners/biotech/research/*.zip
+screeners/biotech/regsig_out/
