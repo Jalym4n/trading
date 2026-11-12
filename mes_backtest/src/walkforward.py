@@ -77,6 +77,12 @@ def run_walk_forward(cfg: dict, strategy, instruments=None, params=None, slippag
     out["test_pooled"] = S.summarize(tt, cfg, B.weeks_in(days, cfg) if len(days) else None)
     out["test_pooled_doubled_slippage"] = S.summarize(
         B.recost_frame(tt, cfg, slippage_mult * 2.0, params), cfg, B.weeks_in(days, cfg) if len(days) else None)
+    if len(tt) > 2 and tt["net_usd"].std(ddof=1) > 0:
+        # t of the mean net P&L per trade, on daily sums (trades on one day are not independent)
+        daily = tt.groupby("date")["net_usd"].sum()
+        out["t_pooled"] = float(daily.mean() / (daily.std(ddof=1) / len(daily) ** 0.5))
+    else:
+        out["t_pooled"] = None
     out["positive_test_windows"] = sum(
         1 for w in out["windows"] if (pooled(w["test"]).get("expectancy_net_usd") or 0) > 0)
     out["n_test_windows"] = len(out["windows"])

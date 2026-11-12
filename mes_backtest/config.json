@@ -46,6 +46,22 @@
       "tick_size": 0.25,
       "tick_value_usd": 0.5,
       "commission_rt_usd": 1.24
+    },
+    "MGC": {
+      "name": "Micro Gold",
+      "root": "MGC",
+      "point_value_usd": 10.0,
+      "tick_size": 0.1,
+      "tick_value_usd": 1.0,
+      "commission_rt_usd": 1.24
+    },
+    "M6E": {
+      "name": "Micro EUR/USD",
+      "root": "M6E",
+      "point_value_usd": 12500.0,
+      "tick_size": 0.0001,
+      "tick_value_usd": 1.25,
+      "commission_rt_usd": 1.24
     }
   },
   "params": {
@@ -182,11 +198,19 @@
     "trial_log": "results/trial_log.jsonl (append-only, hash-chained, committed)",
     "holdout_ledger": "results/holdout_ledger.jsonl (who consumed the holdout, when, at which commit)",
     "trial_budget": {
-      "ceiling": 10,
-      "set_on": "2026-11-10",
-      "set_at_trial_count": 3,
-      "advance_rule": "a strategy advances only with net expectancy > 0 on training AND across the walk-forward windows; a tweak is a new trial, counted",
-      "stopping_rule": "if nothing clears all four gates on walk-forward within the budget, the conclusion is: no edge I can build trades often enough and survives costs on a $1,000 buffer. Nothing is funded."
+      "ceiling": 15,
+      "set_on": "2026-11-12",
+      "set_at_trial_count": 10,
+      "advance_rule": "trials 11-15: a strategy advances only with net expectancy > 0 on training AND, on the pooled walk-forward test trades, net expectancy > 0 with t >= 3.0 and a majority of windows positive. The bar was raised with the budget: more trials, more false positives.",
+      "stopping_rule": "if nothing clears all four gates on walk-forward within the budget, the conclusion is: no edge I can build trades often enough and survives costs on a $1,000 buffer. Nothing is funded.",
+      "history": [
+        {
+          "ceiling": 10,
+          "set_on": "2026-11-10",
+          "spent_on": "2026-11-12"
+        }
+      ],
+      "min_t_pooled_oos": 3.0
     }
   },
   "contract_roll": {

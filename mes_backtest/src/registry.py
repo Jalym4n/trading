@@ -13,7 +13,8 @@ Contract (the harness relies on every line of it):
   - bars are consumed in time order: a decision at bar i uses bars <= i only.
     tests/test_registry.py mutates every bar after an entry and asserts the
     entry is unchanged, for EVERY registered strategy;
-  - prices are instrument points; the strategy never sees point values or costs;
+  - prices are instrument points; the strategy never sees costs. params carries
+    _point_value_usd and _tick_size so a rule can state a dollar amount in price units;
   - returns src.strategy.DayResult (status in DAY_CATEGORIES, trades, detail).
 
 Put the module in src/strategies/; the package imports every file there, so a

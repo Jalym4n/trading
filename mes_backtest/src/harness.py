@@ -45,6 +45,7 @@ def _results_summary(training: dict | None, wf: dict | None) -> dict:
         out["walk_forward_test_pooled"] = _slim(wf["test_pooled"])
         out["walk_forward_test_pooled_doubled_slippage"] = _slim(wf["test_pooled_doubled_slippage"])
         out["positive_test_windows"] = f"{wf['positive_test_windows']}/{wf['n_test_windows']}"
+        out["t_pooled"] = wf.get("t_pooled")
         if "by_regime" in wf:
             out["by_regime"] = {k: _slim(v) for k, v in wf["by_regime"].items()}
     return out
@@ -83,7 +84,13 @@ def cmd_run(a, cfg) -> None:
                            "TEST doubled slip": W.pooled(w["test_doubled_slippage"])}).to_string())
         _print_stats("all TEST windows pooled", {"test pooled": wf["test_pooled"],
                                                   "test pooled, doubled slippage": wf["test_pooled_doubled_slippage"]})
-        print(f"\ntest windows with net expectancy > 0: {wf['positive_test_windows']} of {wf['n_test_windows']}")
+        print(f"\ntest windows with net expectancy > 0: {wf['positive_test_windows']} of {wf['n_test_windows']}; "
+              f"pooled t (daily sums): {wf.get('t_pooled')}")
+        if len(instruments) > 1:
+            for inst in instruments:
+                sub = wf["test_trades"][wf["test_trades"]["instrument"] == inst]
+                print(f"  {inst}: test trades {len(sub)}, net ${sub['net_usd'].mean():.2f}/trade, total ${sub['net_usd'].sum():,.0f}"
+                      if len(sub) else f"  {inst}: no test trades")
         if "by_regime" in wf:
             _print_stats("test trades by volatility regime (terciles of lagged 20-day realized vol)", wf["by_regime"])
     rows = G.scorecard(cfg, W.pooled(training["stats"]) if training else None, wf,

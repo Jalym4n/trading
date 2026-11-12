@@ -108,7 +108,7 @@ def test_scorecard_fails_gate1_and_marks_unmeasured_gates_na():
     assert [r["verdict"] for r in rows if r["gate"] == "GATE 2"] == ["PASS"]
     assert [r["verdict"] for r in rows if r["gate"] in ("GATE 3", "GATE 4")] == ["n/a", "n/a"]
     assert "NOT VIABLE: fails GATE 1" in G.format_scorecard(rows)
-    wf = {"test_pooled": dict(tr, trades_per_week=3.4), "positive_test_windows": 3, "n_test_windows": 4,
+    wf = {"test_pooled": dict(tr, trades_per_week=3.4), "positive_test_windows": 3, "n_test_windows": 4, "t_pooled": 3.4,
           "test_pooled_doubled_slippage": {"expectancy_net_usd": -0.5}}
     rows = G.scorecard(CFG, tr, wf)
     assert [r["verdict"] for r in rows if r["gate"].startswith("GATE")] == ["PASS", "PASS", "PASS", "n/a"]
@@ -137,3 +137,12 @@ def test_rescore_reads_only(tmp_path):
     r = G.rescore(CFG, log)
     assert log.read_text() == before and G.trial_count(log)["distinct"] == 1
     assert [x["verdict"] for x in r[0]["scorecard"] if x["gate"] == "GATE 2"] == ["FAIL"]   # $2,263 > $1,800
+
+
+def test_gate3_needs_t_of_3_under_the_raised_budget():
+    tr = {"n_trades": 400, "trades_per_week": 4.0, "max_dd_usd": 900.0, "expectancy_net_usd": 5.0,
+          "best_day_pct_of_target": 5.0, "trades_to_target": 1200.0, "worst_streak_loss_usd": -300.0, "max_consec_losses": 8}
+    weak = {"test_pooled": tr, "positive_test_windows": 3, "n_test_windows": 4, "t_pooled": 1.4,
+            "test_pooled_doubled_slippage": {"expectancy_net_usd": 2.0}}
+    assert [r["verdict"] for r in G.scorecard(CFG, tr, weak) if r["gate"] == "GATE 3"] == ["FAIL"]
+    assert [r["verdict"] for r in G.scorecard(CFG, tr, dict(weak, t_pooled=3.2)) if r["gate"] == "GATE 3"] == ["PASS"]

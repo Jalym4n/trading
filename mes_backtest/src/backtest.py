@@ -147,6 +147,9 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
     trades, days = [], []
     for inst in instruments:
         spec = instrument_spec(cfg, inst)
+        # contract facts a rule may need to express a DOLLAR amount in price units (a $150 stop is
+        # 30 MES points, 75 MNQ points, 15 MGC points); costs still never reach the strategy
+        p_inst = dict(p, _point_value_usd=spec["point_value_usd"], _tick_size=spec["tick_size"])
         d = read_processed(inst)
         m5, sess = d["m5"], d["sessions"]
         lv = d.get("levels")
@@ -173,7 +176,7 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
                 levels["prior_high"] = float(prior_high.get(day, float("nan")))
                 levels["prior_low"] = float(prior_low.get(day, float("nan")))
                 levels["daily_sma"] = float(sma.get(day, float("nan")))
-                res = strategy(m5[m5["date"] == day], levels, p)
+                res = strategy(m5[m5["date"] == day], levels, p_inst)
             cat = day_category(bool(row["roll_skip"]), bool(row["data_skip"]), res)
             days.append({"instrument": inst, "date": day.date().isoformat(), "contract": row["contract"],
                          "category": cat, "n_trades": len(res.trades) if res else 0,

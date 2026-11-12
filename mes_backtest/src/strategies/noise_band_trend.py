@@ -45,7 +45,12 @@ def noise_band_trend(day_bars, prior_levels, params):
     o, h, l, c = (day_bars[k].to_numpy(float) for k in ("open", "high", "low", "close"))
     hi_ref, lo_ref = max(o[0], pc), min(o[0], pc)
     date = day_bars.index[0].strftime("%Y-%m-%d")
-    stop_pts = params["nbt_stop_points"]
+    if params.get("nbt_stop_usd"):
+        # the same DOLLAR stop on every instrument, rounded down to the tick
+        tick = params["_tick_size"]
+        stop_pts = int(params["nbt_stop_usd"] / params["_point_value_usd"] / tick + 1e-9) * tick
+    else:
+        stop_pts = params["nbt_stop_points"]
     nan = float("nan")
     trades, pos = [], None                      # pos = (side, sgn, entry, stop, entry_label)
 
@@ -80,3 +85,17 @@ def noise_band_trend(day_bars, prior_levels, params):
             elif c[i] < lower:
                 pos = ("short", -1, c[i], c[i] + stop_pts, lab)
     return DayResult("traded" if trades else "no-signal", trades, {"open": o[0], "prior_close": pc})
+
+
+@register(
+    "noise_band_trend_usd",
+    hypothesis="The noise-band trend effect is a property of intraday markets, not of MES 2020-2025: the "
+               "UNCHANGED rule, with its stop expressed as the same $150 per contract, is positive after "
+               "costs on other liquid futures (Nasdaq, gold, euro).",
+    disproof="Pooled walk-forward net expectancy <= 0, or t < 3 on the pooled test trades, or fewer than a "
+             "majority of windows positive.",
+    defaults={"nbt_stop_usd": 150.0, "noise_lookback_days": 14,
+              "slippage_applies_to": ["entry", "stop", "stop_gap", "time", "band"]},
+)
+def noise_band_trend_usd(day_bars, prior_levels, params):
+    return noise_band_trend(day_bars, prior_levels, params)

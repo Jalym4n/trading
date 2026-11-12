@@ -284,8 +284,12 @@ def scorecard(cfg: dict, training: dict | None = None, walk_forward: dict | None
         exp = basis.get("expectancy_net_usd")
         if walk_forward is not None:
             k, n = walk_forward["positive_test_windows"], walk_forward["n_test_windows"]
-            add("GATE 3", "net expectancy > 0 AND positive in a majority of test windows",
-                f"${fmt(exp)}/trade; {k}/{n} windows positive", (exp or 0) > 0 and k > n / 2)
+            min_t = cfg["validation"]["trial_budget"].get("min_t_pooled_oos")
+            tval = walk_forward.get("t_pooled")
+            ok = (exp or 0) > 0 and k > n / 2 and (min_t is None or tval is None or tval >= min_t)
+            add("GATE 3", f"net expectancy > 0, majority of test windows positive"
+                + (f", pooled t >= {min_t:g}" if min_t else ""),
+                f"${fmt(exp)}/trade; {k}/{n} windows positive; t {fmt(tval)}", ok)
         else:
             # a non-positive training expectancy already fails the first condition; a positive one
             # still needs the walk-forward windows

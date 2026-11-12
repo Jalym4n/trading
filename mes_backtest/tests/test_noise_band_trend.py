@@ -70,3 +70,11 @@ def test_noise_sigma_uses_only_earlier_days():
     assert s["09:55"].iloc[2] == pytest.approx(0.015) and s["09:55"].iloc[4] == pytest.approx(0.035)
     m5.loc[m5["date"] == m5["date"].max(), "close"] *= 3               # today's bars cannot move today's sigma
     assert noise_sigma(m5, 2)["09:55"].iloc[4] == pytest.approx(0.035)
+
+
+def test_dollar_stop_scales_with_the_contract():
+    from src.strategies.noise_band_trend import noise_band_trend_usd
+    d = day({"10:25": 102.0, "15:55": 104.0})
+    mes = noise_band_trend_usd(d, LV, dict(P, nbt_stop_usd=150.0, _point_value_usd=5.0, _tick_size=0.25)).trades[0]
+    mgc = noise_band_trend_usd(d, LV, dict(P, nbt_stop_usd=150.0, _point_value_usd=10.0, _tick_size=0.1)).trades[0]
+    assert (mes.entry - mes.stop, round(mgc.entry - mgc.stop, 6)) == (30.0, 15.0)
