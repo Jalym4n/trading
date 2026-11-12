@@ -23,3 +23,20 @@ Disproof, per event: mean excess return not distinguishable from zero (|t| < 2),
 differs between development (through 2023-12-31) and holdout (2024-01-01 to 2025-12-31).
 Fewer than 100 development events: "not testable". Trial budget: 10 (E1-E6 + 4 variants).
 Text similarity = difflib.SequenceMatcher ratio on lowercase, punctuation-stripped measure text.
+
+## Analysis rules (fixed 2026-11-12, before the first return was computed)
+
+- Sample: small-cap (< $1B at the event), pharma/biotech SIC (2833-2836, 8731), development
+  period only, and the whole measurement window must END on or before 2023-12-31.
+- Return: entry at the close of the first trading day after the event date; exit at the close
+  20 (primary) and 60 (secondary) of the stock's own trading bars later. A stock that stops
+  trading before the exit uses its last traded close (a bankruptcy is already near zero there).
+- Excess return = stock return minus XBI return over the same calendar dates.
+- Abnormal return = excess return minus the SAME company's average excess return over every
+  possible entry day in the development period (its placebo). This removes the fact that
+  small biotechs as a group drift against XBI.
+- PRIMARY test, one per event type: mean 20-day abnormal return, events with no 8-K within 3
+  days, significance clustered by company (t of the company means). |t| >= 2 with the
+  predicted sign is a pass for E1, E2, E3, E6; E5 has no predicted sign.
+- Secondary (reported, not decisive): 60-day horizon; the all-events sample; medians;
+  windows without a split or suspect jump.
