@@ -103,6 +103,21 @@ def apply_costs(trade: dict, spec: dict, params: dict, slippage_mult: float = 1.
             "r_net": net_usd / risk_usd if risk_usd else float("nan")}
 
 
+def gex_context(days: pd.DatetimeIndex, window: int = 252) -> tuple[pd.Series, pd.Series]:
+    """SPX dealer gamma exposure (SqueezeMetrics daily file, data/external/squeezemetrics_dix.csv).
+    For trading day D: gex_prev = the value published for the PREVIOUS trading day, and
+    gex_median = the median of the 252 values before that. Nothing from day D or later is used.
+    Empty series when the file is absent (strategies that need it then return no-levels)."""
+    path = ROOT / "data" / "external" / "squeezemetrics_dix.csv"
+    if not path.exists():
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+    g = pd.read_csv(path, parse_dates=["date"]).set_index("date")["gex"].sort_index()
+    prev = g.shift(1)
+    med = g.shift(2).rolling(window).median()
+    idx = pd.DatetimeIndex(days)
+    return prev.reindex(idx), med.reindex(idx)
+
+
 def noise_sigma(m5: pd.DataFrame, lookback: int) -> pd.DataFrame:
     """index = date, columns = bar label "HH:MM": the mean of |bar close / that day's first RTH
     open - 1| over the `lookback` most recent EARLIER days that have that bar. Today's own bars
@@ -145,6 +160,7 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
         prior_high, prior_low = daily["high"].shift(1), daily["low"].shift(1)
         # daily bias input: the prior close against the mean of the closes BEFORE today (no look-ahead)
         sma = daily["close"].rolling(int(p.get("smc_bias_sma", 20))).mean().shift(1)
+        gex_prev, gex_med = gex_context(sess.index)
         sess = sess[(sess.index >= s_ts) & (sess.index <= e_ts)]
         for day, row in sess.iterrows():
             res: DayResult | None = None
@@ -152,6 +168,8 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
                 levels = lv.loc[day, ["poc", "vah", "val"]].to_dict() if day in lv.index else dict(NAN_LEVELS)
                 levels["prior_close"] = float(prior_close.get(day, float("nan")))
                 levels["noise_sigma"] = sigma.loc[day].to_dict() if day in sigma.index else {}
+                levels["gex_prev"] = float(gex_prev.get(day, float("nan")))
+                levels["gex_median"] = float(gex_med.get(day, float("nan")))
                 levels["prior_high"] = float(prior_high.get(day, float("nan")))
                 levels["prior_low"] = float(prior_low.get(day, float("nan")))
                 levels["daily_sma"] = float(sma.get(day, float("nan")))
