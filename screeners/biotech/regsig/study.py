@@ -23,18 +23,20 @@ MIN_EVENTS = 100
 HORIZONS = (20, 60)
 
 
-def forward_excess(g: pd.DataFrame, xbi: pd.Series, h: int) -> pd.Series:
-    """For every bar i of one symbol (dev bars only): return from close[i] to close[i+h] (or the
-    last bar if the stock stops trading first, provided at least one later bar exists), minus XBI
-    over the same dates. Index = entry date."""
+def forward_excess(g: pd.DataFrame, xbi: pd.Series, h: int, stopped: bool) -> pd.Series:
+    """One symbol's development bars -> excess return for every entry bar i, index = entry date.
+    Return runs close[i] -> close[i+h]. If fewer than h later bars exist: when the stock stopped
+    trading inside development (`stopped`), its last close is the exit; otherwise the window is
+    cut by the development boundary and the entry is NaN (not usable). XBI over the same dates."""
     c, d = g["adj_close"].to_numpy(float), g["date"].to_numpy()
     n = len(c)
-    j = np.minimum(np.arange(n) + h, n - 1)
-    stock = c[j] / c - 1.0
-    bench = xbi.reindex(d[j]).to_numpy() / xbi.reindex(d).to_numpy() - 1.0
-    out = pd.Series(stock - bench, index=d)
-    out[j == np.arange(n)] = np.nan                    # no later bar at all
-    return out, pd.Series(d[j], index=d), pd.Series(j - np.arange(n) < h, index=d)
+    i = np.arange(n)
+    j = np.minimum(i + h, n - 1)
+    ex = c[j] / c - 1.0 - (xbi.reindex(d[j]).to_numpy() / xbi.reindex(d).to_numpy() - 1.0)
+    short = (j - i) < h
+    ex[short & (not stopped)] = np.nan
+    ex[j == i] = np.nan
+    return pd.Series(ex, index=d)
 
 
 def clustered(x: pd.Series, cluster: pd.Series) -> dict:
@@ -53,31 +55,22 @@ def main():
     ev = pd.read_csv(os.path.join(OUT, "event_table.csv"), dtype={"sic": str})
     ev = ev[(ev["period"] == "development") & (ev["small_cap"] == True) & ev["sic"].isin(SIC)]   # noqa: E712
     by_sym = {s: g.reset_index(drop=True) for s, g in panel.groupby("symbol") if s in set(ev["symbol"])}
-    fwd = {}
-    for s, g in by_sym.items():
-        fwd[s] = {h: forward_excess(g, xbi, h) for h in HORIZONS}
+    fwd, placebo = {}, {}
+    for sym, g in by_sym.items():
+        stopped = g["date"].iloc[-1] <= "2023-11-30"           # last development bar well before the boundary
+        fwd[sym] = {h: forward_excess(g, xbi, h, stopped) for h in HORIZONS}
+        placebo[sym] = {h: float(np.nanmean(fwd[sym][h])) if fwd[sym][h].notna().any() else np.nan for h in HORIZONS}
     rows = []
     for e in ev.itertuples():
         f = fwd.get(e.symbol)
-        if f is None:
+        if f is None or e.entry_date not in f[20].index:
             continue
         r = {"event": e.event, "symbol": e.symbol, "cik": e.cik, "entry_date": e.entry_date, "near_8k": bool(e.near_8k),
              "suspect": bool(e.suspect_split_within_60d), "year": e.entry_date[:4]}
-        ok = True
         for h in HORIZONS:
-            ex, exit_date, truncated = f[h]
-            if e.entry_date not in ex.index or np.isnan(ex[e.entry_date]):
-                ok = False
-                break
-            # full window inside development: h bars exist, or the stock stopped trading before DEV_END - 30d
-            last_bar = by_sym[e.symbol]["date"].iloc[-1]
-            if truncated[e.entry_date] and last_bar > "2023-11-30":
-                ok = ok and h != 20                    # 60d may be cut by the dev boundary: drop that horizon only
-                r[f"ex{h}"] = np.nan
-                continue
-            placebo = float(ex[~truncated | (last_bar <= "2023-11-30")].mean())
-            r[f"ex{h}"], r[f"ab{h}"], r[f"trunc{h}"] = float(ex[e.entry_date]), float(ex[e.entry_date]) - placebo, bool(truncated[e.entry_date])
-        if ok:
+            x = float(f[h][e.entry_date])
+            r[f"ex{h}"], r[f"ab{h}"] = x, x - placebo[e.symbol][h]
+        if not np.isnan(r["ab20"]):
             rows.append(r)
     t = pd.DataFrame(rows)
     t.to_csv(os.path.join(OUT, "study_dev_events.csv"), index=False)
