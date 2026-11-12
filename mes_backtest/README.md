@@ -103,8 +103,8 @@ counter.
   the budget, the conclusion is: *no edge I can build trades often enough and
   survives costs on a $1,000 buffer.* Nothing is funded. That is the deliverable.
 
-**Budget raised on 2026-11-12, after the first 10 were spent:** ceiling 15, and for
-trials 11-15 the bar is higher: pooled walk-forward net expectancy > 0 with **t >= 3**
+**Budget raised on 2026-11-12, after the first 10 were spent:** ceiling 20 (set to 15,
+then 20 the same day, before trial 11 ran), and for trials 11-20 the bar is higher: pooled walk-forward net expectancy > 0 with **t >= 3**
 (on daily sums) and a majority of windows positive.
 
 ### The holdout rule (enforced in code)
