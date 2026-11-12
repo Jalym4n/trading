@@ -142,6 +142,7 @@ no holdout was run for it, because nothing earned one.
 | 4 | `late_day_momentum` (15:30 entry with the day's move, exit 15:55, 10-pt stop) | 481 | 4.76 | +1.04 | -2.70 | 0.87 | $2,263 | 2, 3 |
 | 5 | `noise_band_trend` (outside the 14-day noise band at half-hour checks, 30-pt stop) | 372 | 3.68 | +10.52 | +6.78 | 1.25 | $835 | training: none. Walk-forward 2022-2025: Gate 2 (max DD $1,944) |
 | 6 | `smc_sweep_bos` (liquidity sweep, break of structure, order block / FVG in discount, daily bias) | 66 | 0.65 | -0.70 | -3.91 | 0.78 | $453 | 1, 3 |
+| 7 | `amt_value_reentry` (open outside prior value area, accepted back in, VWAP side; the '80% rule') | 68 | 0.67 | +12.54 | +9.31 | 1.47 | $452 | training: 1. Walk-forward 2022-2025: 1, 3 (net -$5.16, 2 of 4 windows) |
 
 Scored against the LucidFlex 100K gates (Gate 2: max drawdown < $1,800). The
 account was switched from the 25K on 2026-11-10 after these four trials; they
@@ -181,4 +182,4 @@ enough to fund. Not a finalist; the holdout stays unspent. (Trial-log line 6
 carries a wrong pooled doubled-slippage figure, +$4.14; line 7 is the corrected
 re-run, +$2.68. Same trades, same trial.)
 
-Every run is in `results/trial_log.jsonl` (6 of the 10-trial budget used).
+Every run is in `results/trial_log.jsonl` (7 of the 10-trial budget used).
