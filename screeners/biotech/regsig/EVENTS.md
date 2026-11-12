@@ -40,3 +40,16 @@ Text similarity = difflib.SequenceMatcher ratio on lowercase, punctuation-stripp
   predicted sign is a pass for E1, E2, E3, E6; E5 has no predicted sign.
 - Secondary (reported, not decisive): 60-day horizon; the all-events sample; medians;
   windows without a split or suspect jump.
+
+## Variant V1: rank test for E1 and E6 (fixed 2026-11-12, before it was run; trial 7 of 10)
+
+Reason: the primary test compares means, and small-biotech returns have extreme outliers, so
+it has little power. V1 uses the same sample, window and events and changes only the statistic.
+
+- For each event, take the stock's 20-day excess return (vs XBI) and express it as its
+  PERCENTILE within the same company's own distribution of 20-day excess returns over every
+  valid entry day in the development period (0 = worst the stock ever did, 1 = best).
+- With no effect the expected percentile is 0.50. Statistic: mean over companies of the
+  company's average event percentile, minus 0.50; t across companies.
+- Pass: t <= -2 (both events predict negative). Sample: no 8-K within 3 days, as before.
+- Two tests are run (E1, E6), so one passing by chance has roughly a 5% probability.
