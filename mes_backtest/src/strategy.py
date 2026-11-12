@@ -272,7 +272,8 @@ def run_day(bars: pd.DataFrame, levels: dict, p: dict, confluence: bool = True) 
 
 # one category per calendar day, in this precedence; every day lands in exactly one
 DAY_CATEGORIES = ["roll-skip", "missing-bars", "no-levels", "short-day", "no-breakout", "no-confirmation",
-                  "leg-too-small", "no-zone", "risk-too-large", "no-trigger", "no-signal", "traded"]
+                  "leg-too-small", "no-bias", "no-sweep", "no-bos", "no-zone", "risk-too-large", "no-trigger", "no-signal",
+                  "traded"]
 
 
 def day_category(roll_skip: bool, data_skip: bool, result: "DayResult | None") -> str:

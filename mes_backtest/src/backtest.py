@@ -141,6 +141,10 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
         # (the first session of a new contract is roll-skip); known before the day starts
         prior_close = m5.groupby("date")["close"].last().shift(1)
         sigma = noise_sigma(m5, int(p.get("noise_lookback_days", 14)))
+        daily = m5.groupby("date").agg(high=("high", "max"), low=("low", "min"), close=("close", "last"))
+        prior_high, prior_low = daily["high"].shift(1), daily["low"].shift(1)
+        # daily bias input: the prior close against the mean of the closes BEFORE today (no look-ahead)
+        sma = daily["close"].rolling(int(p.get("smc_bias_sma", 20))).mean().shift(1)
         sess = sess[(sess.index >= s_ts) & (sess.index <= e_ts)]
         for day, row in sess.iterrows():
             res: DayResult | None = None
@@ -148,6 +152,9 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
                 levels = lv.loc[day, ["poc", "vah", "val"]].to_dict() if day in lv.index else dict(NAN_LEVELS)
                 levels["prior_close"] = float(prior_close.get(day, float("nan")))
                 levels["noise_sigma"] = sigma.loc[day].to_dict() if day in sigma.index else {}
+                levels["prior_high"] = float(prior_high.get(day, float("nan")))
+                levels["prior_low"] = float(prior_low.get(day, float("nan")))
+                levels["daily_sma"] = float(sma.get(day, float("nan")))
                 res = strategy(m5[m5["date"] == day], levels, p)
             cat = day_category(bool(row["roll_skip"]), bool(row["data_skip"]), res)
             days.append({"instrument": inst, "date": day.date().isoformat(), "contract": row["contract"],
