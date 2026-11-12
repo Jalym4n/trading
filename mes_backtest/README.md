@@ -150,6 +150,7 @@ no holdout was run for it, because nothing earned one.
 | 8 | `crt_hourly` (5-min sweep of the prior hour's range, closes back in, structure shift, target the other side) | 321 | 3.18 | +1.51 | -1.69 | 0.91 | $1,331 | 3 |
 | 9 | `crt_hourly_high_gamma` (trial 8 only on days after SPX GEX above its 252-day median) | 196 | 1.94 | +5.11 | +1.97 | 1.13 | $552 | training: 1. Walk-forward: 1, 3 (net -$2.12, 2 of 4 windows) |
 | 10 | `noise_band_low_gamma` (trial 5 only on days after GEX below its median) | 191 | 1.89 | +9.12 | +5.38 | 1.16 | $868 | training: 1. Walk-forward: 1, 3 (net +$3.95, t 0.6, 2 of 4 windows) |
+| 11 | `noise_band_trend_usd` on MNQ + MGC + M6E (unchanged rule, $150 stop) | 1,038 | 10.28 | +5.71 | +2.72 | 1.10 | $1,784 | Walk-forward pooled: net +$6.24, 4 of 4 windows, t 2.3 (bar is 3); max DD $2,938. Fails 2 and 3. By market out of sample: MNQ +$18.65 (t 2.7, every year positive), MGC +$1.20, M6E -$3.72 |
 
 Scored against the LucidFlex 100K gates (Gate 2: max drawdown < $1,800). The
 account was switched from the 25K on 2026-11-10 after these four trials; they
@@ -189,4 +190,4 @@ enough to fund. Not a finalist; the holdout stays unspent. (Trial-log line 6
 carries a wrong pooled doubled-slippage figure, +$4.14; line 7 is the corrected
 re-run, +$2.68. Same trades, same trial.)
 
-Every run is in `results/trial_log.jsonl` (10 of the 10-trial budget used: the budget set on 2026-11-10 is spent).
+Every run is in `results/trial_log.jsonl` (11 of 20 used).
