@@ -151,6 +151,11 @@ no holdout was run for it, because nothing earned one.
 | 9 | `crt_hourly_high_gamma` (trial 8 only on days after SPX GEX above its 252-day median) | 196 | 1.94 | +5.11 | +1.97 | 1.13 | $552 | training: 1. Walk-forward: 1, 3 (net -$2.12, 2 of 4 windows) |
 | 10 | `noise_band_low_gamma` (trial 5 only on days after GEX below its median) | 191 | 1.89 | +9.12 | +5.38 | 1.16 | $868 | training: 1. Walk-forward: 1, 3 (net +$3.95, t 0.6, 2 of 4 windows) |
 | 11 | `noise_band_trend_usd` on MNQ + MGC + M6E (unchanged rule, $150 stop) | 1,038 | 10.28 | +5.71 | +2.72 | 1.10 | $1,784 | Walk-forward pooled: net +$6.24, 4 of 4 windows, t 2.3 (bar is 3); max DD $2,938. Fails 2 and 3. By market out of sample: MNQ +$18.65 (t 2.7, every year positive), MGC +$1.20, M6E -$3.72 |
+| 12 | `htf_sweep_choch_volume` (sweep of Asia / London / prior-day high or low, structure break on a 1.5x volume spike, 2R) | 54 | 0.53 | +1.74 | -1.70 | 0.94 | $631 | 1, 3 |
+| 13 | `smt_divergence` (MES sweeps its 1-hour extreme, MNQ does not, 2R) | 817 | 8.09 | -2.05 | -5.42 | 0.58 | $4,429 | 2, 3 (negative before costs) |
+| 14 | `poc_ifvg_flip` (FVG at the prior POC closed through, retest of the inverse gap, 2R) | 123 | 1.22 | +3.29 | -0.08 | 0.99 | $433 | 1, 3 |
+| 15 | `keltner_box_reversion` (outside the daily range box and the Keltner band, 3/8 EMA cross back, 2R) | 82 | 0.81 | -11.05 | -14.59 | 0.60 | $1,271 | 1, 3 (negative before costs) |
+| 16 | `noise_band_trend_usd` on NQ 2010-2019 with MNQ economics (backward confirmation of trial 11, pre-registered) | 1,878 | 3.92 | +3.75 | +1.51 | 1.11 | $1,150 | **Confirmation FAILS**: t 1.33 (bar 3), 4 of 9 full years positive, 2018 alone is +$4,025 of the +$2,827 total; +$0.51/trade at doubled slippage |
 
 Scored against the LucidFlex 100K gates (Gate 2: max drawdown < $1,800). The
 account was switched from the 25K on 2026-11-10 after these four trials; they
@@ -190,4 +195,18 @@ enough to fund. Not a finalist; the holdout stays unspent. (Trial-log line 6
 carries a wrong pooled doubled-slippage figure, +$4.14; line 7 is the corrected
 re-run, +$2.68. Same trades, same trial.)
 
-Every run is in `results/trial_log.jsonl` (11 of 20 used).
+Trials 12-15 (2026-11-13) are four confluence set-ups supplied by the operator,
+mechanised in `src/strategies/user_confluences.py` and committed before any run.
+All four are net negative on training, so none earned a walk-forward. Two have a
+small positive gross (+$1.74 and +$3.29 a trade) that is smaller than the ~$3.40
+round-trip cost: the same shape as trials 4 and 8. A fifth set-up (cumulative
+delta divergence) needs trade-level order flow, quoted at $616, and was not run.
+
+Trial 16 is the test trial 11 called for: the MNQ result was picked out of three
+markets after the fact, so the unchanged rule was run on ten earlier years of NQ
+prices that no trial had read. It does not confirm. The gross edge has the right
+sign (+$3.75 a trade) but one year carries the whole result, which is what a
+high-volatility trend effect looks like, not a stable edge. MNQ 2020-2025 was
+the favourable regime. No finalist; the 2026 holdout stays unspent.
+
+Every run is in `results/trial_log.jsonl` (16 of 20 used).
