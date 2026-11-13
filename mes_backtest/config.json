@@ -62,6 +62,15 @@
       "tick_size": 0.0001,
       "tick_value_usd": 1.25,
       "commission_rt_usd": 1.24
+    },
+    "NQ_AS_MNQ": {
+      "name": "E-mini Nasdaq-100 PRICES with Micro (MNQ) contract economics; MNQ did not list until 2019-05 and tracks NQ within a tick",
+      "root": "NQ",
+      "raw_dir": "data/raw_nq",
+      "point_value_usd": 2.0,
+      "tick_size": 0.25,
+      "tick_value_usd": 0.5,
+      "commission_rt_usd": 1.24
     }
   },
   "params": {
@@ -216,6 +225,17 @@
         }
       ],
       "min_t_pooled_oos": 3.0
+    },
+    "backward_confirmation": {
+      "registered": "2026-11-13, before the NQ file was opened",
+      "strategy": "noise_band_trend_usd, defaults unchanged",
+      "instrument": "NQ_AS_MNQ",
+      "window": [
+        "2010-06-07",
+        "2019-12-31"
+      ],
+      "pass": "net expectancy > 0 AND t >= 3.0 on daily sums AND a majority of calendar years 2011-2019 net positive",
+      "known_caveat": "the $150 stop is 75 points: about 3.7% of price in 2010 against 0.6% in 2022, so it rarely binds early; fixed costs in points are the same while moves are smaller. Both make the early years a harder test, not an easier one."
     }
   },
   "contract_roll": {

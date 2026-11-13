@@ -245,11 +245,12 @@ def build(cfg: dict, instrument: str, root: Path = ROOT) -> dict:
     ds, p = cfg["data_source"], cfg["params"]
     spec = cfg["instrument_specs"][instrument]
     sym = spec.get("root", instrument)
-    raw = read_raw(root / ds["raw_dir"], ds["expected_columns"])
+    raw_dir = root / spec.get("raw_dir", ds["raw_dir"])       # a spec may keep its file in its own folder
+    raw = read_raw(raw_dir, ds["expected_columns"])
     n_raw = len(raw)
     mine = raw[raw["symbol"].str.startswith(sym)]
     if mine.empty:
-        raise FileNotFoundError(f"no {sym} rows in {root / ds['raw_dir']}: drop the {instrument} Databento file there")
+        raise FileNotFoundError(f"no {sym} rows in {raw_dir}: drop the {instrument} Databento file there")
     bars = to_market_tz(mine, ds["source_tz"], p["market_tz"])                    # step 2: FIRST
     outr = bars[bars["symbol"].map(lambda s_: is_outright(s_, sym))].copy()
     outr["session_date"] = session_dates(outr.index)
