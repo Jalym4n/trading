@@ -103,6 +103,21 @@ def apply_costs(trade: dict, spec: dict, params: dict, slippage_mult: float = 1.
             "r_net": net_usd / risk_usd if risk_usd else float("nan")}
 
 
+def overnight_levels(m1: pd.DataFrame) -> pd.DataFrame:
+    """Per RTH date D: asia_high/low = 18:00 (D-1) to 03:00 ET, london_high/low = 03:00 to 09:30 ET,
+    from front-month 1-min bars. Both end before D's 09:30 open: no look-ahead."""
+    wall = m1.index.tz_localize(None)
+    sess = (wall + pd.Timedelta(hours=6)).normalize()
+    mins = wall.hour * 60 + wall.minute
+    asia = (mins >= 18 * 60) | (mins < 3 * 60)
+    london = (mins >= 3 * 60) & (mins < 9 * 60 + 30)
+    out = {}
+    for name, mask in (("asia", asia), ("london", london)):
+        g = m1[mask].groupby(sess[mask])
+        out[f"{name}_high"], out[f"{name}_low"] = g["high"].max(), g["low"].min()
+    return pd.DataFrame(out)
+
+
 def gex_context(days: pd.DatetimeIndex, window: int = 252) -> tuple[pd.Series, pd.Series]:
     """SPX dealer gamma exposure (SqueezeMetrics daily file, data/external/squeezemetrics_dix.csv).
     For trading day D: gex_prev = the value published for the PREVIOUS trading day, and
@@ -164,6 +179,12 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
         # daily bias input: the prior close against the mean of the closes BEFORE today (no look-ahead)
         sma = daily["close"].rolling(int(p.get("smc_bias_sma", 20))).mean().shift(1)
         gex_prev, gex_med = gex_context(sess.index)
+        daily_atr = (daily["high"] - daily["low"]).rolling(14).mean().shift(1)
+        overnight = overnight_levels(d["m1"]) if p.get("need_overnight") and d.get("m1") is not None else None
+        peer_m5 = None
+        if p.get("peer_instrument"):
+            peer_m5 = read_processed(p["peer_instrument"])["m5"]
+            peer_by_day = {k: g for k, g in peer_m5.groupby("date")}
         sess = sess[(sess.index >= s_ts) & (sess.index <= e_ts)]
         for day, row in sess.iterrows():
             res: DayResult | None = None
@@ -176,6 +197,11 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
                 levels["prior_high"] = float(prior_high.get(day, float("nan")))
                 levels["prior_low"] = float(prior_low.get(day, float("nan")))
                 levels["daily_sma"] = float(sma.get(day, float("nan")))
+                levels["daily_atr"] = float(daily_atr.get(day, float("nan")))
+                if overnight is not None and day in overnight.index:
+                    levels.update(overnight.loc[day].to_dict())
+                if peer_m5 is not None:
+                    levels["peer_bars"] = peer_by_day.get(day)
                 res = strategy(m5[m5["date"] == day], levels, p_inst)
             cat = day_category(bool(row["roll_skip"]), bool(row["data_skip"]), res)
             days.append({"instrument": inst, "date": day.date().isoformat(), "contract": row["contract"],
