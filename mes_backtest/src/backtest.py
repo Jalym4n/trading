@@ -181,6 +181,12 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
         gex_prev, gex_med = gex_context(sess.index)
         daily_atr = (daily["high"] - daily["low"]).rolling(14).mean().shift(1)
         overnight = overnight_levels(d["m1"]) if p.get("need_overnight") and d.get("m1") is not None else None
+        walls = None
+        if p.get("need_gex_walls"):
+            wf = ROOT / "data" / "external" / "es_gex_walls.parquet"
+            if not wf.exists():
+                raise FileNotFoundError("no gamma walls: run  python -m src.gex_walls extract  then  build")
+            walls = pd.read_parquet(wf)
         peer_m5 = None
         if p.get("peer_instrument"):
             peer_m5 = read_processed(p["peer_instrument"])["m5"]
@@ -200,6 +206,8 @@ def run(cfg: dict, strategy, instruments: list | None = None, start: str | None 
                 levels["daily_atr"] = float(daily_atr.get(day, float("nan")))
                 if overnight is not None and day in overnight.index:
                     levels.update(overnight.loc[day].to_dict())
+                if walls is not None and day in walls.index:
+                    levels["call_wall"], levels["put_wall"] = float(walls.at[day, "call_wall"]), float(walls.at[day, "put_wall"])
                 if peer_m5 is not None:
                     levels["peer_bars"] = peer_by_day.get(day)
                 res = strategy(m5[m5["date"] == day], levels, p_inst)
