@@ -156,6 +156,7 @@ no holdout was run for it, because nothing earned one.
 | 14 | `poc_ifvg_flip` (FVG at the prior POC closed through, retest of the inverse gap, 2R) | 123 | 1.22 | +3.29 | -0.08 | 0.99 | $433 | 1, 3 |
 | 15 | `keltner_box_reversion` (outside the daily range box and the Keltner band, 3/8 EMA cross back, 2R) | 82 | 0.81 | -11.05 | -14.59 | 0.60 | $1,271 | 1, 3 (negative before costs) |
 | 16 | `noise_band_trend_usd` on NQ 2010-2019 with MNQ economics (backward confirmation of trial 11, pre-registered) | 1,878 | 3.92 | +3.75 | +1.51 | 1.11 | $1,150 | **Confirmation FAILS**: t 1.33 (bar 3), 4 of 9 full years positive, 2018 alone is +$4,025 of the +$2,827 total; +$0.51/trade at doubled slippage |
+| 17 | `gex_wall_fade` (first rejection of the gamma-weighted call or put wall from ES quarterly option open interest, 2R) | 91 | 0.90 | +5.96 | +2.67 | 1.12 | $887 | training: 1. Walk-forward 2022-2025: 1, 3 (net +$5.28 on 135 trades, t 0.9, 2 of 4 windows; +$3.22 at doubled slippage) |
 
 Scored against the LucidFlex 100K gates (Gate 2: max drawdown < $1,800). The
 account was switched from the 25K on 2026-11-10 after these four trials; they
@@ -209,4 +210,11 @@ sign (+$3.75 a trade) but one year carries the whole result, which is what a
 high-volatility trend effect looks like, not a stable edge. MNQ 2020-2025 was
 the favourable regime. No finalist; the 2026 holdout stays unspent.
 
-Every run is in `results/trial_log.jsonl` (16 of 20 used).
+Trial 17 uses gamma walls built by `src/gex_walls.py` from open interest published
+before 09:30 ET (quarterly ES options only: no weeklies, 0DTE or SPX). Net by test
+year: +8.49, -3.97, -1.01, +17.93. Positive, small, and not distinguishable from
+zero: 135 trades in four years give t = 0.9, and 0.7 trades a week fails Gate 1.
+It is the only fade set-up so far whose out-of-sample sign is positive after
+doubled slippage, which makes it a lead, not a result.
+
+Every run is in `results/trial_log.jsonl` (17 of 20 used).
